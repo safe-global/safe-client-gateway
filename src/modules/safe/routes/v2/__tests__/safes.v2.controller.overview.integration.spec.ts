@@ -19,12 +19,10 @@ import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
 import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigTransactionToJson,
-} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
 /** Zerion's chain list keyed by network name, as served by GET /v1/chains. */
@@ -46,6 +44,7 @@ const zerionChainsResponse = zerionChains({
 describe('Safes V2 Controller Overview', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
   let pricesProviderUrl: string;
   let zerionBaseUri: string;
@@ -78,6 +77,7 @@ describe('Safes V2 Controller Overview', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     pricesProviderUrl = configurationService.getOrThrow(
       'balances.providers.safe.prices.baseUri',
     );
@@ -100,7 +100,7 @@ describe('Safes V2 Controller Overview', () => {
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
         .build();
-      const safeInfo = safeBuilder().build();
+      const safeInfo = safeBuilder().with('threshold', 1).build();
       const tokenAddress = faker.finance.ethereumAddress();
       const secondTokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
@@ -132,13 +132,16 @@ describe('Safes V2 Controller Overview', () => {
       };
       const confirmation = confirmationBuilder().build();
       const multisigTransactions = [
-        multisigTransactionToJson(
+        safeQueueMultisigTransactionFrom(
           multisigTransactionBuilder()
-            .with('confirmationsRequired', 0)
             .with('confirmations', [confirmation])
             .build(),
-        ),
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
+          chain.chainId,
+        ).build(),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().with('confirmations', []).build(),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -171,7 +174,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -229,7 +232,7 @@ describe('Safes V2 Controller Overview', () => {
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
         .build();
-      const safeInfo = safeBuilder().build();
+      const safeInfo = safeBuilder().with('threshold', 2).build();
       const currency = 'USD';
 
       // Mock Zerion wallet portfolio response
@@ -251,15 +254,15 @@ describe('Safes V2 Controller Overview', () => {
       };
 
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      // Create a transaction that needs more confirmations (confirmationsRequired: 2, but only 1 confirmation from different owner)
+      // A transaction that needs more confirmations (threshold 2, but only 1 confirmation from a different owner)
       const otherOwnerConfirmation = confirmationBuilder().build();
       const multisigTransactions = [
-        multisigTransactionToJson(
+        safeQueueMultisigTransactionFrom(
           multisigTransactionBuilder()
-            .with('confirmationsRequired', 2)
             .with('confirmations', [otherOwnerConfirmation])
             .build(),
-        ),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -280,7 +283,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -385,8 +388,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${polygonChain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`:
-          case `${ethereumChain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -445,6 +447,9 @@ describe('Safes V2 Controller Overview', () => {
       const testPricesProviderUrl = moduleFixture
         .get<IConfigurationService>(IConfigurationService)
         .getOrThrow('balances.providers.safe.prices.baseUri');
+      const testQueueBaseUri = moduleFixture
+        .get<IConfigurationService>(IConfigurationService)
+        .getOrThrow('safeQueueService.baseUri');
       const testNetworkService: MockedObject<INetworkService> =
         moduleFixture.get(NetworkService);
 
@@ -496,10 +501,7 @@ describe('Safes V2 Controller Overview', () => {
             status: 200,
           });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`
-        ) {
+        if (url === `${testQueueBaseUri}/api/v1/multisig-transactions/queue`) {
           return Promise.resolve({
             data: rawify(
               pageBuilder().with('results', []).with('count', 0).build(),
@@ -568,7 +570,10 @@ describe('Safes V2 Controller Overview', () => {
         [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
       };
       const multisigTransactions = [
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -601,7 +606,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -696,7 +701,7 @@ describe('Safes V2 Controller Overview', () => {
             status: 200,
           });
         }
-        if (url.includes('/multisig-transactions/')) {
+        if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
           return Promise.resolve({
             data: rawify(queuedTransactions),
             status: 200,
@@ -799,8 +804,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`:
-          case `${chain.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -866,7 +870,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -937,7 +941,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -1018,7 +1022,7 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -1115,10 +1119,7 @@ describe('Safes V2 Controller Overview', () => {
             status: 200,
           });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
           return Promise.resolve({
             data: rawify(queuedTransactions),
             status: 200,

@@ -14,23 +14,32 @@ import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
 import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigTransactionToJson,
-} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { rawify } from '#/validation/entities/raw.entity';
+
+/**
+ * The queue of every Safe is read from the same Safe Queue Service URL, so a
+ * request is told apart by the Safe it asks for.
+ */
+function requestKey(url: string, networkRequest?: NetworkRequest): string {
+  const safes = networkRequest?.params?.safes;
+  return typeof safes === 'string' ? `${url}?safes=${safes}` : url;
+}
 
 describe('Safes Controller Overview', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
   let pricesProviderUrl: string;
   let pricesApiKey: string;
@@ -56,6 +65,7 @@ describe('Safes Controller Overview', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     pricesProviderUrl = configurationService.getOrThrow(
       'balances.providers.safe.prices.baseUri',
     );
@@ -75,7 +85,7 @@ describe('Safes Controller Overview', () => {
   describe('GET /safes', () => {
     it('overview with transactions awaiting confirmation is correctly serialised', async () => {
       const chain = chainBuilder().with('chainId', '10').build();
-      const safeInfo = safeBuilder().build();
+      const safeInfo = safeBuilder().with('threshold', 1).build();
       const tokenAddress = faker.finance.ethereumAddress();
       const secondTokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
@@ -107,24 +117,27 @@ describe('Safes Controller Overview', () => {
       };
       const confirmation = confirmationBuilder().build();
       const multisigTransactions = [
-        multisigTransactionToJson(
+        safeQueueMultisigTransactionFrom(
           multisigTransactionBuilder()
-            .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Signature provided
               confirmation,
             ])
             .build(),
-        ),
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
+          chain.chainId,
+        ).build(),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().with('confirmations', []).build(),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
         .with('count', multisigTransactions.length)
         .build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
@@ -149,7 +162,7 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo.address}:${chain.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -228,13 +241,16 @@ describe('Safes Controller Overview', () => {
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
       );
+      expect(
+        networkService.get.mock.calls[5][0].networkRequest?.params,
+      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
 
     it('should not return awaiting confirmations if no more confirmations are required', async () => {
       const chain = chainBuilder().with('chainId', '10').build();
-      const safeInfo = safeBuilder().build();
+      const safeInfo = safeBuilder().with('threshold', 1).build();
       const tokenAddress = faker.finance.ethereumAddress();
       const secondTokenAddress = faker.finance.ethereumAddress();
       const transactionApiBalancesResponse = [
@@ -266,32 +282,32 @@ describe('Safes Controller Overview', () => {
       };
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const multisigTransactions = [
-        multisigTransactionToJson(
+        safeQueueMultisigTransactionFrom(
           multisigTransactionBuilder()
-            .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
               confirmationBuilder().build(),
             ])
             .build(),
-        ),
-        multisigTransactionToJson(
+          chain.chainId,
+        ).build(),
+        safeQueueMultisigTransactionFrom(
           multisigTransactionBuilder()
-            .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
               confirmationBuilder().build(),
             ])
             .build(),
-        ),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
         .with('count', multisigTransactions.length)
         .build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
@@ -316,7 +332,7 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo.address}:${chain.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -395,8 +411,11 @@ describe('Safes Controller Overview', () => {
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
       );
+      expect(
+        networkService.get.mock.calls[5][0].networkRequest?.params,
+      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
 
     it('overview of multiple Safes across different chains is correctly serialised', async () => {
@@ -481,8 +500,8 @@ describe('Safes Controller Overview', () => {
       const queuedTransactions2 = pageBuilder().build();
       const queuedTransactions3 = pageBuilder().build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
             return Promise.resolve({ data: rawify(chain1), status: 200 });
           }
@@ -535,19 +554,19 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo1.address}:${chain1.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo2.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo3.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -705,8 +724,8 @@ describe('Safes Controller Overview', () => {
       const queuedTransactions2 = pageBuilder().build();
       const queuedTransactions3 = pageBuilder().build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
             return Promise.resolve({ data: rawify(chain1), status: 200 });
           }
@@ -758,19 +777,19 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo1.address}:${chain1.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo2.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo3.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -877,16 +896,22 @@ describe('Safes Controller Overview', () => {
         [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
       };
       const multisigTransactions = [
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
         .with('count', multisigTransactions.length)
         .build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
@@ -911,7 +936,7 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo.address}:${chain.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -989,8 +1014,11 @@ describe('Safes Controller Overview', () => {
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
       );
+      expect(
+        networkService.get.mock.calls[5][0].networkRequest?.params,
+      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
 
     it('forwards trusted and exclude spam queries', async () => {
@@ -1027,16 +1055,22 @@ describe('Safes Controller Overview', () => {
       };
       const walletAddress = faker.finance.ethereumAddress();
       const multisigTransactions = [
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
         .with('count', multisigTransactions.length)
         .build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
@@ -1061,7 +1095,7 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo.address}:${chain.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,
@@ -1139,8 +1173,11 @@ describe('Safes Controller Overview', () => {
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
+        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
       );
+      expect(
+        networkService.get.mock.calls[5][0].networkRequest?.params,
+      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
   });
 
@@ -1227,8 +1264,8 @@ describe('Safes Controller Overview', () => {
       const queuedTransactions2 = pageBuilder().build();
       const queuedTransactions3 = pageBuilder().build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
             const error = new NetworkResponseError(
               new URL(`${safeConfigUrl}/api/v1/chains/${chain1.chainId}`),
@@ -1286,19 +1323,19 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo1.address}:${chain1.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo2.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo3.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -1420,8 +1457,8 @@ describe('Safes Controller Overview', () => {
       const queuedTransactions2 = pageBuilder().build();
       const queuedTransactions3 = pageBuilder().build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
             return Promise.resolve({ data: rawify(chain1), status: 200 });
           }
@@ -1475,13 +1512,13 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo2.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo3.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -1621,8 +1658,8 @@ describe('Safes Controller Overview', () => {
       const queuedTransactions2 = pageBuilder().build();
       const queuedTransactions3 = pageBuilder().build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain1.chainId}`: {
             return Promise.resolve({ data: rawify(chain1), status: 200 });
           }
@@ -1674,19 +1711,19 @@ describe('Safes Controller Overview', () => {
               status: 200,
             });
           }
-          case `${chain1.transactionService}/api/v2/safes/${safeInfo1.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo1.address}:${chain1.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo2.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions2),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v2/safes/${safeInfo3.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo3.address}:${chain2.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions3),
               status: 200,
@@ -1763,16 +1800,22 @@ describe('Safes Controller Overview', () => {
       };
       const walletAddress = faker.finance.ethereumAddress();
       const multisigTransactions = [
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
-        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
+        safeQueueMultisigTransactionFrom(
+          multisigTransactionBuilder().build(),
+          chain.chainId,
+        ).build(),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
         .with('count', multisigTransactions.length)
         .build();
 
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        switch (requestKey(url, networkRequest)) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
@@ -1794,7 +1837,7 @@ describe('Safes Controller Overview', () => {
           case `${pricesProviderUrl}/simple/token_price/${chainName}`: {
             return Promise.reject();
           }
-          case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+          case `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${safeInfo.address}:${chain.chainId}`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
               status: 200,

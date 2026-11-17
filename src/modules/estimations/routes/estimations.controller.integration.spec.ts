@@ -29,6 +29,7 @@ import { rawify } from '#/validation/entities/raw.entity';
 describe('Estimations Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
 
   beforeEach(async () => {
@@ -42,6 +43,7 @@ describe('Estimations Controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -76,6 +78,13 @@ describe('Estimations Controller', () => {
                 .with('results', [multisigTransactionToJson(lastTransaction)])
                 .build(),
             ),
+            status: 200,
+          });
+        }
+        // No proposal waiting in the queue.
+        if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+          return Promise.resolve({
+            data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
           });
         }
@@ -130,6 +139,13 @@ describe('Estimations Controller', () => {
               .with('results', [multisigTransactionToJson(lastTransaction)])
               .build(),
           ),
+          status: 200,
+        });
+      }
+      // No proposal waiting in the queue.
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', []).build()),
           status: 200,
         });
       }
@@ -211,6 +227,13 @@ describe('Estimations Controller', () => {
           status: 200,
         });
       }
+      // No proposal waiting in the queue.
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', []).build()),
+          status: 200,
+        });
+      }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.post.mockImplementation(({ url }) => {
@@ -260,6 +283,13 @@ describe('Estimations Controller', () => {
           data: rawify(
             pageBuilder().with('count', 0).with('results', []).build(),
           ),
+          status: 200,
+        });
+      }
+      // No proposal waiting in the queue.
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', []).build()),
           status: 200,
         });
       }
@@ -318,6 +348,13 @@ describe('Estimations Controller', () => {
               .with('results', [multisigTransactionToJson(lastTransaction)])
               .build(),
           ),
+          status: 200,
+        });
+      }
+      // No proposal waiting in the queue.
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', []).build()),
           status: 200,
         });
       }

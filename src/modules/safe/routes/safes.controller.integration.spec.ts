@@ -19,14 +19,11 @@ import {
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { singletonBuilder } from '#/modules/chains/domain/entities/__tests__/singleton.builder';
 import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import {
-  messageBuilder,
-  toJson as messageToJson,
-} from '#/modules/messages/domain/entities/__tests__/message.builder';
 import {
   erc721TransferBuilder,
   toJson as erc721TransferToJson,
@@ -40,6 +37,8 @@ import {
   toJson as multisigTransactionToJson,
 } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueMessageBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -47,6 +46,7 @@ describe('Safes Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let dataDecoderUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
 
   beforeEach(async () => {
@@ -59,6 +59,7 @@ describe('Safes Controller', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     dataDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -117,11 +118,22 @@ describe('Safes Controller', () => {
 
     const messages = pageBuilder()
       .with('results', [
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-03-12T12:29:06Z'))
-            .build(),
-        ),
+        safeQueueMessageBuilder()
+          .with('chainId', Number(chain.chainId))
+          .with('safe', safeInfo.address)
+          .with('modified', new Date('2023-03-12T12:29:06Z'))
+          .build(),
+      ])
+      .build();
+    const queuedTransactions = pageBuilder()
+      .with('results', [
+        safeQueueMultisigTransactionBuilder()
+          .with('chainId', chain.chainId)
+          .with('safe', safeInfo.address)
+          .with('txHash', null)
+          .with('modified', new Date('2049-01-30T14:23:07Z'))
+          .with('confirmations', [])
+          .build(),
       ])
       .build();
 
@@ -175,12 +187,17 @@ describe('Safes Controller', () => {
             ),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -286,12 +303,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -363,12 +385,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -441,12 +468,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -522,12 +554,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -602,12 +639,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -671,30 +713,26 @@ describe('Safes Controller', () => {
             data: rawify(collectibleTransfers),
             status: 200,
           });
-        case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`:
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [
-                  multisigTransactionToJson(
-                    multisigTransactionBuilder()
-                      .with('modified', new Date('2020-09-18T03:52:02Z'))
+                .with(
+                  'results',
+                  [
+                    new Date('2020-09-14T03:52:02Z'),
+                    new Date('2020-09-18T03:52:02Z'),
+                    new Date('2020-09-16T03:52:02Z'),
+                  ].map((modified) =>
+                    safeQueueMultisigTransactionBuilder()
+                      .with('chainId', chain.chainId)
+                      .with('safe', safeInfo.address)
+                      .with('txHash', null)
+                      .with('modified', modified)
                       .with('confirmations', [])
                       .build(),
                   ),
-                  multisigTransactionToJson(
-                    multisigTransactionBuilder()
-                      .with('modified', new Date('2020-09-16T03:52:02Z'))
-                      .with('confirmations', [])
-                      .build(),
-                  ),
-                  multisigTransactionToJson(
-                    multisigTransactionBuilder()
-                      .with('modified', new Date('2020-09-14T03:52:02Z'))
-                      .with('confirmations', [])
-                      .build(),
-                  ),
-                ])
+                )
                 .build(),
             ),
             status: 200,
@@ -704,7 +742,7 @@ describe('Safes Controller', () => {
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -775,12 +813,17 @@ describe('Safes Controller', () => {
             data: rawify(multisigTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(multisigTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -847,12 +890,14 @@ describe('Safes Controller', () => {
           });
         case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.reject({ status: 500 });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.reject({ status: 500 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -941,12 +986,17 @@ describe('Safes Controller', () => {
             data: rawify(multisigTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(multisigTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1018,12 +1068,17 @@ describe('Safes Controller', () => {
             data: rawify(multisigTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(multisigTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1089,12 +1144,17 @@ describe('Safes Controller', () => {
             data: rawify(multisigTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(multisigTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1188,7 +1248,7 @@ describe('Safes Controller', () => {
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1286,7 +1346,7 @@ describe('Safes Controller', () => {
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1381,7 +1441,7 @@ describe('Safes Controller', () => {
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1474,7 +1534,7 @@ describe('Safes Controller', () => {
             ),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1545,12 +1605,17 @@ describe('Safes Controller', () => {
             data: rawify(multisigTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(multisigTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1628,7 +1693,7 @@ describe('Safes Controller', () => {
             data: rawify(pageBuilder().build()),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1704,7 +1769,7 @@ describe('Safes Controller', () => {
             ),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1768,7 +1833,7 @@ describe('Safes Controller', () => {
           return Promise.reject({ status: 500 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.reject({ status: 500 });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1813,11 +1878,11 @@ describe('Safes Controller', () => {
 
     const messages = pageBuilder()
       .with('results', [
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-07-12T12:29:06Z'))
-            .build(),
-        ),
+        safeQueueMessageBuilder()
+          .with('chainId', Number(chain.chainId))
+          .with('safe', safeInfo.address)
+          .with('modified', new Date('2023-07-12T12:29:06Z'))
+          .build(),
       ])
       .build();
 
@@ -1848,12 +1913,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1869,9 +1939,13 @@ describe('Safes Controller', () => {
       );
 
     expect(networkService.get).toHaveBeenCalledWith({
-      url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`,
+      url: `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`,
       networkRequest: expect.objectContaining({
-        params: { ordering: '-modified', limit: 1, offset: undefined },
+        params: {
+          chainId: Number(chain.chainId),
+          limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+          offset: undefined,
+        },
       }),
     });
   });
@@ -1932,12 +2006,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -2019,12 +2098,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -2109,12 +2193,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -2180,12 +2269,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -2241,12 +2335,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -2314,12 +2413,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
@@ -2376,12 +2480,17 @@ describe('Safes Controller', () => {
             data: rawify(queuedTransactions),
             status: 200,
           });
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(queuedTransactions),
+            status: 200,
+          });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/module-transactions/`:
           return Promise.resolve({
             data: rawify(moduleTransactions),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`:
+        case `${queueBaseUri}/api/v1/safes/${safeInfo.address}/messages`:
           return Promise.resolve({ data: rawify(messages), status: 200 });
       }
       return Promise.reject(`No matching rule for url: ${url}`);

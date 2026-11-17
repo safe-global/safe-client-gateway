@@ -24,6 +24,7 @@ import { rawify } from '#/validation/entities/raw.entity';
 describe('Safes Controller Nonces', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string | undefined;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
   let configurationService: MockedObject<IConfigurationService>;
 
@@ -34,6 +35,7 @@ describe('Safes Controller Nonces', () => {
 
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -66,6 +68,13 @@ describe('Safes Controller Nonces', () => {
         case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({
             data: rawify(multisigTransactionsPage),
+            status: 200,
+          });
+        // No proposal waiting in the queue, so the Transaction Service's last
+        // trusted transaction is the latest one.
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
           });
       }
@@ -105,6 +114,13 @@ describe('Safes Controller Nonces', () => {
             data: rawify(multisigTransactionsPage),
             status: 200,
           });
+        // No proposal waiting in the queue, so the Transaction Service's last
+        // trusted transaction is the latest one.
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(pageBuilder().with('results', []).build()),
+            status: 200,
+          });
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -132,6 +148,13 @@ describe('Safes Controller Nonces', () => {
         case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`:
           return Promise.resolve({
             data: rawify(multisigTransactionsPage),
+            status: 200,
+          });
+        // No proposal waiting in the queue, so the Transaction Service's last
+        // trusted transaction is the latest one.
+        case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
+          return Promise.resolve({
+            data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
           });
       }
