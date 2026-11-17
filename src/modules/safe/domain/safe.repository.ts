@@ -13,6 +13,7 @@ import { Page } from '#/domain/entities/page.entity';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
 import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
@@ -62,6 +63,7 @@ import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { NullableCoercedDateSchema } from '#/validation/entities/schemas/nullable.schema';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -311,6 +313,42 @@ export class SafeRepository implements ISafeRepository {
       });
     }
     return this.getSafeQueueSortedByLastModified(args);
+  }
+
+  async getTransactionQueueChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Date | null> {
+    if (!this.safeQueueEnabled) {
+      return null;
+    }
+    try {
+      const changedAt =
+        await this.safeQueueService.getTransactionQueueChangedAt(args);
+      return NullableCoercedDateSchema.parse(changedAt);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to read when the transaction queue changed. chainId=${args.chainId}, safeAddress=${args.safeAddress}, error=${asError(error).message}`,
+      );
+      return null;
+    }
+  }
+
+  async setTransactionQueueChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void> {
+    if (!this.safeQueueEnabled) {
+      return;
+    }
+    try {
+      await this.safeQueueService.setTransactionQueueChangedAt(args);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to record when the transaction queue changed. chainId=${args.chainId}, safeAddress=${args.safeAddress}, error=${asError(error).message}`,
+      );
+    }
   }
 
   async getTransactionQueueForSafes(args: {
@@ -799,7 +837,15 @@ export class SafeRepository implements ISafeRepository {
       this.loggingService.warn(
         `Failed to clear the caches of a queued transaction. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, errors=${errors}`,
       );
+      return;
     }
+    // Only once the caches are cleared, so a client following the new
+    // `txQueuedTag` never reads the stale queue
+    await this.setTransactionQueueChangedAt({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      changedAt: new Date(),
+    });
   }
 
   async clearMultisigTransactions(args: {

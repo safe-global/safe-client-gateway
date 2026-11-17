@@ -4,5 +4,8 @@ import type { Event } from '#/modules/hooks/routes/entities/event.entity';
 export const IHooksRepository = Symbol('IHooksRepository');
 
 export interface IHooksRepository {
-  onEvent(event: Event): Promise<unknown>;
+  /**
+   * @param publishedAt - when the event was published; defaults to now
+   */
+  onEvent(event: Event, publishedAt?: Date): Promise<unknown>;
 }

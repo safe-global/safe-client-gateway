@@ -10,6 +10,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { PublishedAtSchema } from '#/modules/hooks/domain/entities/schemas/published-at.schema';
 import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
 import type { IHooksRepository } from '#/modules/hooks/domain/hooks.repository.interface';
 import type { Event } from '#/modules/hooks/routes/entities/event.entity';
@@ -50,7 +51,7 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
         try {
           const event = this.parseEvent(msg.content.toString());
           if (event) {
-            await this.onEvent(event);
+            await this.onEvent(event, this.getPublishedAt(msg));
           }
         } catch (err) {
           this.loggingService.error(err);
@@ -75,6 +76,15 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     return result.data;
   }
 
+  /**
+   * When the event was published, or now when the publisher set no AMQP
+   * `timestamp` on the message.
+   */
+  private getPublishedAt(msg: ConsumeMessage): Date {
+    const result = PublishedAtSchema.safeParse(msg.properties?.timestamp);
+    return result.success ? result.data : new Date();
+  }
+
   private logInvalidEvent(content: unknown, reason: string): void {
     const { type, chainId } = InvalidEventContextSchema.parse(content);
     this.loggingService.error({
@@ -85,13 +95,22 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     });
   }
 
-  async onEvent(event: Event): Promise<unknown> {
+  async onEvent(
+    event: Event,
+    publishedAt: Date = new Date(),
+  ): Promise<unknown> {
     const isSupportedChainId = await this.eventCacheHelper.isSupportedChainMemo(
       event.chainId,
     );
     if (isSupportedChainId || event.type === ConfigEventType.CHAIN_UPDATE) {
       return Promise.allSettled([
-        this.eventCacheHelper.onEventClearCache(event),
+        // Recorded only once the caches are cleared, so a client following the
+        // new tag never reads the stale entries
+        this.eventCacheHelper
+          .onEventClearCache(event)
+          .then(() =>
+            this.eventCacheHelper.onEventRecordChange(event, publishedAt),
+          ),
         this.pushNotificationService.enqueueEvent(event),
         this.markCounterfactualSafeAsDeployed(event),
       ]).finally(() => {

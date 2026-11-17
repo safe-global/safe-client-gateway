@@ -31,6 +31,8 @@ const mockDataSource = vi.mocked(dataSource);
 
 const cacheService = {
   deleteByKey: vi.fn(),
+  hGet: vi.fn(),
+  hSet: vi.fn(),
 } as unknown as MockedObject<ICacheService>;
 const mockCacheService = vi.mocked(cacheService);
 
@@ -625,6 +627,100 @@ describe('SafeQueueService', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_safe_queue_delegates_${safeAddress}`,
+      );
+    });
+  });
+
+  describe('getTransactionQueueChangedAt', () => {
+    it('Should read the safe_queue_transaction_queue_changed_at cache key', async () => {
+      const changedAt = faker.date.recent().toISOString();
+      mockCacheService.hGet.mockResolvedValue(changedAt);
+
+      const result = await service.getTransactionQueueChangedAt({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result).toBe(changedAt);
+      expect(mockCacheService.hGet).toHaveBeenCalledExactlyOnceWith(
+        new CacheDir(
+          `${chainId}_safe_queue_transaction_queue_changed_at_${safeAddress}`,
+          '',
+        ),
+      );
+    });
+
+    it('Should return null when no change was recorded', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+
+      await expect(
+        service.getTransactionQueueChangedAt({ chainId, safeAddress }),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('setTransactionQueueChangedAt', () => {
+    it('Should store the change for the default cache TTL', async () => {
+      const changedAt = faker.date.recent();
+
+      await service.setTransactionQueueChangedAt({
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+
+      expect(mockCacheService.hSet).toHaveBeenCalledExactlyOnceWith(
+        new CacheDir(
+          `${chainId}_safe_queue_transaction_queue_changed_at_${safeAddress}`,
+          '',
+        ),
+        changedAt.toISOString(),
+        defaultExpirationTimeInSeconds,
+      );
+    });
+  });
+
+  describe('getMessagesChangedAt', () => {
+    it('Should read the safe_queue_messages_changed_at cache key', async () => {
+      const changedAt = faker.date.recent().toISOString();
+      mockCacheService.hGet.mockResolvedValue(changedAt);
+
+      const result = await service.getMessagesChangedAt({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result).toBe(changedAt);
+      expect(mockCacheService.hGet).toHaveBeenCalledExactlyOnceWith(
+        new CacheDir(
+          `${chainId}_safe_queue_messages_changed_at_${safeAddress}`,
+          '',
+        ),
+      );
+    });
+
+    it('Should return null when no change was recorded', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+
+      await expect(
+        service.getMessagesChangedAt({ chainId, safeAddress }),
+      ).resolves.toBeNull();
+    });
+  });
+
+  describe('setMessagesChangedAt', () => {
+    it('Should store the change for the default cache TTL', async () => {
+      const changedAt = faker.date.recent();
+
+      await service.setMessagesChangedAt({ chainId, safeAddress, changedAt });
+
+      expect(mockCacheService.hSet).toHaveBeenCalledExactlyOnceWith(
+        new CacheDir(
+          `${chainId}_safe_queue_messages_changed_at_${safeAddress}`,
+          '',
+        ),
+        changedAt.toISOString(),
+        defaultExpirationTimeInSeconds,
       );
     });
   });

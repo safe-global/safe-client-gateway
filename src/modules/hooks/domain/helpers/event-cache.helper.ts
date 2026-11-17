@@ -134,6 +134,58 @@ export class EventCacheHelper {
     return Promise.all(eventHandler(event));
   }
 
+  /**
+   * Records when the queue or the messages of the Safes an event touched
+   * changed, which `txQueuedTag` and `messagesTag` are served from. Call it
+   * after {@link onEventClearCache} resolves.
+   */
+  public async onEventRecordChange(
+    event: Event,
+    changedAt: Date,
+  ): Promise<void> {
+    switch (event.type) {
+      case TransactionEventType.PENDING_MULTISIG_TRANSACTION:
+      case TransactionEventType.DELETED_MULTISIG_TRANSACTION:
+      case TransactionEventType.NEW_CONFIRMATION:
+        await this.safeRepository.setTransactionQueueChangedAt({
+          chainId: event.chainId,
+          safeAddress: event.address,
+          changedAt,
+        });
+        break;
+      case TransactionEventType.EXECUTED_MULTISIG_TRANSACTION: {
+        // Nested Safes whose transaction the execution approved got a new
+        // confirmation, so their queue changed too
+        const safeAddresses = [
+          event.address,
+          ...this.getApprovedNestedTransactions(event).map(
+            (child) => child.safeAddress,
+          ),
+        ];
+        await Promise.all(
+          safeAddresses.map((safeAddress) =>
+            this.safeRepository.setTransactionQueueChangedAt({
+              chainId: event.chainId,
+              safeAddress,
+              changedAt,
+            }),
+          ),
+        );
+        break;
+      }
+      case TransactionEventType.MESSAGE_CREATED:
+      case TransactionEventType.MESSAGE_CONFIRMATION:
+        await this.messagesRepository.setMessagesChangedAt({
+          chainId: event.chainId,
+          safeAddress: event.address,
+          changedAt,
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
   public onEventLog(event: Event): void {
     switch (event.type) {
       case TransactionEventType.PENDING_MULTISIG_TRANSACTION:

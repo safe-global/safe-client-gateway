@@ -40,10 +40,14 @@ export class CacheRouter {
   private static readonly SAFE_QUEUE_DELEGATES_KEY = 'safe_queue_delegates';
   private static readonly SAFE_QUEUE_MESSAGE_KEY = 'safe_queue_message';
   private static readonly SAFE_QUEUE_MESSAGES_KEY = 'safe_queue_messages';
+  private static readonly SAFE_QUEUE_MESSAGES_CHANGED_AT_KEY =
+    'safe_queue_messages_changed_at';
   private static readonly SAFE_QUEUE_MULTISIG_TRANSACTION_KEY =
     'safe_queue_multisig_transaction';
   private static readonly SAFE_QUEUE_MULTISIG_TRANSACTIONS_KEY =
     'safe_queue_multisig_transactions';
+  private static readonly SAFE_QUEUE_TRANSACTION_QUEUE_CHANGED_AT_KEY =
+    'safe_queue_transaction_queue_changed_at';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly BILLING_PAYMENT_LINKS_KEY = 'billing_payment_links';
@@ -455,6 +459,16 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
+  static getSafeQueueTransactionQueueChangedAtCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_QUEUE_TRANSACTION_QUEUE_CHANGED_AT_KEY}_${args.safeAddress}`,
+      '',
+    );
+  }
+
   static getSafeQueuedTransactionsCacheDir(args: {
     chainId: string;
     safeAddress: Address;
@@ -738,6 +752,16 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getSafeQueueMessagesBySafeCacheKey(args),
       `${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getSafeQueueMessagesChangedAtCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_QUEUE_MESSAGES_CHANGED_AT_KEY}_${args.safeAddress}`,
+      '',
     );
   }
 

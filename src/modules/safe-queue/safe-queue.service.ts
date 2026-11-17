@@ -655,6 +655,52 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getTransactionQueueChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Raw<string> | null> {
+    const cacheDir =
+      CacheRouter.getSafeQueueTransactionQueueChangedAtCacheDir(args);
+    const changedAt = await this.cacheService.hGet(cacheDir);
+    return changedAt === null ? null : rawify(changedAt);
+  }
+
+  async setTransactionQueueChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void> {
+    const cacheDir =
+      CacheRouter.getSafeQueueTransactionQueueChangedAtCacheDir(args);
+    await this.cacheService.hSet(
+      cacheDir,
+      args.changedAt.toISOString(),
+      this.defaultExpirationTimeInSeconds,
+    );
+  }
+
+  async getMessagesChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Raw<string> | null> {
+    const cacheDir = CacheRouter.getSafeQueueMessagesChangedAtCacheDir(args);
+    const changedAt = await this.cacheService.hGet(cacheDir);
+    return changedAt === null ? null : rawify(changedAt);
+  }
+
+  async setMessagesChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void> {
+    const cacheDir = CacheRouter.getSafeQueueMessagesChangedAtCacheDir(args);
+    await this.cacheService.hSet(
+      cacheDir,
+      args.changedAt.toISOString(),
+      this.defaultExpirationTimeInSeconds,
+    );
+  }
+
   async clearMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;

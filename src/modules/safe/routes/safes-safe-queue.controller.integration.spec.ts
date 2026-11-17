@@ -13,6 +13,11 @@ import {
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '#/datasources/cache/cache.service.interface';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
@@ -43,6 +48,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
   let dataDecoderUrl: string;
   let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
+  let cacheService: ICacheService;
 
   beforeEach(async () => {
     vi.resetAllMocks();
@@ -62,6 +68,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
     dataDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    cacheService = moduleFixture.get(CacheService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -410,6 +417,89 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
       expect(networkService.get).not.toHaveBeenCalledWith(
         expect.objectContaining({
           url: `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`,
+        }),
+      );
+    });
+
+    it('serves txQueuedTag from the recorded queue change without reading the queue', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const changedAt = faker.date.recent();
+      mockSafeInfoUpstreams({
+        chain,
+        safe,
+        queuedTransactions: [
+          safeQueueMultisigTransactionBuilder()
+            .with('chainId', chain.chainId)
+            .with('safe', safe.address)
+            .with('txHash', null)
+            .with('modified', faker.date.past({ refDate: changedAt }))
+            .build(),
+        ],
+        queuedMessages: [],
+      });
+      await cacheService.hSet(
+        CacheRouter.getSafeQueueTransactionQueueChangedAtCacheDir({
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+        }),
+        changedAt.toISOString(),
+        faker.number.int({ min: 60 }),
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}`)
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            txQueuedTag: toUnixSeconds(changedAt),
+          }),
+        );
+
+      expect(networkService.get).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+        }),
+      );
+    });
+
+    it('serves messagesTag from the recorded messages change without reading the messages', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const changedAt = faker.date.recent();
+      mockSafeInfoUpstreams({
+        chain,
+        safe,
+        queuedTransactions: [],
+        queuedMessages: [
+          safeQueueMessageBuilder()
+            .with('chainId', Number(chain.chainId))
+            .with('safe', safe.address)
+            .with('modified', faker.date.past({ refDate: changedAt }))
+            .build(),
+        ],
+      });
+      await cacheService.hSet(
+        CacheRouter.getSafeQueueMessagesChangedAtCacheDir({
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+        }),
+        changedAt.toISOString(),
+        faker.number.int({ min: 60 }),
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}`)
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            messagesTag: toUnixSeconds(changedAt),
+          }),
+        );
+
+      expect(networkService.get).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/safes/${safe.address}/messages`,
         }),
       );
     });

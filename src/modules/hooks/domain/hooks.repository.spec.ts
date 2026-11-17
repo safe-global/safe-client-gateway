@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ConsumeMessage } from 'amqplib';
+import { encodeFunctionData, getAddress, type Hash } from 'viem';
 import type { MockedObject } from 'vitest';
+import Safe130 from '#/abis/safe/v1.3.0/GnosisSafe.abi';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
@@ -22,8 +24,10 @@ import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests
 import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { messageCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/message-created.builder';
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
 import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
+import { newMessageConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
 import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
@@ -62,7 +66,9 @@ const mockDelegatesRepository = vi.mocked({
 } as MockedObject<DelegatesV3Repository>);
 
 const mockMessagesRepository = vi.mocked({
-  clearMessages: vi.fn(),
+  clearMessagesBySafe: vi.fn(),
+  clearMessagesByHash: vi.fn(),
+  setMessagesChangedAt: vi.fn(),
 } as unknown as MockedObject<MessagesRepository>);
 
 const mockSafeAppsRepository = vi.mocked({
@@ -83,6 +89,7 @@ const mockSafeRepository = vi.mocked({
   clearSafe: vi.fn(),
   clearIsSafe: vi.fn(),
   clearSpaceTransactionQueues: vi.fn(),
+  setTransactionQueueChangedAt: vi.fn(),
 } as MockedObject<SafeRepository>);
 
 const mockStakingRepository = vi.mocked({
@@ -215,6 +222,184 @@ describe('HooksRepository (Unit)', () => {
       expect(
         mockSafeRepository.clearSpaceTransactionQueues,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('queue and messages changed at', () => {
+    const queueEvents = [
+      ['PENDING_MULTISIG_TRANSACTION', pendingTransactionEventBuilder],
+      ['NEW_CONFIRMATION', newConfirmationEventBuilder],
+      ['EXECUTED_MULTISIG_TRANSACTION', executedTransactionEventBuilder],
+      ['DELETED_MULTISIG_TRANSACTION', deletedMultisigTransactionEventBuilder],
+    ] as const;
+
+    const messageEvents = [
+      ['MESSAGE_CREATED', messageCreatedEventBuilder],
+      ['MESSAGE_CONFIRMATION', newMessageConfirmationEventBuilder],
+    ] as const;
+
+    beforeEach(() => {
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it.each(queueEvents)(
+      'should record when the queue changed on %s',
+      async (_, builder) => {
+        const event = builder().build();
+        const publishedAt = faker.date.recent();
+
+        await hooksRepository.onEvent(event, publishedAt);
+
+        expect(
+          mockSafeRepository.setTransactionQueueChangedAt,
+        ).toHaveBeenCalledTimes(1);
+        expect(
+          mockSafeRepository.setTransactionQueueChangedAt,
+        ).toHaveBeenCalledWith({
+          chainId: event.chainId,
+          safeAddress: event.address,
+          changedAt: publishedAt,
+        });
+        expect(
+          mockMessagesRepository.setMessagesChangedAt,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(messageEvents)(
+      'should record when the messages changed on %s',
+      async (_, builder) => {
+        const event = builder().build();
+        const publishedAt = faker.date.recent();
+
+        await hooksRepository.onEvent(event, publishedAt);
+
+        expect(
+          mockMessagesRepository.setMessagesChangedAt,
+        ).toHaveBeenCalledTimes(1);
+        expect(
+          mockMessagesRepository.setMessagesChangedAt,
+        ).toHaveBeenCalledWith({
+          chainId: event.chainId,
+          safeAddress: event.address,
+          changedAt: publishedAt,
+        });
+        expect(
+          mockSafeRepository.setTransactionQueueChangedAt,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should not record a change on an event that leaves the queue and the messages as they are', async () => {
+      await hooksRepository.onEvent(
+        incomingTokenEventBuilder().build(),
+        faker.date.recent(),
+      );
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockMessagesRepository.setMessagesChangedAt,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should record the change on the nested Safe an execution approved a transaction of', async () => {
+      const childSafe = getAddress(faker.finance.ethereumAddress());
+      const event = executedTransactionEventBuilder()
+        .with('to', childSafe)
+        .with(
+          'data',
+          encodeFunctionData({
+            abi: Safe130,
+            functionName: 'approveHash',
+            args: [faker.string.hexadecimal({ length: 64 }) as Hash],
+          }),
+        )
+        .build();
+      const publishedAt = faker.date.recent();
+
+      await hooksRepository.onEvent(event, publishedAt);
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).toHaveBeenCalledTimes(2);
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).toHaveBeenCalledWith({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        changedAt: publishedAt,
+      });
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).toHaveBeenCalledWith({
+        chainId: event.chainId,
+        safeAddress: childSafe,
+        changedAt: publishedAt,
+      });
+    });
+
+    it('should record the change only once the queue caches are cleared', async () => {
+      const event = pendingTransactionEventBuilder().build();
+      let resolveClear: () => void = () => {};
+      mockSafeRepository.clearMultisigTransactions.mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          resolveClear = resolve;
+        }),
+      );
+
+      const onEvent = hooksRepository.onEvent(event, faker.date.recent());
+      await vi.waitFor(() => {
+        expect(mockSafeRepository.clearMultisigTransactions).toHaveBeenCalled();
+      });
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).not.toHaveBeenCalled();
+
+      resolveClear();
+      await onEvent;
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not record the change when clearing the queue caches fails', async () => {
+      mockSafeRepository.clearMultisigTransactions.mockRejectedValueOnce(
+        new Error(faker.lorem.sentence()),
+      );
+
+      await hooksRepository.onEvent(
+        pendingTransactionEventBuilder().build(),
+        faker.date.recent(),
+      );
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should record the change at the time the event is processed when none is given', async () => {
+      const now = faker.date.recent();
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now);
+      const event = pendingTransactionEventBuilder().build();
+
+      await hooksRepository.onEvent(event);
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).toHaveBeenCalledWith({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        changedAt: now,
+      });
     });
   });
 
@@ -588,7 +773,10 @@ describe('HooksRepository (Unit)', () => {
   });
 
   describe('queue messages', () => {
-    async function consume(body: string): Promise<void> {
+    async function consume(
+      body: string,
+      properties?: Partial<ConsumeMessage['properties']>,
+    ): Promise<void> {
       let onMessage: ((msg: ConsumeMessage) => Promise<void>) | undefined;
       mockQueuesRepository.subscribe.mockImplementation((_queueName, fn) => {
         onMessage = fn;
@@ -600,8 +788,56 @@ describe('HooksRepository (Unit)', () => {
       }
       await onMessage({
         content: Buffer.from(body),
+        properties,
       } as ConsumeMessage);
     }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should record the change at the time the event was published', async () => {
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      const event = pendingTransactionEventBuilder().build();
+      const publishedAtSeconds = Math.floor(
+        faker.date.recent().getTime() / 1_000,
+      );
+
+      await consume(JSON.stringify(event), { timestamp: publishedAtSeconds });
+
+      expect(
+        mockSafeRepository.setTransactionQueueChangedAt,
+      ).toHaveBeenCalledWith({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        changedAt: new Date(publishedAtSeconds * 1_000),
+      });
+    });
+
+    it.each([
+      ['no timestamp', {}],
+      ['no properties', undefined],
+      ['a timestamp that is not a number', { timestamp: faker.word.sample() }],
+    ])(
+      'should record the change at the time it is consumed when the message has %s',
+      async (_, properties) => {
+        const now = faker.date.recent();
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(now);
+        mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+        const event = pendingTransactionEventBuilder().build();
+
+        await consume(JSON.stringify(event), properties);
+
+        expect(
+          mockSafeRepository.setTransactionQueueChangedAt,
+        ).toHaveBeenCalledWith({
+          chainId: event.chainId,
+          safeAddress: event.address,
+          changedAt: now,
+        });
+      },
+    );
 
     it('should log a rejected event with the fields the monitor reads', async () => {
       const type = faker.word.sample();

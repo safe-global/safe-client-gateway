@@ -24,6 +24,27 @@ export interface IMessagesRepository {
     safeAddress: Address;
   }): Promise<Message | null>;
 
+  /**
+   * When the Safe's messages last changed, as recorded from message events and
+   * from writes made through this service. Null when nothing was recorded
+   * within the default cache TTL, when it cannot be read, or when the Queue
+   * Service is off: the caller then derives it from the messages themselves.
+   */
+  getMessagesChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Date | null>;
+
+  /**
+   * Records when the Safe's messages changed. Best-effort: a failure is
+   * logged, as the tag then falls back to the messages themselves.
+   */
+  setMessagesChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void>;
+
   createMessage(args: {
     chainId: string;
     safeAddress: Address;

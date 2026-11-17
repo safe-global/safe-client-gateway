@@ -257,6 +257,14 @@ export class SafesService {
     chainId: string,
     safe: Safe,
   ): Promise<Date | null> {
+    const changedAt = await this.safeRepository.getTransactionQueueChangedAt({
+      chainId,
+      safeAddress: safe.address,
+    });
+    if (changedAt) {
+      return changedAt;
+    }
+
     const queue = await this.safeRepository
       .getTransactionQueueByModified({
         chainId,
@@ -342,6 +350,14 @@ export class SafesService {
     chainId: string,
     safeAddress: Address,
   ): Promise<Date | null> {
+    const changedAt = await this.messagesRepository.getMessagesChangedAt({
+      chainId,
+      safeAddress,
+    });
+    if (changedAt) {
+      return changedAt;
+    }
+
     const message = await this.messagesRepository.getLastModifiedMessage({
       chainId,
       safeAddress,

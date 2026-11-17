@@ -126,6 +126,30 @@ export interface ISafeQueueService {
     signature: Hex;
   }): Promise<unknown>;
 
+  // When the queue or the messages of a Safe last changed, as recorded by CGW
+  // from events and its own writes. Expires with the default cache TTL.
+  getTransactionQueueChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Raw<string> | null>;
+
+  setTransactionQueueChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void>;
+
+  getMessagesChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Raw<string> | null>;
+
+  setMessagesChangedAt(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void>;
+
   // Cache clearing
   clearMultisigTransaction(args: {
     chainId: string;
