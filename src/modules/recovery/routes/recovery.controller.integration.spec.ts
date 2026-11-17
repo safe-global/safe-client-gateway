@@ -124,7 +124,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -168,7 +168,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -198,7 +198,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -231,7 +231,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -319,7 +319,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -365,7 +365,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -403,7 +403,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -439,7 +439,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -470,7 +470,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -516,7 +516,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }
@@ -568,7 +568,7 @@ describe('Recovery Controller', () => {
           return Promise.resolve({ status: 200, data: rawify(chain) });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ status: 200, data: rawify(safe) });
         }

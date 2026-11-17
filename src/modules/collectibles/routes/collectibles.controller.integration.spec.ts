@@ -82,7 +82,7 @@ describe('Collectibles Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({ data: rawify(safeResponse), status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({
@@ -133,7 +133,7 @@ describe('Collectibles Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({ data: rawify(safeResponse), status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({
@@ -185,7 +185,7 @@ describe('Collectibles Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({ data: rawify(safeResponse), status: 200 });
           case `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`:
             return Promise.resolve({
@@ -233,7 +233,7 @@ describe('Collectibles Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({ data: rawify(safeResponse), status: 200 });
           case transactionServiceUrl:
             return Promise.reject(transactionServiceError);
@@ -268,7 +268,7 @@ describe('Collectibles Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({ data: rawify(safeResponse), status: 200 });
           case transactionServiceUrl:
             return Promise.reject(transactionServiceError);
@@ -306,7 +306,7 @@ describe('Collectibles Controller', () => {
               data: rawify(chainResponse),
               status: 200,
             });
-          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({ data: rawify(safeResponse), status: 200 });
           case transactionServiceUrl:
             return Promise.reject(transactionServiceError);

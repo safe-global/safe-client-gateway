@@ -321,7 +321,7 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
       );
       expect(networkService.patch).not.toHaveBeenCalledWith(
         expect.objectContaining({
-          url: `${chain.transactionService}/api/v2/delegates/${updateDelegateDto.delegate}`,
+          url: `${chain.transactionService}/api/v2/delegates/${updateDelegateDto.delegate}/`,
         }),
       );
     });
@@ -358,7 +358,7 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
       );
       expect(networkService.delete).not.toHaveBeenCalledWith(
         expect.objectContaining({
-          url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+          url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`,
         }),
       );
     });

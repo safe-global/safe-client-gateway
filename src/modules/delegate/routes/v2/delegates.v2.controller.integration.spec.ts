@@ -286,7 +286,7 @@ describe('Delegates controller', () => {
       );
       networkService.delete.mockImplementation(({ url }) =>
         url ===
-        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`
           ? Promise.resolve({ data: rawify({}), status: 204 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -297,7 +297,7 @@ describe('Delegates controller', () => {
         .expect(200);
 
       expect(networkService.delete).toHaveBeenCalledWith({
-        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`,
         data: {
           delegator: deleteDelegateV2Dto.delegator,
           safe: deleteDelegateV2Dto.safe,
@@ -319,7 +319,7 @@ describe('Delegates controller', () => {
       );
       networkService.delete.mockImplementation(({ url }) =>
         url ===
-        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`
           ? Promise.resolve({ data: rawify({}), status: 204 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -330,7 +330,7 @@ describe('Delegates controller', () => {
         .expect(200);
 
       expect(networkService.delete).toHaveBeenCalledWith({
-        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`,
         data: {
           delegator: deleteDelegateV2Dto.delegator,
           safe: null,
@@ -373,7 +373,7 @@ describe('Delegates controller', () => {
       });
       networkService.delete.mockImplementation(({ url }) =>
         url ===
-        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`
           ? Promise.resolve({ data: rawify({}), status: 204 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -384,7 +384,7 @@ describe('Delegates controller', () => {
         .expect(200);
 
       expect(networkService.delete).toHaveBeenCalledWith({
-        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}`,
+        url: `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`,
         data: {
           delegator: delegatorAddress,
           safe: deleteDelegateV2Dto.safe,
@@ -403,7 +403,7 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: rawify(chain), status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      const transactionServiceUrl = `${chain.transactionService}/api/v2/delegates/${delegateAddress}`;
+      const transactionServiceUrl = `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`;
       const error = new NetworkResponseError(
         new URL(transactionServiceUrl),
         {
@@ -436,13 +436,13 @@ describe('Delegates controller', () => {
           ? Promise.resolve({ data: rawify(chain), status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      const transactionServiceUrl = `${chain.transactionService}/api/v2/delegates/${delegateAddress}`;
+      const transactionServiceUrl = `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`;
       const error = new NetworkResponseError(new URL(transactionServiceUrl), {
         status: 503,
       } as Response);
       networkService.delete.mockImplementation(({ url }) =>
         url ===
-        `${chain.transactionService}/api/v2/delegates/${delegateAddress}`
+        `${chain.transactionService}/api/v2/delegates/${delegateAddress}/`
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
