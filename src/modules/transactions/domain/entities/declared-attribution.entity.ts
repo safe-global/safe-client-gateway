@@ -65,7 +65,7 @@ export const DeclaredAttributionDescriptions: Record<
   string
 > = {
   declared: 'Client-declared attribution.',
-  channel: `Known values: ${KnownDeclaredChannels.join(', ')}. Truncated to ${DECLARED_CHANNEL_MAX_LENGTH} characters.`,
+  channel: `Where the user started the request. Known values: ${KnownDeclaredChannels.join(', ')}. Truncated to ${DECLARED_CHANNEL_MAX_LENGTH} characters.`,
   appName: `App name. Truncated to ${DECLARED_APP_NAME_MAX_LENGTH} characters.`,
   appUrl: `App origin and path. Truncated to ${DECLARED_APP_URL_MAX_LENGTH} characters.`,
   appId: 'ID of a listed Safe App.',
