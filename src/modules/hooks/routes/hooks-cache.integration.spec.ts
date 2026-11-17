@@ -1633,7 +1633,21 @@ describe('Hook Events for Cache', () => {
             return Promise.reject(new Error(`Could not match ${url}`));
         }
       });
-      for (const cacheDir of cacheDirs) {
+      const untouchedCacheDirs = [
+        CacheRouter.getSafesByOwnerV2CacheDir({
+          chainId: event.chainId,
+          ownerAddress: getAddress(faker.finance.ethereumAddress()),
+          limit: faker.number.int({ min: 1 }),
+          offset: faker.number.int(),
+        }),
+        CacheRouter.getSafesByOwnerV2CacheDir({
+          chainId: faker.string.numeric({ length: event.chainId.length + 1 }),
+          ownerAddress,
+          limit: faker.number.int({ min: 1 }),
+          offset: faker.number.int(),
+        }),
+      ];
+      for (const cacheDir of [...cacheDirs, ...untouchedCacheDirs]) {
         await fakeCacheService.hSet(
           cacheDir,
           faker.string.alpha(),
@@ -1648,6 +1662,9 @@ describe('Hook Events for Cache', () => {
 
       for (const cacheDir of cacheDirs) {
         await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+      }
+      for (const cacheDir of untouchedCacheDirs) {
+        await expect(fakeCacheService.hGet(cacheDir)).resolves.not.toBeNull();
       }
     },
   );

@@ -613,16 +613,26 @@ describe('HooksRepository (Unit)', () => {
       },
     );
 
-    it('should not clear the Safes of any owner on a change that is not an owner change', async () => {
-      const event = safeConfigUpdatedEventBuilder()
-        .with('change', 'CHANGED_THRESHOLD')
-        .with('data', {})
-        .build();
+    it.each([
+      'CHANGED_THRESHOLD',
+      'ENABLED_MODULE',
+      'DISABLED_MODULE',
+      'CHANGED_GUARD',
+      'CHANGED_MODULE_GUARD',
+      'CHANGED_FALLBACK_HANDLER',
+      'CHANGED_MASTER_COPY',
+    ])(
+      'should not clear the Safes of any owner on a %s change',
+      async (change) => {
+        const event = safeConfigUpdatedEventBuilder()
+          .with('change', change)
+          .build();
 
-      await buildEventCacheHelper().onEventClearCache(event);
+        await buildEventCacheHelper().onEventClearCache(event);
 
-      expect(mockSafeRepository.clearSafesByOwner).not.toHaveBeenCalled();
-    });
+        expect(mockSafeRepository.clearSafesByOwner).not.toHaveBeenCalled();
+      },
+    );
 
     it('should clear the Safes of every owner of a created Safe after clearing the Safe', async () => {
       const event = safeCreatedEventBuilder().build();
@@ -639,9 +649,9 @@ describe('HooksRepository (Unit)', () => {
 
       await buildEventCacheHelper().onEventClearCache(event);
 
-      expect(
-        mockSafeRepository.clearSafe.mock.invocationCallOrder[0],
-      ).toBeLessThan(mockSafeRepository.getSafe.mock.invocationCallOrder[0]);
+      expect(mockSafeRepository.clearSafe).toHaveBeenCalledBefore(
+        mockSafeRepository.getSafe,
+      );
       expect(mockSafeRepository.getSafe).toHaveBeenCalledExactlyOnceWith(event);
       expect(mockSafeRepository.clearSafesByOwner).toHaveBeenCalledTimes(
         safe.owners.length,
@@ -652,6 +662,28 @@ describe('HooksRepository (Unit)', () => {
           ownerAddress,
         });
       }
+    });
+
+    it('should log, clear the Safe again and clear the rest if reading the created Safe fails', async () => {
+      const event = safeCreatedEventBuilder().build();
+      const error = new Error(faker.lorem.sentence());
+      mockSafeRepository.getSafe.mockRejectedValue(error);
+
+      await buildEventCacheHelper().onEventClearCache(event);
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith({
+        message: 'Failed to clear the Safes of the owners of a created Safe',
+        chainId: event.chainId,
+        address: event.address,
+        error: error.message,
+      });
+      expect(mockSafeRepository.clearSafe).toHaveBeenCalledTimes(2);
+      expect(mockSafeRepository.clearSafesByOwner).not.toHaveBeenCalled();
+      expect(mockSafeRepository.clearIsSafe).toHaveBeenCalledWith(event);
+      expect(mockZerionCache.invalidate).toHaveBeenCalledWith(
+        event.address,
+        event.type,
+      );
     });
   });
 

@@ -1022,6 +1022,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  // Events clear the cache only when the owners change, not when the nonce or other fields of the Safes do
   async getSafesByOwnerV2(args: {
     ownerAddress: Address;
     limit?: number;

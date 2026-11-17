@@ -4,7 +4,10 @@ import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type
 import { HookEventBaseSchema } from '#/modules/hooks/routes/entities/schemas/hook-event-base.schema';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
-export const SafeConfigOwnerChanges = ['ADDED_OWNER', 'REMOVED_OWNER'];
+export const SafeConfigOwnerChanges: ReadonlyArray<string> = [
+  'ADDED_OWNER',
+  'REMOVED_OWNER',
+];
 
 // `change` stays an open string so a change type added by the Transaction Service does not reject the event
 export const SafeConfigUpdatedEventSchema = HookEventBaseSchema.extend({
