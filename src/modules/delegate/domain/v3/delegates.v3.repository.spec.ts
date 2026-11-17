@@ -137,6 +137,17 @@ describe('DelegatesV3Repository', () => {
         expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledTimes(1);
         expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledWith(args);
         expect(mockSafeQueueService.updateDelegate).not.toHaveBeenCalled();
+
+        await new Promise(setImmediate);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+          args.safeAddress,
+        );
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+        });
       });
     });
 
