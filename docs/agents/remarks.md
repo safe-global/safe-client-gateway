@@ -187,7 +187,7 @@ await expect(service.mintToken()).rejects.toThrow(new UnauthorizedException('Inv
 
 **Pattern:** a `*.spec.ts` that boots a controller's Nest module, or a `*.e2e-spec.ts` whose upstream calls are all mocked — including new coverage added only as e2e.
 
-**Why it's bad:** an `*.e2e-spec.ts` that is really an integration test never runs on a PR, and a module-booting `*.spec.ts` sits in the project that is meant to mock all I/O. Nothing fails; the coverage just isn't where the reader thinks it is.
+**Why it's bad:** #3107's and #3393's e2e specs would never have run on a PR, and #2884's module-booting suite sat in the unit project. Nothing failed; the coverage just wasn't where the reader thought it was.
 
 **Corrected form:** #3393 renamed `policies.e2e-spec.ts` to `policies.integration.spec.ts`, #3107 renamed its controller spec "from e2e to integration so CI picks it up", and #2884's `owners.controller.v3.spec.ts` landed as `owners.controller.v3.integration.spec.ts`.
 
@@ -273,23 +273,16 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 **Pattern:** an address, chain id or UUID typed `string`, or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
 
-**Why it's bad:** the duplicate doesn't look like one in the diff — #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction` field by field under a new name, and a single `string` field passes unnoticed beside typed siblings.
+**Why it's bad:** #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction` field by field, and #3531's member `address` was a plain `string` beside typed siblings.
 
 **Corrected form:**
 
 ```ts
 // Don't
 export type SafeRef = { chainId: string; address: Address };
-address!: string | null;
-export type RawIndexerSafeAllowance = { chainId: number; safe: string; /* … */ };
 // Do
-export const SafeRefSchema = z.object({ chainId: ChainIdSchema, address: AddressSchema });
 export type SafeRef = z.infer<typeof SafeRefSchema>;
-address!: Address | null;
-export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceSchema>;
 ```
-
-#3564 dropped `SafenetSafeTransaction` for `BaseMultisigTransaction`.
 
 **Spotted in:** #3531 ("Should we use Address from viem instead of string here?", then "This could also use Address from viem" and "Same here :)" on two more files), #3391 ("Nit: Would be nice to infer the type from the global `ChainIdSchema`.", "Nit: Same here, we could infer the type from `AddressSchema`"), #3392 ("Nit: Can we read it from the schemas?"), #3564 ("Why are we not using the current types we have? We have Safe TX type."), #3117 (a suggestion replacing `uuid: string` with `uuid: UUID`).
 **Status:** active — `best-practices.md`'s "The project's type, not `string`" rule owns this, with `api-dtos-and-validation.md`'s "Domain types from Zod" rule for the `z.infer` side.
@@ -390,20 +383,16 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 **Pattern:** a product alias beside the module's own name (`Copilot*` flags, guards and errors inside `safe-shield`), a stored value spelled differently from the config-service flag that gates the same feature, or env vars for one resource under two prefixes.
 
-**Why it's bad:** the diff is consistent with itself — every `Copilot*` name in #3454 matched every other — so the second name only shows against the rest of the module, the config service, or the env vars already deployed.
+**Why it's bad:** every `Copilot*` name in #3454 matched every other, so the second name for Safe Shield only showed against the rest of the module; #3613's stored value and #3565's env vars split the same way.
 
 **Corrected form:**
 
 ```ts
-// Don't
-copilotCoreDisabled: process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'true', // in safe-shield
-export const ExperimentalFeatures = ['RECIPIENT_ALLOWLIST'] as const; // flag is POLICY_RECIPIENT_ALLOWLIST
+// Don't — in safe-shield
+copilotCoreDisabled: process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'true',
 // Do
 safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
-export const ExperimentalFeatures = ['POLICY_RECIPIENT_ALLOWLIST'] as const;
 ```
-
-#3565 kept `SAFENET_PAYER_KMS_KEY_ID`, already set on staging, and renamed the new timeouts to match.
 
 **Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`").
 **Status:** active — `module-structure.md`'s "One name per concept" rule owns this.
@@ -456,26 +445,17 @@ await Promise.allSettled([
 
 ### R-036: A cached value whose shape or meaning changes under the same key
 
-**Pattern:** a diff that changes a cached schema — a new required key, or a `.nullable()` that still requires the key to be present — or changes what a cached entry means, such as which chains a cached list includes, while the `CacheRouter` key stays the same.
+**Pattern:** a diff that changes a cached schema (a new required key, a `.nullable()` that still requires the key) or what a cached entry means, while the `CacheRouter` key stays the same.
 
-**Why it's bad:** entries the previous version wrote stay under the key for the whole TTL, and during a rolling deploy older instances keep writing them. A stricter schema then makes every read of such an entry throw — in #3437 that would have failed quota checks, Safe-seat checks included, until the entry expired — and a changed meaning serves the old answer for a full TTL: #3447's 24h chain list would have kept routing opBNB to Zerion after deploy.
+**Why it's bad:** in #3437 old entries would have failed quota checks, Safe-seat checks included, until they expired; #3447's 24h chain list would have kept routing opBNB to Zerion after deploy.
 
-**Corrected form:** change the key whenever the shape or the meaning changes. Through `CacheFirstDataSource` there is no other option: the repository's `Schema.parse()` throws on an old entry. Only a cache read by hand may instead treat an entry it can't parse as a miss.
+**Corrected form:** a new key; a cache read by hand may instead treat an unreadable entry as a miss.
 
 ```ts
 // Don't
 private static readonly ZERION_CHAINS_KEY = 'zerion_chains'; // now only indexed chains
 // Do
 private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
-// Do, for a cache read by hand
-private readCachedGrants(spaceId: Space['id'], cached: string): Record<string, FeatureGrant> | null {
-  try {
-    return CachedGrantsSchema.parse(JSON.parse(cached));
-  } catch (error) {
-    this.loggingService.warn(`Unreadable cached entitlements for space ${spaceId}, recomputing: ${asError(error).message}`);
-    return null;
-  }
-}
 ```
 
 **Spotted in:** #3437 ("Should we handle existing cached grants before making counter mandatory?"), #3447 ("Change the chain-list cache field (`zerion_chains`, 24h). Otherwise the old list keeps serving opBNB after deploy.").
@@ -577,22 +557,9 @@ private readCachedGrants(spaceId: Space['id'], cached: string): Record<string, F
 
 **Pattern:** a diff removing a feature, endpoint or env-driven path that keeps its env vars in `.env.sample.json` or `.devcontainer/docker-compose.yml`, or leaves sibling endpoints of the same deprecated family, and the code only they call, in place.
 
-**Why it's bad:** the leftovers sit outside the diff — in `.env.sample.json`, the devcontainer, or a sibling route nobody touched — so a reviewer reading only the changed lines never sees them, and a deprecated route left beside its removed siblings keeps the service, repository and datasource methods behind it alive.
+**Why it's bad:** #3105 would have left three relay variables documented in `.env.sample.json` and the devcontainer after the code stopped reading them, and #3225 first removed one deprecated `/raw` route while its two siblings, and the code only they called, stayed.
 
-**Corrected form:**
-
-```jsonc
-// Don't — .env.sample.json still documents what the removed code read
-{
-  "name": "RELAY_DAILY_LIMIT_CHAIN_IDS",
-  "description": "Comma-separated chain IDs with daily relay limits",
-  "defaultValue": "11155111",
-  "required": true
-},
-// Do — the entry goes, with its line in .devcontainer/docker-compose.yml
-```
-
-#3105 deleted `RELAY_DAILY_LIMIT_CHAIN_IDS`, `RELAY_FEE_CHAIN_IDS` and `RELAY_SIMULATION_CHAIN_IDS` from both files. #3225 removed all three deprecated `/raw` routes instead of one, each with its service method, the repository and datasource methods only it called, and its orphaned entities.
+**Corrected form:** #3105 deleted the entries from both files; #3225 removed all three `/raw` routes down to the datasource.
 
 **Spotted in:** #3105 ("There are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml"), #3225 ("Let's remove all `/raw` endpoints in this PR.").
 **Status:** active — `commits-and-prs.md`'s "A removal takes what only it used" rule owns this.

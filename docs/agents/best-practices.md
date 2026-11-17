@@ -166,15 +166,20 @@ saltNonce: NumericStringSchema.pipe(z.string().max(CHAIN_ID_MAXLENGTH)),
 
 **Rule:** A value the project already has a type for is typed with it, never a bare `string`: an address is viem's `Address`, a UUID is `UUID`, and a field of a schema-backed shape takes its type from that schema (`api-dtos-and-validation.md`'s "Domain types from Zod" rule owns the `z.infer` side). `` `0x${string}` `` compiles, since viem's `Address` and `Hex` are that template literal type, but an address still takes `Address`: `AddressSchema` parses through viem's `getAddress()`, so `z.infer<typeof AddressSchema>` is the checksummed `Address`.
 
-**Why:** a `string` drops what the type said about the value, so passing a chain id where an address belongs compiles; and a type written out by hand beside the schema that parses the same value drifts from it the moment either is edited alone.
+The same holds for a whole shape: a type the domain already has — an entity, or a schema's `z.infer`/`z.input` — is reused, including in test builders, rather than written out field by field under a new name.
 
-**Canonical example:** `src/modules/policies/domain/entities/safe-ref.entity.ts` derives `SafeRef` from `SafeRefSchema` (`ChainIdSchema` + `AddressSchema`) instead of declaring `{ chainId: string; address: Address }`, and `src/modules/spaces/routes/members/entities/members.dto.entity.ts` types the member's `address` as `Address | null`.
+**Why:** a `string` drops what the type said about the value, so passing a chain id where an address belongs compiles; and a type written out by hand beside the schema that parses the same value drifts from it the moment either is edited alone. The duplicate rarely looks like one in the diff — a new entity and builder under a new name, or one `string` field beside typed siblings.
+
+**Canonical example:** `src/modules/policies/domain/entities/safe-ref.entity.ts` derives `SafeRef` from `SafeRefSchema` (`ChainIdSchema` + `AddressSchema`) instead of declaring `{ chainId: string; address: Address }`; `src/modules/spaces/routes/members/entities/members.dto.entity.ts` types the member's `address` as `Address | null`; and the policy indexer's test builder `src/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder.ts` takes its row type from the schema it feeds. `src/modules/safenet/domain/entities/safenet-payer.entity.ts` carries the existing `BaseMultisigTransaction` rather than a re-declared Safenet transaction type.
 
 ```ts
 // Don't
 export type SafeRef = { chainId: string; address: Address };
 address!: string | null;
+export type RawIndexerSafeAllowance = { chainId: number; safe: string; /* … */ };
 // Do
+export const SafeRefSchema = z.object({ chainId: ChainIdSchema, address: AddressSchema });
 export type SafeRef = z.infer<typeof SafeRefSchema>;
 address!: Address | null;
+export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceSchema>;
 ```

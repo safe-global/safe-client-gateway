@@ -108,9 +108,18 @@ This applies in both directions: neither a module's `routes/` nor its `datasourc
 
 **Rule:** A concept keeps one name across its module, classes, config keys, flags, env vars and stored values: the module's own name rather than a product alias, the config-service flag's exact string for a value that pairs with it, and one prefix for every env var of one resource. A name already deployed keeps its spelling, and new names align to it.
 
-**Why:** a search for one name misses the half that uses the other, a reader cannot tell from the names whether they are one concept or two, and each new file picks whichever name its author met first.
+**Why:** a search for one name misses the half that uses the other, a reader cannot tell from the names whether they are one concept or two, and each new file picks whichever name its author met first. The diff that introduces the second name is usually consistent with itself, so the split only shows against the rest of the module, the config service, or the env vars already deployed.
 
 **Canonical example:** the Safe Shield core gate is `SafeShieldCoreGatingGuard` in `src/modules/safe-shield/routes/guards/safe-shield-core-gating.guard.ts`, read from `features.safeShieldCoreDisabled` / `FF_SAFE_SHIELD_CORE_DISABLED` in `src/config/entities/configuration.ts`; `src/modules/spaces/domain/entities/experimental-feature.entity.ts` stores `POLICY_RECIPIENT_ALLOWLIST`, the config-service flag's own string; and the Safenet payer's KMS variables all carry `SAFENET_PAYER_KMS_`, the prefix of the one already set on staging.
+
+```ts
+// Don't — a product alias inside safe-shield, and a stored value spelled unlike its flag
+copilotCoreDisabled: process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'true',
+export const ExperimentalFeatures = ['RECIPIENT_ALLOWLIST'] as const;
+// Do
+safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
+export const ExperimentalFeatures = ['POLICY_RECIPIENT_ALLOWLIST'] as const;
+```
 
 ### Versioning
 
