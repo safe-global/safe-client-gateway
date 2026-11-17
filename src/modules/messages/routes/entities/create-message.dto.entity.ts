@@ -7,10 +7,12 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import { MessageDeclaredAttributionDto } from '#/modules/messages/routes/entities/declared-attribution.dto.entity';
 import type { CreateMessageDtoSchema } from '#/modules/messages/routes/entities/schemas/create-message.dto.schema';
 import { TypedData } from '#/modules/messages/routes/entities/typed-data.entity';
-import { DeclaredAttributionDescriptions } from '#/modules/transactions/domain/entities/declared-attribution.entity';
+import {
+  DECLARED_ATTRIBUTION_DESCRIPTION,
+  DeclaredAttributionDto,
+} from '#/routes/common/entities/declared-attribution.dto.entity';
 
 @ApiExtraModels(TypedData)
 export class CreateMessageDto
@@ -28,9 +30,9 @@ export class CreateMessageDto
   @ApiPropertyOptional({ type: String, nullable: true })
   origin!: string | null;
   @ApiPropertyOptional({
-    type: MessageDeclaredAttributionDto,
+    type: DeclaredAttributionDto,
     nullable: true,
-    description: DeclaredAttributionDescriptions.declared,
+    description: DECLARED_ATTRIBUTION_DESCRIPTION,
   })
-  declared!: MessageDeclaredAttributionDto | null;
+  declared!: DeclaredAttributionDto | null;
 }

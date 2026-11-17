@@ -55,18 +55,3 @@ export type DeclaredAttribution = z.infer<typeof DeclaredAttributionSchema>;
  */
 export const NullableDeclaredAttributionSchema =
   DeclaredAttributionSchema.nullish().default(null).catch(null);
-
-/**
- * Swagger descriptions shared by every request DTO that carries
- * {@link DeclaredAttribution}.
- */
-export const DeclaredAttributionDescriptions: Record<
-  'declared' | keyof DeclaredAttribution,
-  string
-> = {
-  declared: 'Client-declared attribution.',
-  channel: `Where the user started the request. Known values: ${KnownDeclaredChannels.join(', ')}. Truncated to ${DECLARED_CHANNEL_MAX_LENGTH} characters.`,
-  appName: `App name. Truncated to ${DECLARED_APP_NAME_MAX_LENGTH} characters.`,
-  appUrl: `App origin and path. Truncated to ${DECLARED_APP_URL_MAX_LENGTH} characters.`,
-  appId: 'ID of a listed Safe App.',
-};

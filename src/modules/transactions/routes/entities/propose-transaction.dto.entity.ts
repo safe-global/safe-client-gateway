@@ -2,12 +2,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address, Hash, Hex } from 'viem';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
-import { DeclaredAttributionDescriptions } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 import type {
   NestedTransactionDto as DomainNestedTransactionDto,
   ProposeTransactionDto as DomainProposeTransactionDto,
 } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { DeclaredAttributionDto } from '#/modules/transactions/routes/entities/declared-attribution.dto.entity';
+import {
+  DECLARED_ATTRIBUTION_DESCRIPTION,
+  DeclaredAttributionDto,
+} from '#/routes/common/entities/declared-attribution.dto.entity';
 
 export class NestedTransactionDto implements DomainNestedTransactionDto {
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -81,7 +83,7 @@ export class ProposeTransactionDto implements DomainProposeTransactionDto {
   @ApiPropertyOptional({
     type: DeclaredAttributionDto,
     nullable: true,
-    description: DeclaredAttributionDescriptions.declared,
+    description: DECLARED_ATTRIBUTION_DESCRIPTION,
   })
   declared!: DeclaredAttributionDto | null;
 }
