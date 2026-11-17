@@ -121,20 +121,19 @@ describe('Transactions Controller - Safe Queue Service', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const queueEnabledConfig: typeof configuration = () => {
+    const testConfiguration: typeof configuration = () => {
       const cfg = configuration();
       return {
         ...cfg,
         features: {
           ...cfg.features,
-          safeQueueService: true,
           ethSign: false,
         },
       };
     };
 
     const moduleFixture: TestingModule = await createTestModule({
-      config: queueEnabledConfig,
+      config: testConfiguration,
       providers: [{ provide: APP_FILTER, useClass: GlobalErrorFilter }],
     });
 

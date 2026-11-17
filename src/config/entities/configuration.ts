@@ -530,8 +530,6 @@ export default () => ({
     // for the flag or `SafeShieldCoreGatingGuard` — see PLA-1964 for status.
     safeShieldCoreDisabled:
       process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
-    safeQueueService:
-      process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
     // Safe Labs: remove after the KMS-backed payer rollout is complete.
     safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
     // Hides every SafePolicyGuard policy from the active and pending policy

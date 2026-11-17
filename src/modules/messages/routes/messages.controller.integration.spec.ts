@@ -108,14 +108,7 @@ describe('Messages controller', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    // This spec exercises the queue-service read path; the rest of the
-    // integration suite still defaults to features.safeQueueService=false until
-    // each suite is migrated alongside its own queue-URL mocks.
-    const queueEnabledConfig: typeof configuration = () => {
-      const cfg = configuration();
-      return { ...cfg, features: { ...cfg.features, safeQueueService: true } };
-    };
-    await initApp(queueEnabledConfig);
+    await initApp(configuration);
   });
 
   afterEach(async () => {
@@ -1381,7 +1374,6 @@ describe('Messages controller', () => {
             features: {
               ...defaultConfiguration.features,
               ethSign: false,
-              safeQueueService: true,
             },
           };
         };
@@ -1875,7 +1867,6 @@ describe('Messages controller', () => {
             features: {
               ...defaultConfiguration.features,
               ethSign: false,
-              safeQueueService: true,
             },
           };
         };

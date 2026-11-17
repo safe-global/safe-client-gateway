@@ -37,7 +37,7 @@ function toUnixSeconds(date: Date): string {
   return Math.floor(date.getTime() / 1000).toString();
 }
 
-describe('Safes Controller (Safe Queue Service enabled)', () => {
+describe('Safes Controller (Safe Queue Service)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let dataDecoderUrl: string;
@@ -47,13 +47,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const queueEnabledConfig: typeof configuration = () => {
-      const cfg = configuration();
-      return { ...cfg, features: { ...cfg.features, safeQueueService: true } };
-    };
-    const moduleFixture = await createTestModule({
-      config: queueEnabledConfig,
-    });
+    const moduleFixture = await createTestModule({ config: configuration });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,

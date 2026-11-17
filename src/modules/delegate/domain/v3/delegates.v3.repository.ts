@@ -2,12 +2,10 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '#/config/configuration.service.interface';
 import { Page } from '#/domain/entities/page.entity';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
 import { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
-import { DelegatePageSchema } from '#/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { SafeQueueDelegatePageSchema } from '#/modules/safe-queue/entities/delegate.entity';
 import { clearBothCacheLayers } from '#/modules/safe-queue/helpers/clear-cache-layers.helper';
@@ -15,22 +13,14 @@ import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
 
 @Injectable()
 export class DelegatesV3Repository implements IDelegatesV3Repository {
-  private readonly safeQueueEnabled: boolean;
-
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(ISafeQueueService)
     private readonly safeQueueService: ISafeQueueService,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {
-    this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.safeQueueService',
-    );
-  }
+  ) {}
 
   async getDelegates(args: {
     chainId: string;
@@ -41,29 +31,27 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    if (this.safeQueueEnabled) {
-      const page = await this.safeQueueService.getDelegates(args);
-      const parsed = SafeQueueDelegatePageSchema.parse(page);
-      return {
-        ...parsed,
-        results: parsed.results.map((d) => ({
-          safe: d.safe,
-          delegate: d.delegate,
-          delegator: d.delegator,
-          // The queue allows a null label; the domain Delegate (and the
-          // tx-service v2 path) require a string. Coerce to '' so both backends
-          // represent "no label" identically for downstream consumers.
-          label: d.label ?? '',
-        })),
-      };
-    }
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const page = await transactionService.getDelegatesV2(args);
-    return DelegatePageSchema.parse(page);
+    const page = await this.safeQueueService.getDelegates(args);
+    const parsed = SafeQueueDelegatePageSchema.parse(page);
+    return {
+      ...parsed,
+      results: parsed.results.map((d) => ({
+        safe: d.safe,
+        delegate: d.delegate,
+        delegator: d.delegator,
+        // The queue allows a null label; the domain Delegate (and the v2
+        // endpoint, served by the tx service) require a string. Coerce to ''
+        // so "no label" reads the same on both versions.
+        label: d.label ?? '',
+      })),
+    };
   }
 
+  /**
+   * Also clears the tx-service layer: the v1 and v2 delegate endpoints still
+   * read delegates from the tx service, and this is the only clear the
+   * delegate webhook events trigger.
+   */
   async clearDelegates(args: {
     chainId: string;
     safeAddress?: Address;
@@ -88,18 +76,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    if (this.safeQueueEnabled) {
-      await this.safeQueueService.postDelegate(args);
-      await this.clearDelegates({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress ?? undefined,
-      });
-      return;
-    }
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.postDelegateV2(args);
+    await this.safeQueueService.postDelegate(args);
     await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
@@ -114,18 +91,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    if (this.safeQueueEnabled) {
-      await this.safeQueueService.updateDelegate(args);
-      await this.clearDelegates({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress ?? undefined,
-      });
-      return;
-    }
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.updateDelegateV2(args);
+    await this.safeQueueService.updateDelegate(args);
     await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
@@ -139,18 +105,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     safeAddress: Address | null;
     signature: string;
   }): Promise<void> {
-    if (this.safeQueueEnabled) {
-      await this.safeQueueService.deleteDelegate(args);
-      await this.clearDelegates({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress ?? undefined,
-      });
-      return;
-    }
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    await transactionService.deleteDelegateV2(args);
+    await this.safeQueueService.deleteDelegate(args);
     await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,

@@ -66,14 +66,7 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const queueEnabledConfig: typeof configuration = () => {
-      const cfg = configuration();
-      return { ...cfg, features: { ...cfg.features, safeQueueService: true } };
-    };
-
-    const moduleFixture = await createTestModule({
-      config: queueEnabledConfig,
-    });
+    const moduleFixture = await createTestModule({ config: configuration });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,

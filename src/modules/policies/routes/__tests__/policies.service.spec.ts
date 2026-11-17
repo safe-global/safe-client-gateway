@@ -3,10 +3,7 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
-import {
-  SAFE_QUEUE_SERVICE_MAX_LIMIT,
-  SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-} from '#/domain/common/constants';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -96,14 +93,10 @@ const mockDelayedGuardPoliciesMapper = {
 } as MockedObject<DelayedGuardPoliciesMapper>;
 
 const mockSafeRepository: MockedObject<
-  Pick<
-    ISafeRepository,
-    'getSafe' | 'getTransactionQueue' | 'getTransactionQueueMaxPageSize'
-  >
+  Pick<ISafeRepository, 'getSafe' | 'getTransactionQueue'>
 > = {
   getSafe: vi.fn(),
   getTransactionQueue: vi.fn(),
-  getTransactionQueueMaxPageSize: vi.fn(),
 };
 
 const mockSpaceSafesRepository: MockedObject<
@@ -208,7 +201,6 @@ describe('PoliciesService', () => {
   function policiesService(
     size: number,
     args?: {
-      safeQueueServiceEnabled?: boolean;
       guardPoliciesEnabled?: boolean;
     },
   ): PoliciesService {
@@ -217,11 +209,6 @@ describe('PoliciesService', () => {
     fakeConfigurationService.set(
       'features.guardPolicies',
       args?.guardPoliciesEnabled ?? true,
-    );
-    mockSafeRepository.getTransactionQueueMaxPageSize.mockReturnValue(
-      args?.safeQueueServiceEnabled
-        ? SAFE_QUEUE_SERVICE_MAX_LIMIT
-        : SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
     );
 
     return new PoliciesService(
@@ -834,8 +821,8 @@ describe('PoliciesService', () => {
   });
 
   describe('proposers', () => {
-    it('should read the delegates api for the safe, at the Queue Service max page size when the queue service flag is set true', async () => {
-      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+    it('should read the delegates api for the safe, at the Queue Service max page size', async () => {
+      target = policiesService(batchSize);
 
       await target.getSpaceActivePolicies(policyRequest);
 
@@ -843,18 +830,6 @@ describe('PoliciesService', () => {
         chainId: SEPOLIA,
         safeAddress,
         limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-      });
-    });
-
-    it('should read the delegates api for the safe, at the Transaction Service max page size when the queue service flag is set false', async () => {
-      target = policiesService(batchSize, { safeQueueServiceEnabled: false });
-
-      await target.getSpaceActivePolicies(policyRequest);
-
-      expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledWith({
-        chainId: SEPOLIA,
-        safeAddress,
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
       });
     });
 
@@ -1248,20 +1223,8 @@ describe('PoliciesService', () => {
       );
     });
 
-    it('should read the queue at the Transaction Service page size when the queue service flag is set false', async () => {
-      target = policiesService(batchSize, { safeQueueServiceEnabled: false });
-
-      await target.getSpacePendingPolicies(pendingRequest);
-
-      expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledWith(
-        expect.objectContaining({
-          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-        }),
-      );
-    });
-
-    it('should read the queue at the Queue Service page size when the queue service flag is set true', async () => {
-      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+    it('should read the queue at the Queue Service page size', async () => {
+      target = policiesService(batchSize);
 
       await target.getSpacePendingPolicies(pendingRequest);
 
@@ -1273,7 +1236,7 @@ describe('PoliciesService', () => {
     });
 
     it('should read every page of a queue longer than one page', async () => {
-      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+      target = policiesService(batchSize);
       const addDelegate = addDelegateEncoder();
       const addDelegateArgs = addDelegate.build();
       const firstPage = Array.from(
@@ -1323,7 +1286,7 @@ describe('PoliciesService', () => {
     });
 
     it('should stop reading a queue at the page cap and warn', async () => {
-      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+      target = policiesService(batchSize);
       mockSafeRepository.getTransactionQueue.mockResolvedValue(
         pageBuilder<MultisigTransaction>()
           .with('results', [])

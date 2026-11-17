@@ -31,8 +31,6 @@ export class CacheRouter {
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly INDEXING_KEY = 'indexing';
   private static readonly MALICIOUS_ADDRESS_SCAN_KEY = 'malicious_address_scan';
-  private static readonly MESSAGE_KEY = 'message';
-  private static readonly MESSAGES_KEY = 'messages';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
@@ -671,20 +669,6 @@ export class CacheRouter {
     );
   }
 
-  static getMessageByHashCacheKey(args: {
-    chainId: string;
-    messageHash: string;
-  }): string {
-    return `${args.chainId}_${CacheRouter.MESSAGE_KEY}_${args.messageHash}`;
-  }
-
-  static getMessageByHashCacheDir(args: {
-    chainId: string;
-    messageHash: string;
-  }): CacheDir {
-    return new CacheDir(CacheRouter.getMessageByHashCacheKey(args), '');
-  }
-
   static getSafeQueueMessageByHashCacheKey(args: {
     chainId: string;
     messageHash: string;
@@ -699,26 +683,6 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getSafeQueueMessageByHashCacheKey(args),
       '',
-    );
-  }
-
-  static getMessagesBySafeCacheKey(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): string {
-    return `${args.chainId}_${CacheRouter.MESSAGES_KEY}_${args.safeAddress}`;
-  }
-
-  static getMessagesBySafeCacheDir(args: {
-    chainId: string;
-    safeAddress: Address;
-    ordering?: string;
-    limit?: number;
-    offset?: number;
-  }): CacheDir {
-    return new CacheDir(
-      CacheRouter.getMessagesBySafeCacheKey(args),
-      `${args.ordering}_${args.limit}_${args.offset}`,
     );
   }
 
