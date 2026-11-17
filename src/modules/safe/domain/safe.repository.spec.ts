@@ -60,6 +60,7 @@ const mockTransactionApi = {
   getMultisigTransactionWithNoCache: vi.fn(),
   getMultisigTransactions: vi.fn(),
   deleteTransaction: vi.fn(),
+  postConfirmation: vi.fn(),
   postMultisigTransaction: vi.fn(),
   clearMultisigTransaction: vi.fn(),
   clearMultisigTransactions: vi.fn(),
@@ -1622,9 +1623,11 @@ describe('SafeRepository', () => {
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
       mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
-        new Error('not found'),
+        new Error(faker.lorem.sentence()),
       );
-      mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(
+        rawify(safeQueueMultisigTransactionBuilder().build()),
+      );
       mockSpaceSafesRepository.findSpaceIdsBySafe.mockResolvedValue(spaceIds);
 
       await repo.proposeTransaction({
@@ -1652,7 +1655,7 @@ describe('SafeRepository', () => {
       const error = new Error(faker.lorem.sentence());
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
       mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
-        new Error('not found'),
+        new Error(faker.lorem.sentence()),
       );
       mockSafeQueueService.proposeTransaction.mockRejectedValue(error);
 
@@ -1679,14 +1682,18 @@ describe('SafeRepository', () => {
     it('should return the proposal and warn when clearing the caches fails', async () => {
       const safe = safeBuilder().with('address', safeAddress).build();
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
-      const proposal = rawify({ safeTxHash: proposeTransactionDto.safeTxHash });
+      const proposal = rawify(
+        safeQueueMultisigTransactionBuilder()
+          .with('safeTxHash', proposeTransactionDto.safeTxHash)
+          .build(),
+      );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
       mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
-        new Error('not found'),
+        new Error(faker.lorem.sentence()),
       );
       mockSafeQueueService.proposeTransaction.mockResolvedValue(proposal);
       mockSafeQueueService.clearAllTransactions.mockRejectedValue(
-        new Error('cache down'),
+        new Error(faker.lorem.sentence()),
       );
 
       await expect(
@@ -1886,6 +1893,45 @@ describe('SafeRepository', () => {
       ).toHaveBeenCalledExactlyOnceWith(safeAddress);
     });
 
+    it('should post the confirmation to the transaction service and only clear its caches when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const addConfirmationDto = {
+        signature: getAddress(faker.finance.ethereumAddress()),
+      };
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(
+        rawify(safeBuilder().with('address', safeAddress).build()),
+      );
+
+      await repo.addConfirmation({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        addConfirmationDto,
+      });
+
+      expect(
+        mockTransactionApi.postConfirmation,
+      ).toHaveBeenCalledExactlyOnceWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        addConfirmationDto,
+      });
+      expect(
+        mockTransactionApi.clearMultisigTransaction,
+      ).toHaveBeenCalledExactlyOnceWith(tx.safeTxHash);
+      expect(
+        mockTransactionApi.clearMultisigTransactions,
+      ).toHaveBeenCalledExactlyOnceWith(safeAddress);
+      expect(mockSafeQueueService.postConfirmation).not.toHaveBeenCalled();
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
+    });
+
     it('should clear the queue of every Space holding the Safe', async () => {
       const repo = createRepository({
         safeQueueEnabled: true,
@@ -1972,7 +2018,7 @@ describe('SafeRepository', () => {
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
       mockSafeQueueService.postConfirmation.mockResolvedValue();
       mockSafeQueueService.clearMultisigTransaction.mockRejectedValue(
-        new Error('cache down'),
+        new Error(faker.lorem.sentence()),
       );
 
       await expect(
