@@ -43,6 +43,7 @@ import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.build
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { TestSafeQueueModule } from '#/modules/safe-queue/__tests__/test.safe-queue.module';
+import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
 import { TestSpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/__tests__/test.space-safes-repository.module';
 import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
@@ -57,6 +58,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
 
@@ -95,6 +97,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -151,18 +154,22 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       const contractPage = pageBuilder()
         .with('results', [contractBuilder().build()])
         .build();
-      const transaction = multisigToJson(
-        await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('isExecuted', false)
-          .buildWithConfirmations({
-            signers: [signer],
-            chainId: chain.chainId,
-            safe,
-            signatureType,
-          }),
-      ) as MultisigTransaction;
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('isExecuted', false)
+        .buildWithConfirmations({
+          signers: [signer],
+          chainId: chain.chainId,
+          safe,
+          signatureType,
+        });
+      const queueTransaction = safeQueueMultisigTransactionFrom(
+        transaction,
+        chain.chainId,
+      )
+        .with('txHash', null)
+        .build();
       const dataDecoder = dataDecodedBuilder().build();
       const addConfirmationDto = addConfirmationDtoBuilder()
         .with('signature', transaction.confirmations?.[0].signature as Address)
@@ -171,7 +178,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       const token = tokenBuilder().build();
       networkService.get.mockImplementation(({ url }) => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
+        const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
@@ -180,8 +187,11 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({ data: rawify(transaction), status: 200 });
+          case getQueueTransactionUrl:
+            return Promise.resolve({
+              data: rawify(queueTransaction),
+              status: 200,
+            });
           case getSafeUrl:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getSafeAppsUrl:
@@ -197,7 +207,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         }
       });
       networkService.post.mockImplementation(({ url }) => {
-        const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${transaction.safeTxHash}/confirmations/`;
+        const postConfirmationUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`;
         const getDataDecoderUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
         switch (url) {
           case postConfirmationUrl:
@@ -219,15 +229,21 @@ describe('Add transaction confirmations - Transactions Controller', () => {
           expect(body).toMatchObject({
             safeAddress: safe.address,
             txId: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
-            executedAt: expect.any(Number),
+            executedAt: null,
             txStatus: expect.any(String),
             txInfo: expect.any(Object),
             txData: expect.any(Object),
-            txHash: transaction.transactionHash,
+            txHash: null,
             detailedExecutionInfo: expect.any(Object),
             safeAppInfo: expect.any(Object),
           }),
         );
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`,
+          data: { signatures: [addConfirmationDto.signature] },
+        }),
+      );
     },
   );
 

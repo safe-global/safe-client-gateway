@@ -29,55 +29,9 @@ import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.build
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
-import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
 import { rawify } from '#/validation/entities/raw.entity';
-
-function toQueueTransaction(
-  transaction: MultisigTransaction,
-  chainId: string,
-): SafeQueueMultisigTransactionEntity {
-  return safeQueueMultisigTransactionBuilder()
-    .with('safeTxHash', transaction.safeTxHash)
-    .with('chainId', chainId)
-    .with('safe', transaction.safe)
-    .with('nonce', transaction.nonce)
-    .with('proposer', transaction.proposer)
-    .with('to', transaction.to)
-    .with('value', transaction.value)
-    .with('data', transaction.data)
-    .with('operation', transaction.operation)
-    .with(
-      'safeTxGas',
-      transaction.safeTxGas === null ? null : transaction.safeTxGas.toString(),
-    )
-    .with(
-      'baseGas',
-      transaction.baseGas === null ? null : transaction.baseGas.toString(),
-    )
-    .with('gasPrice', transaction.gasPrice)
-    .with('gasToken', transaction.gasToken)
-    .with('refundReceiver', transaction.refundReceiver)
-    .with('txHash', transaction.transactionHash)
-    .with(
-      'confirmations',
-      (transaction.confirmations ?? []).flatMap((confirmation) => {
-        return confirmation.signature === null
-          ? []
-          : [
-              {
-                owner: confirmation.owner,
-                signature: confirmation.signature,
-                signatureType: confirmation.signatureType,
-                created: confirmation.submissionDate,
-                modified: confirmation.submissionDate,
-              },
-            ];
-      }),
-    )
-    .build();
-}
 
 describe('Multisig transactions - Safe queue service', () => {
   let app: INestApplication<Server>;
@@ -88,20 +42,19 @@ describe('Multisig transactions - Safe queue service', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const queueEnabledConfig: typeof configuration = () => {
+    const testConfiguration: typeof configuration = () => {
       const cfg = configuration();
       return {
         ...cfg,
         features: {
           ...cfg.features,
           ethSign: true,
-          safeQueueService: true,
         },
       };
     };
 
     const moduleFixture: TestingModule = await createTestModule({
-      config: queueEnabledConfig,
+      config: testConfiguration,
       providers: [
         {
           provide: APP_FILTER,
@@ -160,7 +113,10 @@ describe('Multisig transactions - Safe queue service', () => {
           return Promise.resolve({
             data: rawify(
               args.transactions.map((transaction) =>
-                toQueueTransaction(transaction, args.chain.chainId),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  args.chain.chainId,
+                ).build(),
               ),
             ),
             status: 200,
@@ -412,7 +368,10 @@ describe('Multisig transactions - Safe queue service', () => {
           case `${queueBaseUri}/api/v1/multisig-transactions/${pendingTransaction.safeTxHash}`:
             return Promise.resolve({
               data: rawify(
-                toQueueTransaction(pendingTransaction, chain.chainId),
+                safeQueueMultisigTransactionFrom(
+                  pendingTransaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
