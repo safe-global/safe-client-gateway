@@ -678,6 +678,7 @@ describe('HooksRepository (Unit)', () => {
         error: error.message,
       });
       expect(mockSafeRepository.clearSafe).toHaveBeenCalledTimes(2);
+      expect(mockSafeRepository.clearSafe).toHaveBeenNthCalledWith(2, event);
       expect(mockSafeRepository.clearSafesByOwner).not.toHaveBeenCalled();
       expect(mockSafeRepository.clearIsSafe).toHaveBeenCalledWith(event);
       expect(mockZerionCache.invalidate).toHaveBeenCalledWith(
