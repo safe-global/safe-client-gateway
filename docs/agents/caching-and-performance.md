@@ -26,6 +26,14 @@ The key/TTL/clear pieces of this recipe are each covered in more depth in the ru
 
 The mechanism's own internal bookkeeping is the one exception: `CacheFirstDataSource` and `RedisCacheService` each build their own `invalidationTimeMs:<key>` marker directly, since that marker belongs to the cache mechanism itself and not to a feature datasource's key space.
 
+### A changed cached shape or meaning gets a new key
+
+**Rule:** When a change alters the schema of a cached value or what a cached entry means, change its key in `CacheRouter` in the same PR. A cache read by hand rather than through `CacheFirstDataSource` may instead treat an entry it can't parse as a miss.
+
+**Why:** entries the previous version wrote stay under the old key for the whole TTL, and during a rolling deploy older instances keep writing them. Through `CacheFirstDataSource` the repository's `Schema.parse()` throws on such an entry, so the read fails until it expires; a changed meaning silently serves the old answer for a full TTL.
+
+**Canonical example:** `CacheRouter.ZERION_CHAINS_KEY` became `'zerion_indexed_chains'` when the cached list changed from all chains to indexed chains only. For a hand-read cache, `EntitlementsService.readCachedGrants` returns `null` for an entry `CachedGrantsSchema` rejects, and the caller recomputes.
+
 ### No literal TTLs
 
 **Rule:** Every cache TTL comes from `expirationTimeInSeconds.*` in `src/config/entities/configuration.ts`, never a number literal at the call site; negative caching via `notFoundExpireTimeSeconds` is mandatory on every cached read, not an optional extra reserved for high-traffic endpoints.

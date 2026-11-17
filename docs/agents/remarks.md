@@ -225,10 +225,10 @@ async post<T>(url: string, body: object): Promise<Raw<T>>;
 ```ts
 // Don't
 @ApiProperty({ nullable: true })
-safe?: `0x${string}` | null;
+safe?: Address | null;
 // Do — pick the one the schema allows, and annotate it accordingly
 @ApiPropertyOptional({ type: String })
-safe?: `0x${string}`;
+safe?: Address;
 // Do — a key that is always present but may be null
 @ApiProperty({ type: Relayer, nullable: true })
 relayer: Relayer | null;
@@ -271,7 +271,7 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 ### R-033: `string` where the project already has the type
 
-**Pattern:** an address, chain id or UUID typed `string` (or `` `0x${string}` ``), or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
+**Pattern:** an address, chain id or UUID typed `string`, or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
 
 **Why it's bad:** a hand-written type is a second declaration of a shape the schema already owns, and it drifts the moment either is edited alone. A plain `string` also throws away what the type said — that the value is an address or a chain id — so the compiler stops catching a value of the wrong kind. #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction`.
 
@@ -290,6 +290,8 @@ export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceS
 ```
 
 A shape the domain already has is reused, not re-declared — #3564 dropped `SafenetSafeTransaction` for `BaseMultisigTransaction`.
+
+`` `0x${string}` `` is not a wrong type: viem's `Address` and `Hex` are that template literal type. For an address, though, prefer `Address`: `AddressSchema` parses through viem's `getAddress()`, so `z.infer<typeof AddressSchema>` is viem's `Address`, checksummed.
 
 **Spotted in:** #3531 ("Should we use Address from viem instead of string here?", then "This could also use Address from viem" and "Same here :)" on two more files), #3391 ("Nit: Would be nice to infer the type from the global `ChainIdSchema`.", "Nit: Same here, we could infer the type from `AddressSchema`"), #3392 ("Nit: Can we read it from the schemas?"), #3564 ("Why are we not using the current types we have? We have Safe TX type."), #3117 (a suggestion replacing `uuid: string` with `uuid: UUID`).
 **Status:** active — `api-dtos-and-validation.md`'s "Domain types from Zod" rule owns the `z.infer` half.
@@ -398,11 +400,9 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 // Don't
 copilotCoreDisabled: process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'true', // in safe-shield
 export const ExperimentalFeatures = ['RECIPIENT_ALLOWLIST'] as const; // flag is POLICY_RECIPIENT_ALLOWLIST
-SAFENET_KMS_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1).optional(), // beside SAFENET_PAYER_KMS_KEY_ID
 // Do
 safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
 export const ExperimentalFeatures = ['POLICY_RECIPIENT_ALLOWLIST'] as const;
-SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
 ```
 
 A name already deployed keeps its spelling and the new ones align to it — #3565 kept `SAFENET_PAYER_KMS_KEY_ID`, already set on staging, and renamed the new timeouts to match.
@@ -462,14 +462,14 @@ await Promise.allSettled([
 
 **Why it's bad:** entries the previous version wrote stay under the key for the whole TTL, and during a rolling deploy older instances keep writing them. A stricter schema then makes every read of such an entry throw — in #3437 that would have failed quota checks, Safe-seat checks included, until the entry expired — and a changed meaning serves the old answer for a full TTL: #3447's 24h chain list would have kept routing opBNB to Zerion after deploy.
 
-**Corrected form:** when the meaning changes, change the key; when the shape changes, read an entry this version can't parse as a miss.
+**Corrected form:** change the key whenever the shape or the meaning changes. Through `CacheFirstDataSource` there is no other option: the repository's `Schema.parse()` throws on an old entry. Only a cache read by hand may instead treat an entry it can't parse as a miss.
 
 ```ts
 // Don't
 private static readonly ZERION_CHAINS_KEY = 'zerion_chains'; // now only indexed chains
-const grants = CachedGrantsSchema.parse(JSON.parse(cached));
 // Do
 private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
+// Do, for a cache read by hand
 private readCachedGrants(spaceId: Space['id'], cached: string): Record<string, FeatureGrant> | null {
   try {
     return CachedGrantsSchema.parse(JSON.parse(cached));
@@ -481,7 +481,7 @@ private readCachedGrants(spaceId: Space['id'], cached: string): Record<string, F
 ```
 
 **Spotted in:** #3437 ("Should we handle existing cached grants before making counter mandatory?"), #3447 ("Change the chain-list cache field (`zerion_chains`, 24h). Otherwise the old list keeps serving opBNB after deploy.").
-**Status:** active
+**Status:** active — `caching-and-performance.md`'s "A changed cached shape or meaning gets a new key" rule owns this.
 
 ## Logging and errors
 
