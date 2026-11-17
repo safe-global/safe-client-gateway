@@ -520,7 +520,7 @@ export class TransactionsController {
     description: 'Paginated list of outgoing transfers',
   })
   @ApiUnprocessableEntityResponse({
-    description: 'Invalid chain ID, address, date or trusted flag',
+    description: 'Invalid chain ID, address, date, trusted flag or cursor',
   })
   @ApiNotFoundResponse({
     description: 'Safe or chain not found',
@@ -531,7 +531,8 @@ export class TransactionsController {
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('trusted', new ValidationPipe(BooleanStringSchema.default(true)))
     trusted: boolean,
     @Query(

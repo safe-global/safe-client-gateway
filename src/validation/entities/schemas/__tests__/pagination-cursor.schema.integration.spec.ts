@@ -88,7 +88,9 @@ describe('PaginationCursorSchema in a ValidationPipe', () => {
 
     await request(app.getHttpServer())
       .get('')
-      .query(`cursor=limit%3D20%26offset%3D-${offset}`)
+      .query(
+        `cursor=limit%3D${faker.number.int({ min: 1 })}%26offset%3D-${offset}`,
+      )
       .expect(422);
 
     expect(paginationData).toBeUndefined();

@@ -42,7 +42,7 @@ describe('PaginationCursorSchema', () => {
     const offset = faker.number.int({ min: 0, max: 1_000 });
 
     const result = PaginationCursorSchema.safeParse(
-      `limit=20&offset=-${offset + 1}&offset=${offset}`,
+      `limit=${faker.number.int({ min: 1 })}&offset=-${offset + 1}&offset=${offset}`,
     );
 
     expect(result.success).toBe(false);
@@ -58,7 +58,7 @@ describe('PaginationCursorSchema', () => {
     ['beyond the safe integer range', '9007199254740993'],
   ])('should reject a %s offset', (_label, offset) => {
     const result = PaginationCursorSchema.safeParse(
-      `limit=20&offset=${offset}`,
+      `limit=${faker.number.int({ min: 1 })}&offset=${offset}`,
     );
 
     expect(result.success).toBe(false);
@@ -68,7 +68,9 @@ describe('PaginationCursorSchema', () => {
     ['negative', '-1'],
     ['decimal', '2.5'],
   ])('should reject a %s limit', (_label, limit) => {
-    const result = PaginationCursorSchema.safeParse(`limit=${limit}&offset=0`);
+    const result = PaginationCursorSchema.safeParse(
+      `limit=${limit}&offset=${faker.number.int({ min: 0 })}`,
+    );
 
     expect(result.success).toBe(false);
   });
