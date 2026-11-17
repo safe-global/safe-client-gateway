@@ -289,7 +289,7 @@ The rest of the codebase asks its manager for "the client for this chain" rather
 | Tenderly | Transaction simulation and alert webhooks, HMAC-verified (`src/modules/alerts/`) |
 | AWS KMS | Field-level encryption and asymmetric signing (`src/datasources/kms/`) |
 | AWS S3 | CSV export and targeted-messaging file storage (`src/datasources/storage/`) |
-| AWS SES / Pushwoosh | Transactional and marketing email (`src/modules/email/ses/`, `src/modules/email/pushwoosh/`) |
+| AWS SES | Transactional email (`src/modules/email/ses/`) |
 | Cloudflare Turnstile | Captcha verification (`src/routes/captcha/`) |
 | Fingerprint | Device/geo signal for Safe token locking eligibility (`src/datasources/locking-api/fingerprint-api.service.ts`) |
 

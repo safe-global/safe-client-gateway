@@ -5,9 +5,6 @@ process.env.ALERTS_PROVIDER_SIGNING_KEY = 'fake-signing-key';
 process.env.ALERTS_PROVIDER_API_KEY = 'fake-api-key';
 process.env.ALERTS_PROVIDER_ACCOUNT = 'fake-account';
 process.env.ALERTS_PROVIDER_PROJECT = 'fake-project';
-process.env.EMAIL_API_APPLICATION_CODE = 'fake-application-code';
-process.env.EMAIL_API_FROM_EMAIL = 'changeme@example.com';
-process.env.EMAIL_API_KEY = 'fake-api-key';
 process.env.FINGERPRINT_ENCRYPTION_KEY = 'fake-encryption-key';
 process.env.INFURA_API_KEY = 'fake-api-key';
 

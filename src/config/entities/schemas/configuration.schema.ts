@@ -252,10 +252,6 @@ export const RootConfigurationSchema = z
       .int()
       .min(0)
       .optional(),
-    // TODO: Reassess EMAIL_ keys after email integration
-    EMAIL_API_APPLICATION_CODE: z.string(),
-    EMAIL_API_FROM_EMAIL: z.email(),
-    EMAIL_API_KEY: z.string(),
     ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
     ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT: z.iso.datetime().optional(),
     DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS: z.coerce
