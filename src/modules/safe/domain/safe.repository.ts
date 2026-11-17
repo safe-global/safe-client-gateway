@@ -48,6 +48,7 @@ import {
 } from '#/modules/safe/domain/entities/transfer.entity';
 import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { getQueueFallbackError } from '#/modules/safe/domain/helpers/queue-fallback-error.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
@@ -61,25 +62,6 @@ import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '#/routes/common/pagination/pagination.data';
-
-const TRANSIENT_QUEUE_STATUSES: ReadonlyArray<number> = [
-  HttpStatus.TOO_MANY_REQUESTS,
-  HttpStatus.SERVICE_UNAVAILABLE,
-];
-
-function isTransientQueueError(error: unknown): error is DataSourceError {
-  return (
-    error instanceof DataSourceError &&
-    error.code !== undefined &&
-    TRANSIENT_QUEUE_STATUSES.includes(error.code)
-  );
-}
-
-function isNotFound(error: unknown): boolean {
-  return (
-    error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND
-  );
-}
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -719,9 +701,7 @@ export class SafeRepository implements ISafeRepository {
         `Failed to fetch transaction from queue service. chainId=${args.chainId}, safeTxHash=${args.safeTransactionHash}, error=${error}`,
       );
       return this.fetchTxServiceMultisig(args).catch((txServiceError) => {
-        throw isTransientQueueError(error) && isNotFound(txServiceError)
-          ? error
-          : txServiceError;
+        throw getQueueFallbackError({ queueError: error, txServiceError });
       });
     }
 

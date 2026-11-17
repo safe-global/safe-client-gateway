@@ -1041,7 +1041,11 @@ describe('SafeRepository', () => {
       );
     });
 
-    it.each([HttpStatus.TOO_MANY_REQUESTS, HttpStatus.SERVICE_UNAVAILABLE])(
+    it.each([
+      HttpStatus.TOO_MANY_REQUESTS,
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      HttpStatus.SERVICE_UNAVAILABLE,
+    ])(
       'should throw the queue %s when the queue call fails and the transaction service does not have the transaction',
       async (status) => {
         const safeTxHash = faker.string.hexadecimal({ length: 64 });
@@ -1063,10 +1067,7 @@ describe('SafeRepository', () => {
     );
 
     it('should serve the transaction service result when the queue call is rate limited', async () => {
-      const tx = multisigTransactionBuilder()
-        .with('safe', safeAddress)
-        .with('origin', 'tx-service-origin')
-        .build();
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       mockSafeQueueService.getMultisigTransaction.mockRejectedValue(
         new DataSourceError(
           faker.lorem.sentence(),
