@@ -14,6 +14,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 30,
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/canary-comment.sh\""
+          }
+        ]
+      }
     ]
   }
 }
