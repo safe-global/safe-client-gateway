@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address } from 'viem';
-import type { SafeQueueChange } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
+import type { SafeQueueChangeKey } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
 
 export const ISafeQueueChangesRepository = Symbol(
   'ISafeQueueChangesRepository',
@@ -17,20 +16,12 @@ export interface ISafeQueueChangesRepository {
    * record, when it cannot be read, or when the Queue Service is off: the
    * caller then derives the time from the queue or the messages themselves.
    */
-  getChangedAt(args: {
-    change: SafeQueueChange;
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<Date | null>;
+  getChangedAt(args: SafeQueueChangeKey): Promise<Date | null>;
 
   /**
-   * Best-effort: a failure is logged, as the tag then falls back to the queue
-   * or the messages themselves.
+   * Keeps the stored time when it is the same or later, so a late event never
+   * takes the tag back. Best-effort: a failure is logged, as the tag then
+   * falls back to the queue or the messages themselves.
    */
-  setChangedAt(args: {
-    change: SafeQueueChange;
-    chainId: string;
-    safeAddress: Address;
-    changedAt: Date;
-  }): Promise<void>;
+  setChangedAt(args: SafeQueueChangeKey & { changedAt: Date }): Promise<void>;
 }

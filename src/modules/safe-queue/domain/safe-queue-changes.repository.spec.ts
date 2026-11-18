@@ -138,6 +138,68 @@ describe('SafeQueueChangesRepository', () => {
       },
     );
 
+    it.each([
+      ['later', 1],
+      ['the same', 0],
+    ])('should keep the stored time when it is %s', async (_, secondsLater) => {
+      const changedAt = faker.date.recent();
+      mockSafeQueueChangesCacheService.getChangedAt.mockResolvedValue(
+        rawify(
+          new Date(changedAt.getTime() + secondsLater * 1_000).toISOString(),
+        ),
+      );
+
+      await createRepository(true).setChangedAt({
+        change: faker.helpers.arrayElement(SafeQueueChanges),
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+
+      expect(
+        mockSafeQueueChangesCacheService.setChangedAt,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should replace an older stored time', async () => {
+      const change = faker.helpers.arrayElement(SafeQueueChanges);
+      const changedAt = faker.date.recent();
+      mockSafeQueueChangesCacheService.getChangedAt.mockResolvedValue(
+        rawify(faker.date.past({ refDate: changedAt }).toISOString()),
+      );
+
+      await createRepository(true).setChangedAt({
+        change,
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+
+      expect(
+        mockSafeQueueChangesCacheService.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change,
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+    });
+
+    it('should store the time when the stored one cannot be read', async () => {
+      mockSafeQueueChangesCacheService.getChangedAt.mockRejectedValue(
+        new Error(faker.lorem.sentence()),
+      );
+
+      await createRepository(true).setChangedAt({
+        change: faker.helpers.arrayElement(SafeQueueChanges),
+        chainId,
+        safeAddress,
+        changedAt: faker.date.recent(),
+      });
+
+      expect(mockSafeQueueChangesCacheService.setChangedAt).toHaveBeenCalled();
+    });
+
     it('should resolve and warn when the write fails', async () => {
       const change = faker.helpers.arrayElement(SafeQueueChanges);
       const error = new Error(faker.lorem.sentence());

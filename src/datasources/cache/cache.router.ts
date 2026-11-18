@@ -5,7 +5,7 @@ import type { SubscriptionStatusFilter } from '#/datasources/billing-api/entitie
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { Origin } from '#/modules/fees/domain/entities/origin.entity';
-import type { SafeQueueChange } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
+import type { SafeQueueChangeKey } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
 import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
 import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
 
@@ -457,11 +457,7 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
-  static getSafeQueueChangedAtCacheDir(args: {
-    change: SafeQueueChange;
-    chainId: string;
-    safeAddress: Address;
-  }): CacheDir {
+  static getSafeQueueChangedAtCacheDir(args: SafeQueueChangeKey): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.SAFE_QUEUE_CHANGED_AT_KEY}_${args.change}_${args.safeAddress}`,
       '',

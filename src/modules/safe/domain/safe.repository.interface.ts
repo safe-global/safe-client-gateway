@@ -166,11 +166,6 @@ export interface ISafeRepository {
     safeAddress: Address;
   }): Promise<void>;
 
-  clearMultisigTransaction(args: {
-    chainId: string;
-    safeTransactionHash: string;
-  }): Promise<void>;
-
   /**
    * Clears the Safe's queue and the queued transaction, then records when the
    * Safe's queue changed, which `txQueuedTag` is served from. Rejects without

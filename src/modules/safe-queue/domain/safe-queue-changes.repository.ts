@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
@@ -8,7 +7,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { ISafeQueueChangesCacheService } from '#/modules/safe-queue/datasources/safe-queue-changes-cache.service.interface';
-import type { SafeQueueChange } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
+import type { SafeQueueChangeKey } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
 import type { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { NullableCoercedDateSchema } from '#/validation/entities/schemas/nullable.schema';
 
@@ -28,11 +27,7 @@ export class SafeQueueChangesRepository implements ISafeQueueChangesRepository {
     );
   }
 
-  async getChangedAt(args: {
-    change: SafeQueueChange;
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<Date | null> {
+  async getChangedAt(args: SafeQueueChangeKey): Promise<Date | null> {
     if (!this.safeQueueEnabled) {
       return null;
     }
@@ -48,13 +43,16 @@ export class SafeQueueChangesRepository implements ISafeQueueChangesRepository {
     }
   }
 
-  async setChangedAt(args: {
-    change: SafeQueueChange;
-    chainId: string;
-    safeAddress: Address;
-    changedAt: Date;
-  }): Promise<void> {
+  async setChangedAt(
+    args: SafeQueueChangeKey & { changedAt: Date },
+  ): Promise<void> {
     if (!this.safeQueueEnabled) {
+      return;
+    }
+    // Events are handled concurrently and can arrive late, so an older change
+    // must not take the tag back to a value a client already holds
+    const storedChangedAt = await this.getChangedAt(args);
+    if (storedChangedAt && storedChangedAt >= args.changedAt) {
       return;
     }
     try {

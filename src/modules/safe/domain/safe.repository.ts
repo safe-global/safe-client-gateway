@@ -632,7 +632,7 @@ export class SafeRepository implements ISafeRepository {
     }
   }
 
-  async clearMultisigTransaction(args: {
+  private async clearMultisigTransaction(args: {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<void> {

@@ -79,7 +79,6 @@ const mockZerionCache = vi.mocked({
 
 const mockSafeRepository = vi.mocked({
   clearTransfers: vi.fn(),
-  clearMultisigTransaction: vi.fn(),
   clearAllExecutedTransactions: vi.fn(),
   clearMultisigTransactions: vi.fn(),
   clearModuleTransactions: vi.fn(),
