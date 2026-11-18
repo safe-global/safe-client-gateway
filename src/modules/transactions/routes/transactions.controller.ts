@@ -108,7 +108,7 @@ export class TransactionsController {
   @ApiOperation({
     summary: 'Get multisig transactions',
     description:
-      'Retrieves a paginated list of multisig transactions for a Safe with optional filtering by execution date, recipient, value, nonce, and execution status.',
+      'Retrieves a paginated list of executed multisig transactions for a Safe with optional filtering by execution date, recipient, value and nonce. Pending transactions are served by /transactions/queued.',
   })
   @ApiParam({
     name: 'chainId',

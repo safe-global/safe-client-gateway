@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api.manager.interface';
 import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
 import { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
@@ -15,7 +14,6 @@ import { AddressInfoModule } from '#/routes/common/address-info/address-info.mod
 @Module({
   imports: [
     AddressInfoModule,
-    TransactionApiManagerModule,
     SafeRepositoryModule,
     SafeAppsModule,
     SafeQueueModule,
