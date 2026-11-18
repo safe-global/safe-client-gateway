@@ -38,6 +38,7 @@ import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/dom
 import {
   applyConfigurationEncoder,
   configureImmediatelyEncoder,
+  requestConfigurationEncoder,
   setModuleGuardEncoder,
 } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
@@ -1652,8 +1653,9 @@ describe('Space Policies Controller', () => {
     async function storeRequest(args: {
       accessToken: string;
       spaceId: string;
+      body?: ReturnType<typeof payload>;
     }): Promise<`0x${string}`> {
-      const body = payload();
+      const body = args.body ?? payload();
       await request(app.getHttpServer())
         .post(
           `/v1/spaces/${args.spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
@@ -1700,6 +1702,48 @@ describe('Space Policies Controller', () => {
         .delete(url)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404);
+    });
+
+    it('should delete a queued root, which stays pending without configurations', async () => {
+      const body = payload();
+      mockUpstream({
+        queuedTransactions: [
+          multisigTransactionBuilder()
+            .with('to', getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID)[0])
+            .with('operation', Operation.CALL)
+            .with(
+              'data',
+              requestConfigurationEncoder()
+                .with('configureRoot', body.root)
+                .encode(),
+            )
+            .build(),
+        ],
+      });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const root = await storeRequest({ accessToken, spaceId, body });
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/${root}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+      const { body: pending } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: Object.values(PolicyType).join(',') })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+      expect(pending).toEqual([
+        expect.objectContaining({
+          root,
+          status: 'configuration-in-signing',
+          configurations: null,
+        }),
+      ]);
     });
 
     it('should return 422 for a root that is not 32 bytes', async () => {
