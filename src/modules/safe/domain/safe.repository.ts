@@ -48,6 +48,7 @@ import {
 } from '#/modules/safe/domain/entities/transfer.entity';
 import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { getQueueFallbackError } from '#/modules/safe/domain/helpers/queue-fallback-error.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
@@ -622,7 +623,9 @@ export class SafeRepository implements ISafeRepository {
       this.loggingService.warn(
         `Failed to fetch transaction from queue service. chainId=${args.chainId}, safeTxHash=${args.safeTransactionHash}, error=${error}`,
       );
-      return this.fetchTxServiceMultisig(args);
+      return this.fetchTxServiceMultisig(args).catch((txServiceError) => {
+        throw getQueueFallbackError({ queueError: error, txServiceError });
+      });
     }
 
     if (queue.txHash !== null) {

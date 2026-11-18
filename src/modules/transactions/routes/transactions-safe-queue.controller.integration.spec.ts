@@ -579,6 +579,125 @@ describe('Transactions Controller - Safe Queue Service', () => {
     });
   });
 
+  describe('POST add confirmation while the Safe Queue Service is busy', () => {
+    it.each([429, 503])(
+      'returns the Safe Queue Service %s instead of a 404',
+      async (status) => {
+        const chain = chainBuilder().build();
+        const safeTxHash = faker.string.hexadecimal({ length: 64 });
+        const addConfirmationDto = addConfirmationDtoBuilder().build();
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+        const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${safeTxHash}`;
+        const getTxServiceTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${safeTxHash}/`;
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case getChainUrl:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case getQueueTransactionUrl:
+              return Promise.reject(
+                new NetworkResponseError(
+                  new URL(url),
+                  new Response(null, { status }),
+                  { message: faker.lorem.sentence() },
+                ),
+              );
+            case getTxServiceTransactionUrl:
+              return Promise.reject(notFoundError(url));
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safeTxHash}/confirmations`,
+          )
+          .send(addConfirmationDto)
+          .expect(status)
+          .expect(({ body }) => expect(body).toMatchObject({ code: status }));
+
+        expect(networkService.post).not.toHaveBeenCalled();
+      },
+    );
+
+    it('returns the Safe Queue Service 429 when the transaction cannot be read back after the confirmation was stored', async () => {
+      const chain = chainBuilder().build();
+      const proposer = privateKeyToAccount(generatePrivateKey());
+      const confirmer = privateKeyToAccount(generatePrivateKey());
+      const safe = safeBuilder()
+        .with('owners', [proposer.address, confirmer.address])
+        .with('threshold', 2)
+        .build();
+      const { transaction } = await buildSignedProposal({
+        chainId: chain.chainId,
+        safe,
+        nonce: safe.nonce,
+        signer: proposer,
+        signatureType: faker.helpers.arrayElement(NON_ETH_SIGN_SIGNATURE_TYPES),
+      });
+      const addConfirmationDto = addConfirmationDtoBuilder()
+        .with(
+          'signature',
+          await getSignature({
+            signer: confirmer,
+            hash: transaction.safeTxHash,
+            signatureType: SignatureType.Eoa,
+          }),
+        )
+        .build();
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
+      const getTxServiceTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
+      const postConfirmationUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`;
+      let isConfirmationStored = false;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case getQueueTransactionUrl:
+            return isConfirmationStored
+              ? Promise.reject(
+                  new NetworkResponseError(
+                    new URL(url),
+                    new Response(null, { status: 429 }),
+                    { message: faker.lorem.sentence() },
+                  ),
+                )
+              : Promise.resolve({ data: rawify(transaction), status: 200 });
+          case getTxServiceTransactionUrl:
+            return Promise.reject(notFoundError(url));
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      networkService.post.mockImplementation(({ url }) => {
+        if (url === postConfirmationUrl) {
+          isConfirmationStored = true;
+          return Promise.resolve({ data: rawify({}), status: 201 });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
+        )
+        .send(addConfirmationDto)
+        .expect(429)
+        .expect(({ body }) => expect(body).toMatchObject({ code: 429 }));
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: postConfirmationUrl,
+          data: { signatures: [addConfirmationDto.signature] },
+        }),
+      );
+    });
+  });
+
   describe('DELETE transaction', () => {
     it('deletes the transaction from the Safe Queue Service', async () => {
       const chain = chainBuilder().build();
