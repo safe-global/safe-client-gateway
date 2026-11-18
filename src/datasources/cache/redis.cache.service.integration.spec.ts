@@ -192,6 +192,25 @@ describe('RedisCacheService', () => {
     expect(secondResult).toBe(0);
   });
 
+  it('Deleting key still unlinks it and rethrows when the invalidation marker write is refused', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    const invalidationKey = `invalidationTimeMs:${cacheDir.key}`;
+    await redisClient.hSet(cacheDir.key, cacheDir.field, fakeJson());
+    // A string where the marker hash should be makes the marker HSET fail
+    // with WRONGTYPE, while the UNLINK in the same pipeline succeeds.
+    await redisClient.set(invalidationKey, faker.string.alphanumeric());
+
+    await expect(redisCacheService.deleteByKey(cacheDir.key)).rejects.toThrow(
+      'WRONGTYPE',
+    );
+
+    expect(await redisClient.exists(cacheDir.key)).toBe(0);
+    expect(await redisClient.exists(invalidationKey)).toBe(0);
+  });
+
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 

@@ -33,6 +33,7 @@ const redisClientMock = {
     return { disableOfflineQueue: isOfflineQueueDisabled };
   },
   multi: multiMock,
+  hGet: vi.fn(),
   hSet: vi.fn(),
   expire: vi.fn(),
   unlink: vi.fn(),
@@ -277,5 +278,85 @@ describe('RedisCacheService', () => {
     );
 
     expect(transactionMock.exec).toHaveBeenCalledOnce();
+  });
+
+  it('queues the deleteByKey batch while the client is not ready when the offline queue is enabled', async () => {
+    isClientReady = false;
+
+    await target.deleteByKey(faker.string.alphanumeric());
+
+    expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
+  });
+
+  describe('with a key prefix', () => {
+    let keyPrefix: string;
+
+    beforeEach(() => {
+      keyPrefix = faker.string.uuid();
+      target = new RedisCacheService(
+        redisClientMock,
+        mockLoggingService,
+        fakeConfigurationService,
+        keyPrefix,
+      );
+    });
+
+    it('hSet writes the prefixed key', async () => {
+      const cacheDir = new CacheDir(
+        faker.string.alphanumeric(),
+        faker.string.sample(),
+      );
+      const value = fakeJson();
+      const expireTime = faker.number.int({ min: 1 });
+
+      await target.hSet(cacheDir, value, expireTime, 0);
+
+      expect(transactionMock.hSet).toHaveBeenCalledWith(
+        `${keyPrefix}-${cacheDir.key}`,
+        cacheDir.field,
+        value,
+      );
+      expect(transactionMock.expire).toHaveBeenCalledWith(
+        `${keyPrefix}-${cacheDir.key}`,
+        expireTime,
+        'NX',
+      );
+    });
+
+    it('hGet reads the prefixed key', async () => {
+      const cacheDir = new CacheDir(
+        faker.string.alphanumeric(),
+        faker.string.sample(),
+      );
+
+      await target.hGet(cacheDir);
+
+      expect(redisClientMock.hGet).toHaveBeenCalledWith(
+        `${keyPrefix}-${cacheDir.key}`,
+        cacheDir.field,
+      );
+    });
+
+    it('deleteByKey unlinks the prefixed key and stamps the prefixed marker', async () => {
+      vi.useFakeTimers();
+      const now = Date.now();
+      const key = faker.string.alphanumeric();
+
+      await target.deleteByKey(key);
+
+      expect(transactionMock.unlink).toHaveBeenCalledWith(
+        `${keyPrefix}-${key}`,
+      );
+      expect(transactionMock.hSet).toHaveBeenCalledWith(
+        `${keyPrefix}-invalidationTimeMs:${key}`,
+        '',
+        now.toString(),
+      );
+      expect(transactionMock.expire).toHaveBeenCalledWith(
+        `${keyPrefix}-invalidationTimeMs:${key}`,
+        defaultExpirationTimeInSeconds,
+        'NX',
+      );
+    });
   });
 });
