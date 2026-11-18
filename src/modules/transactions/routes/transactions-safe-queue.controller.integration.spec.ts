@@ -193,7 +193,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
         .with('results', [next, queued])
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -270,7 +270,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
         .with('results', [])
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -324,10 +324,10 @@ describe('Transactions Controller - Safe Queue Service', () => {
         signatureType: faker.helpers.arrayElement(NON_ETH_SIGN_SIGNATURE_TYPES),
       });
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const gasToken = tokenBuilder().build();
-      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const proposeUrl = `${queueBaseUri}/api/v1/multisig-transactions`;
       const queuePage = pageBuilder().with('results', [transaction]).build();
@@ -425,10 +425,10 @@ describe('Transactions Controller - Safe Queue Service', () => {
         signatureType: SignatureType.EthSign,
       });
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const gasToken = tokenBuilder().build();
-      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const proposeUrl = `${queueBaseUri}/api/v1/multisig-transactions`;
       const queuePage = pageBuilder().with('results', [transaction]).build();
@@ -519,10 +519,10 @@ describe('Transactions Controller - Safe Queue Service', () => {
         )
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const gasToken = tokenBuilder().build();
-      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const postConfirmationUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`;
       const queuePage = pageBuilder().with('results', [transaction]).build();
@@ -594,7 +594,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       });
       const signature = faker.string.hexadecimal({ length: 130 });
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -633,7 +633,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       );
       expect(networkService.delete).not.toHaveBeenCalledWith(
         expect.objectContaining({
-          url: `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}`,
+          url: `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`,
         }),
       );
     });
@@ -658,10 +658,10 @@ describe('Transactions Controller - Safe Queue Service', () => {
         signatureType: faker.helpers.arrayElement(NON_ETH_SIGN_SIGNATURE_TYPES),
       });
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const gasToken = tokenBuilder().build();
-      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const queuePage = pageBuilder().with('results', [transaction]).build();
       networkService.get.mockImplementation(({ url }) => {
@@ -754,11 +754,11 @@ describe('Transactions Controller - Safe Queue Service', () => {
         .with('txHash', transaction.transactionHash)
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const getTxServiceTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
       const gasToken = tokenBuilder().build();
-      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getTxServiceTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
       const emptyPage = pageBuilder()
         .with('count', 0)

@@ -130,7 +130,7 @@ describe('Multisig transactions - Safe queue service', () => {
   }
 
   function getSafeUrl(chain: Chain, safe: Safe): string {
-    return `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    return `${chain.transactionService}/api/v1/safes/${safe.address}/`;
   }
 
   function getMultisigTransactionsUrl(chain: Chain, safe: Safe): string {
