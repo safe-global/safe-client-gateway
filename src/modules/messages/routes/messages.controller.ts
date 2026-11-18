@@ -152,7 +152,7 @@ export class MessagesController {
   })
   @ApiAcceptedResponse({
     description:
-      'Message accepted. The Transaction Service indexes messages asynchronously, so the message may not be immediately retrievable — poll GET /v1/chains/{chainId}/messages/{messageHash}.',
+      'Message accepted. The message may not be immediately retrievable — poll GET /v1/chains/{chainId}/messages/{messageHash}.',
   })
   @ApiBadRequestResponse({
     description: 'Invalid message format or signature',

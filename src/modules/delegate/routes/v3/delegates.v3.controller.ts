@@ -145,7 +145,7 @@ export class DelegatesV3Controller {
   @ApiOperation({
     summary: 'Update delegate',
     description:
-      'Updates an existing delegate relationship (e.g. the delegate label). Requires proper authorization signature. Depending on the backing service, a relationship that does not exist yet is either created or rejected.',
+      'Updates an existing delegate relationship (e.g. the delegate label). Requires proper authorization signature.',
   })
   @ApiParam({
     name: 'chainId',

@@ -66,7 +66,7 @@ function consumeMessageOf(event: object): ConsumeMessage {
   };
 }
 
-describe('Hook Events for Cache (safe-queue service enabled)', () => {
+describe('Hook Events for Cache (safe-queue service)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let fakeCacheService: FakeCacheService;
@@ -74,17 +74,7 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
   let consume: (msg: ConsumeMessage) => Promise<void>;
 
   beforeEach(async () => {
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        safeQueueService: true,
-      },
-    });
-    const moduleFixture = await createTestModule({
-      config: testConfiguration,
-    });
+    const moduleFixture = await createTestModule({ config: configuration });
 
     app = createTestApplication(moduleFixture);
 
@@ -237,7 +227,7 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
   });
 
   describe('message events', () => {
-    it('MESSAGE_CREATED clears the queue-service and tx-service messages of the Safe', async () => {
+    it('MESSAGE_CREATED clears the queue-service messages of the Safe', async () => {
       const chainId = faker.string.numeric();
       const event = messageCreatedEventBuilder()
         .with('chainId', chainId)
@@ -252,11 +242,6 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
           safeAddress: event.address,
           ...pagination,
         }),
-        CacheRouter.getMessagesBySafeCacheDir({
-          chainId,
-          safeAddress: event.address,
-          ...pagination,
-        }),
       ];
       await prime(cacheDirs);
       mockChain(chainId);
@@ -266,7 +251,7 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
       await expectCleared(cacheDirs);
     });
 
-    it('MESSAGE_CONFIRMATION clears the queue-service and tx-service message and messages of the Safe', async () => {
+    it('MESSAGE_CONFIRMATION clears the queue-service message and messages of the Safe', async () => {
       const chainId = faker.string.numeric();
       const event = newMessageConfirmationEventBuilder()
         .with('chainId', chainId)
@@ -281,15 +266,6 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
           messageHash: event.messageHash,
         }),
         CacheRouter.getSafeQueueMessagesBySafeCacheDir({
-          chainId,
-          safeAddress: event.address,
-          ...pagination,
-        }),
-        CacheRouter.getMessageByHashCacheDir({
-          chainId,
-          messageHash: event.messageHash,
-        }),
-        CacheRouter.getMessagesBySafeCacheDir({
           chainId,
           safeAddress: event.address,
           ...pagination,

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { batched } from '#/domain/common/utils/batch';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
@@ -73,7 +74,6 @@ export class PoliciesService {
   static readonly MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
 
   private readonly batchSize: number;
-  private readonly maxPageSize: number;
   private readonly guardPoliciesEnabled: boolean;
 
   constructor(
@@ -107,8 +107,6 @@ export class PoliciesService {
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
-
-    this.maxPageSize = this.safeRepository.getTransactionQueueMaxPageSize();
 
     this.guardPoliciesEnabled = this.configurationService.getOrThrow<boolean>(
       'features.guardPolicies',
@@ -572,8 +570,8 @@ export class PoliciesService {
       const queue = await this.safeRepository.getTransactionQueue({
         chainId: safe.chainId,
         safe: safeInfo,
-        limit: this.maxPageSize,
-        offset: page * this.maxPageSize,
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        offset: page * SAFE_QUEUE_SERVICE_MAX_LIMIT,
       });
       transactions.push(...queue.results);
       next = queue.next;
@@ -719,7 +717,7 @@ export class PoliciesService {
     const { results } = await this.delegatesV3Repository.getDelegates({
       chainId: safe.chainId,
       safeAddress: safe.address,
-      limit: this.maxPageSize,
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
     });
 
     return results;

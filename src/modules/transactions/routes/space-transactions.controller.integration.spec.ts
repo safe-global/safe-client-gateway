@@ -73,7 +73,6 @@ describe('SpaceTransactionsController', () => {
         ...defaultConfiguration.features,
         auth: true,
         users: true,
-        safeQueueService: true,
       },
     });
 
@@ -652,81 +651,4 @@ describe('SpaceTransactionsController', () => {
       url.startsWith(`${queueBaseUri}/api/v1/multisig-transactions/queue`),
     );
   }
-});
-
-describe('SpaceTransactionsController with features.safeQueueService off', () => {
-  let app: INestApplication<Server>;
-  let jwtService: IJwtService;
-  let postgresDatabaseService: PostgresDatabaseService;
-
-  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
-  const testDbFactory = new TestDbFactory();
-  let testDatabase: postgres.Sql;
-
-  beforeAll(async () => {
-    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
-
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      db: {
-        ...defaultConfiguration.db,
-        connection: {
-          ...defaultConfiguration.db.connection,
-          postgres: {
-            ...defaultConfiguration.db.connection.postgres,
-            database: testDatabaseName,
-          },
-        },
-      },
-      features: {
-        ...defaultConfiguration.features,
-        auth: true,
-        users: true,
-        safeQueueService: false,
-      },
-    });
-
-    const moduleFixture = await createTestModule({
-      config: testConfiguration,
-      overridePostgresV2: false,
-      cacheKeyPrefix: testDatabaseName,
-      guards: [
-        {
-          originalGuard: SpacesCreationRateLimitGuard,
-          testGuard: { canActivate: (): true => true },
-        },
-      ],
-      modules: [
-        {
-          originalModule: NotificationsRepositoryV2Module,
-          testModule: TestNotificationsRepositoryV2Module,
-        },
-      ],
-    });
-
-    jwtService = moduleFixture.get<IJwtService>(IJwtService);
-    postgresDatabaseService = moduleFixture.get(PostgresDatabaseService);
-
-    app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
-  });
-
-  afterAll(async () => {
-    await app?.close();
-    await testDbFactory.destroyTestDatabase(testDatabase);
-  });
-
-  it('does not serve the queue of a Space', async () => {
-    const { spaceUuid, accessToken } = await createSpaceForSignerFixture({
-      app,
-      jwtService,
-      postgresDatabaseService,
-    });
-
-    await request(app.getHttpServer())
-      .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .expect(HttpStatus.NOT_FOUND);
-  });
 });

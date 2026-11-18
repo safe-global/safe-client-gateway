@@ -92,7 +92,6 @@ export class AppModule implements NestModule {
       billingService: isBillingServiceFeatureEnabled,
       safenet: isSafenetFeatureEnabled,
       sesEmail: isSesEmailFeatureEnabled,
-      safeQueueService: isSafeQueueServiceFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -133,9 +132,7 @@ export class AppModule implements NestModule {
               ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
               CounterfactualSafesModule,
               SpaceSafeShieldModule,
-              ...(isSafeQueueServiceFeatureEnabled
-                ? [SpaceTransactionsModule]
-                : []),
+              SpaceTransactionsModule,
               PoliciesModule,
               SurveysModule,
             ]

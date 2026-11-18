@@ -2,14 +2,10 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
-import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
-import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
 import type { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
 import { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -24,26 +20,9 @@ function safeQueueMessageBuilder(chainId: number): SafeQueueMessage {
   return buildSafeQueueMessage().with('chainId', chainId).build();
 }
 
-const mockTransactionApiManager = {
-  getApi: vi.fn(),
-} as MockedObject<ITransactionApiManager>;
-
-const mockTransactionApi = {
-  getMessageByHash: vi.fn(),
-  getMessagesBySafe: vi.fn(),
-  postMessage: vi.fn(),
-  postMessageSignature: vi.fn(),
-  clearMessagesBySafe: vi.fn(),
-  clearMessagesByHash: vi.fn(),
-} as MockedObject<ITransactionApi>;
-
 const mockSafeRepository = {
   getSafe: vi.fn(),
 } as MockedObject<ISafeRepository>;
-
-const mockConfigurationService = {
-  getOrThrow: vi.fn(),
-} as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -57,29 +36,18 @@ const mockMessageVerifier = {
   verifyUpdate: vi.fn(),
 } as MockedObject<MessageVerifierHelper>;
 
-describe('MessagesRepository (queue service enabled)', () => {
+describe('MessagesRepository', () => {
   let safeQueueService: MockedObject<ISafeQueueService>;
   let target: MessagesRepository;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.safeQueueService') {
-        return true;
-      }
-      throw new Error(`Unexpected key: ${key}`);
-    });
     safeQueueService = createMockSafeQueueService();
-    mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-    mockTransactionApi.clearMessagesBySafe.mockResolvedValue(undefined);
-    mockTransactionApi.clearMessagesByHash.mockResolvedValue(undefined);
     safeQueueService.clearMessagesBySafe.mockResolvedValue(undefined);
     safeQueueService.clearMessagesByHash.mockResolvedValue(undefined);
     target = new MessagesRepository(
-      mockTransactionApiManager,
       mockSafeRepository,
       safeQueueService,
-      mockConfigurationService,
       mockLoggingService,
       mockMessageVerifier,
     );
@@ -253,43 +221,6 @@ describe('MessagesRepository (queue service enabled)', () => {
 
       expect(result).toBeNull();
     });
-
-    it('requests the latest modified message from the transaction service when disabled', async () => {
-      const disabledTarget = buildTargetWithQueueDisabled();
-      const chainId = faker.string.numeric();
-      const message = messageBuilder().build();
-      mockTransactionApi.getMessagesBySafe.mockResolvedValue(
-        rawify(pageBuilder().with('results', [message]).build()),
-      );
-
-      const result = await disabledTarget.getLastModifiedMessage({
-        chainId,
-        safeAddress: message.safe,
-      });
-
-      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
-      expect(mockTransactionApi.getMessagesBySafe).toHaveBeenCalledWith({
-        safeAddress: message.safe,
-        ordering: '-modified',
-        limit: 1,
-      });
-      expect(safeQueueService.getMessagesBySafe).not.toHaveBeenCalled();
-      expect(result?.messageHash).toBe(message.messageHash);
-    });
-
-    it('returns null when the Safe has no messages on the transaction service', async () => {
-      const disabledTarget = buildTargetWithQueueDisabled();
-      mockTransactionApi.getMessagesBySafe.mockResolvedValue(
-        rawify(pageBuilder().with('count', 0).with('results', []).build()),
-      );
-
-      const result = await disabledTarget.getLastModifiedMessage({
-        chainId: faker.string.numeric(),
-        safeAddress: getAddress(faker.finance.ethereumAddress()),
-      });
-
-      expect(result).toBeNull();
-    });
   });
 
   describe('getMessageByHash cross-chain guard', () => {
@@ -321,26 +252,6 @@ describe('MessagesRepository (queue service enabled)', () => {
     });
   });
 
-  // Reconstructs the repository with the queue feature flag disabled — the flag
-  // is read once in the constructor, so the fallback branch needs its own target.
-  function buildTargetWithQueueDisabled(): MessagesRepository {
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.safeQueueService') {
-        return false;
-      }
-      throw new Error(`Unexpected key: ${key}`);
-    });
-    mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-    return new MessagesRepository(
-      mockTransactionApiManager,
-      mockSafeRepository,
-      safeQueueService,
-      mockConfigurationService,
-      mockLoggingService,
-      mockMessageVerifier,
-    );
-  }
-
   function createMessageArgs(): {
     chainId: string;
     safeAddress: Address;
@@ -360,7 +271,7 @@ describe('MessagesRepository (queue service enabled)', () => {
   }
 
   describe('createMessage write routing', () => {
-    it('verifies creation then forwards to the queue service when enabled', async () => {
+    it('verifies creation then forwards to the queue service', async () => {
       const safe = safeBuilder().build();
       mockSafeRepository.getSafe.mockResolvedValue(safe);
       const posted = rawify({ id: faker.string.uuid() });
@@ -379,7 +290,7 @@ describe('MessagesRepository (queue service enabled)', () => {
         message: args.message,
         signature: args.signature,
       });
-      // Enabled path forwards the args verbatim — no safeAppId injected.
+      // The args are forwarded verbatim — no safeAppId injected.
       expect(safeQueueService.postMessage).toHaveBeenCalledWith(args);
       expect(result).toBe(posted);
 
@@ -388,39 +299,11 @@ describe('MessagesRepository (queue service enabled)', () => {
         chainId: args.chainId,
         safeAddress: args.safeAddress,
       });
-      expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      });
-    });
-
-    it('forwards to the transaction service with safeAppId null when disabled', async () => {
-      const disabledTarget = buildTargetWithQueueDisabled();
-      const safe = safeBuilder().build();
-      mockSafeRepository.getSafe.mockResolvedValue(safe);
-      const posted = rawify({ id: faker.string.uuid() });
-      mockTransactionApi.postMessage.mockResolvedValue(posted);
-      const args = createMessageArgs();
-
-      const result = await disabledTarget.createMessage(args);
-
-      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
-        args.chainId,
-      );
-      expect(mockTransactionApi.postMessage).toHaveBeenCalledWith({
-        safeAddress: args.safeAddress,
-        message: args.message,
-        safeAppId: null,
-        signature: args.signature,
-        origin: args.origin,
-      });
-      expect(safeQueueService.postMessage).not.toHaveBeenCalled();
-      expect(result).toBe(posted);
     });
   });
 
   describe('updateMessageSignature write routing', () => {
-    it('forwards to the queue service when enabled', async () => {
+    it('forwards to the queue service', async () => {
       const chainId = faker.number.int({ min: 1, max: 1000 });
       const message = safeQueueMessageBuilder(chainId);
       safeQueueService.getMessageByHash.mockResolvedValue(rawify(message));
@@ -456,38 +339,10 @@ describe('MessagesRepository (queue service enabled)', () => {
         safeAddress: message.safe,
       });
     });
-
-    it('resolves the message via the transaction service when disabled', async () => {
-      const chainId = faker.number.int({ min: 1, max: 1000 });
-      const disabledTarget = buildTargetWithQueueDisabled();
-      const message = messageBuilder().build();
-      mockTransactionApi.getMessageByHash.mockResolvedValue(rawify(message));
-      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
-      const posted = rawify({ id: faker.string.uuid() });
-      mockTransactionApi.postMessageSignature.mockResolvedValue(posted);
-      const args = {
-        chainId: String(chainId),
-        messageHash: message.messageHash,
-        signature: faker.string.hexadecimal({ length: 130 }) as Hex,
-      };
-
-      const result = await disabledTarget.updateMessageSignature(args);
-
-      // getMessageByHash is always called first, regardless of routing.
-      expect(mockTransactionApi.getMessageByHash).toHaveBeenCalledWith(
-        args.messageHash,
-      );
-      expect(mockTransactionApi.postMessageSignature).toHaveBeenCalledWith({
-        messageHash: args.messageHash,
-        signature: args.signature,
-      });
-      expect(safeQueueService.postMessageSignature).not.toHaveBeenCalled();
-      expect(result).toBe(posted);
-    });
   });
 
   describe('clearMessagesBySafe / clearMessagesByHash', () => {
-    it('clears both the tx-service and queue caches, independent of the flag', async () => {
+    it('clears the queue caches', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const messageHash = faker.string.hexadecimal({ length: 64 }) as Hash;
@@ -495,17 +350,9 @@ describe('MessagesRepository (queue service enabled)', () => {
       await target.clearMessagesBySafe({ chainId, safeAddress });
       await target.clearMessagesByHash({ chainId, messageHash });
 
-      expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
-        chainId,
-        safeAddress,
-      });
       expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledWith({
         chainId,
         safeAddress,
-      });
-      expect(mockTransactionApi.clearMessagesByHash).toHaveBeenCalledWith({
-        chainId,
-        messageHash,
       });
       expect(safeQueueService.clearMessagesByHash).toHaveBeenCalledWith({
         chainId,
@@ -513,23 +360,35 @@ describe('MessagesRepository (queue service enabled)', () => {
       });
     });
 
-    it('swallows a failure in either layer, clears the other, and logs a warning', async () => {
+    it('swallows a failure to clear the messages of a Safe and logs a warning', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       safeQueueService.clearMessagesBySafe.mockRejectedValueOnce(
-        new Error('queue unavailable'),
+        new Error(faker.lorem.sentence()),
       );
 
       await expect(
         target.clearMessagesBySafe({ chainId, safeAddress }),
       ).resolves.toBeUndefined();
 
-      expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
-        chainId,
-        safeAddress,
-      });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to clear queue messages cache'),
+      );
+    });
+
+    it('swallows a failure to clear a message and logs a warning', async () => {
+      const chainId = faker.string.numeric();
+      const messageHash = faker.string.hexadecimal({ length: 64 }) as Hash;
+      safeQueueService.clearMessagesByHash.mockRejectedValueOnce(
+        new Error(faker.lorem.sentence()),
+      );
+
+      await expect(
+        target.clearMessagesByHash({ chainId, messageHash }),
+      ).resolves.toBeUndefined();
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to clear queue message cache'),
       );
     });
   });

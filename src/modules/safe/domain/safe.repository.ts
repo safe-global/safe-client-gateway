@@ -66,7 +66,6 @@ import { PaginationData } from '#/routes/common/pagination/pagination.data';
 @Injectable()
 export class SafeRepository implements ISafeRepository {
   private readonly maxSequentialPages: number;
-  private readonly safeQueueEnabled: boolean;
   private readonly spaceTransactionQueueEnabled: boolean;
 
   constructor(
@@ -86,12 +85,8 @@ export class SafeRepository implements ISafeRepository {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
     );
-    this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.safeQueueService',
-    );
-    // The same conditions `AppModule` serves the Space queue under.
+    // The same condition `AppModule` serves the Space queue under.
     this.spaceTransactionQueueEnabled =
-      this.safeQueueEnabled &&
       this.configurationService.getOrThrow<boolean>('features.users');
   }
 
@@ -220,18 +215,11 @@ export class SafeRepository implements ISafeRepository {
       signature: args.addConfirmationDto.signature,
     });
 
-    if (this.safeQueueEnabled) {
-      await this.safeQueueService.postConfirmation({
-        chainId: args.chainId,
-        safeTxHash: args.safeTxHash,
-        signature: args.addConfirmationDto.signature,
-      });
-    } else {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      await transactionService.postConfirmation(args);
-    }
+    await this.safeQueueService.postConfirmation({
+      chainId: args.chainId,
+      safeTxHash: args.safeTxHash,
+      signature: args.addConfirmationDto.signature,
+    });
 
     await this.clearQueuedTransactionCaches({
       chainId: args.chainId,
@@ -280,37 +268,74 @@ export class SafeRepository implements ISafeRepository {
     return transactionService.clearModuleTransactions(args.safeAddress);
   }
 
-  getTransactionQueue(args: {
+  async getTransactionQueue(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
     offset?: number;
-    trusted?: boolean;
   }): Promise<Page<MultisigTransaction>> {
-    return this._getTransactionQueue({
-      ...args,
-      ordering: 'nonce,submissionDate',
+    const page = await this.safeQueueService.getTransactionQueue({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      nonceOrder: 'asc',
+      limit: args.limit,
+      offset: args.offset,
     });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    return {
+      count: parsed.count,
+      next: parsed.next,
+      previous: parsed.previous,
+      results: parsed.results.map((tx) =>
+        mapSafeQueueToMultisigTransaction(tx, args.safe),
+      ),
+    };
   }
 
   /**
    * The queue ordered by last modification, newest first. Used to derive
    * `txQueuedTag`; the queue itself is served nonce-ordered by
    * {@link getTransactionQueue}.
+   *
+   * The queue service can only order by nonce, so the first page of the queue
+   * (`SAFE_QUEUE_SERVICE_MAX_LIMIT` transactions, enough for any realistic
+   * queue) is fetched and sorted locally rather than degrading to nonce
+   * order, which would return the wrong transaction whenever a lower-nonce
+   * entry is the most recently touched one.
+   * The sort key is the last modification including confirmations, so a new
+   * signature moves a transaction to the front even if the queue service
+   * leaves its `modified` date untouched.
    */
-  getTransactionQueueByModified(args: {
+  async getTransactionQueueByModified(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
-    if (!this.safeQueueEnabled) {
-      return this._getTransactionQueue({
-        ...args,
-        ordering: '-modified',
-      });
-    }
-    return this.getSafeQueueSortedByLastModified(args);
+    const page = await this.safeQueueService.getTransactionQueue({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      nonceOrder: 'asc',
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+    });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    const sortedByLastModified = parsed.results
+      .map((tx) => mapSafeQueueToMultisigTransaction(tx, args.safe))
+      .sort(
+        (a, b) =>
+          (getLastModified(b)?.getTime() ?? 0) -
+          (getLastModified(a)?.getTime() ?? 0),
+      );
+    const offset = args.offset ?? 0;
+    return {
+      count: parsed.count,
+      next: null,
+      previous: null,
+      results: sortedByLastModified.slice(
+        offset,
+        args.limit ? offset + args.limit : undefined,
+      ),
+    };
   }
 
   async getTransactionQueueForSafes(args: {
@@ -350,94 +375,6 @@ export class SafeRepository implements ISafeRepository {
             ]
           : [];
       }),
-    };
-  }
-
-  getTransactionQueueMaxPageSize(): number {
-    return this.safeQueueEnabled
-      ? SAFE_QUEUE_SERVICE_MAX_LIMIT
-      : SAFE_TRANSACTION_SERVICE_MAX_LIMIT;
-  }
-
-  private async _getTransactionQueue(args: {
-    chainId: string;
-    safe: Safe;
-    ordering: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<Page<MultisigTransaction>> {
-    if (!this.safeQueueEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      const page = await transactionService.getMultisigTransactions({
-        ...args,
-        safeAddress: args.safe.address,
-        executed: false,
-        nonceGte: args.safe.nonce,
-      });
-      return MultisigTransactionPageSchema.parse(page);
-    }
-    const nonceOrder = args.ordering.startsWith('-') ? 'desc' : 'asc';
-    const page = await this.safeQueueService.getTransactionQueue({
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      nonceOrder,
-      limit: args.limit,
-      offset: args.offset,
-    });
-    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
-    return {
-      count: parsed.count,
-      next: parsed.next,
-      previous: parsed.previous,
-      results: parsed.results.map((tx) =>
-        mapSafeQueueToMultisigTransaction(tx, args.safe),
-      ),
-    };
-  }
-
-  /**
-   * Queue-service counterpart of the tx-service's `ordering=-modified`.
-   *
-   * The queue service can only order by nonce, so the first page of the queue
-   * (`SAFE_QUEUE_SERVICE_MAX_LIMIT` transactions, enough for any realistic
-   * queue) is fetched and sorted locally rather than degrading to nonce
-   * order, which would return the wrong transaction whenever a lower-nonce
-   * entry is the most recently touched one.
-   * The sort key is the last modification including confirmations, so a new
-   * signature moves a transaction to the front even if the queue service
-   * leaves its `modified` date untouched.
-   */
-  private async getSafeQueueSortedByLastModified(args: {
-    chainId: string;
-    safe: Safe;
-    limit?: number;
-    offset?: number;
-  }): Promise<Page<MultisigTransaction>> {
-    const page = await this.safeQueueService.getTransactionQueue({
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      nonceOrder: 'asc',
-      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-    });
-    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
-    const sortedByLastModified = parsed.results
-      .map((tx) => mapSafeQueueToMultisigTransaction(tx, args.safe))
-      .sort(
-        (a, b) =>
-          (getLastModified(b)?.getTime() ?? 0) -
-          (getLastModified(a)?.getTime() ?? 0),
-      );
-    const offset = args.offset ?? 0;
-    return {
-      count: parsed.count,
-      next: null,
-      previous: null,
-      results: sortedByLastModified.slice(
-        offset,
-        args.limit ? offset + args.limit : undefined,
-      ),
     };
   }
 
@@ -573,9 +510,6 @@ export class SafeRepository implements ISafeRepository {
     txs: ReadonlyArray<Transaction>,
     chainId: string,
   ): Promise<void> {
-    if (!this.safeQueueEnabled) {
-      return;
-    }
     const multisigs = txs.filter(isMultisigTransaction);
     if (multisigs.length === 0) {
       return;
@@ -609,14 +543,10 @@ export class SafeRepository implements ISafeRepository {
     // invalidation.
     const results = await Promise.allSettled([
       transactionService.clearAllTransactions(args.safeAddress),
-      ...(this.safeQueueEnabled
-        ? [
-            this.safeQueueService.clearAllTransactions({
-              chainId: args.chainId,
-              safeAddress: args.safeAddress,
-            }),
-          ]
-        : []),
+      this.safeQueueService.clearAllTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
     ]);
     const errors = results
       .filter((r) => r.status === 'rejected')
@@ -642,14 +572,10 @@ export class SafeRepository implements ISafeRepository {
     // invalidation.
     const results = await Promise.allSettled([
       transactionService.clearMultisigTransaction(args.safeTransactionHash),
-      ...(this.safeQueueEnabled
-        ? [
-            this.safeQueueService.clearMultisigTransaction({
-              chainId: args.chainId,
-              safeTxHash: args.safeTransactionHash,
-            }),
-          ]
-        : []),
+      this.safeQueueService.clearMultisigTransaction({
+        chainId: args.chainId,
+        safeTxHash: args.safeTransactionHash,
+      }),
     ]);
     const errors = results
       .filter((r) => r.status === 'rejected')
@@ -686,10 +612,6 @@ export class SafeRepository implements ISafeRepository {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<MultisigTransaction> {
-    if (!this.safeQueueEnabled) {
-      return this.fetchTxServiceMultisig(args);
-    }
-
     let queue: SafeQueueMultisigTransactionEntity;
     try {
       const raw = await this.safeQueueService.getMultisigTransaction({
@@ -741,24 +663,15 @@ export class SafeRepository implements ISafeRepository {
     safeTxHash: string;
     signature: string;
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    // Queue-first resolution: a not-yet-executed transaction proposed while
-    // FF_SAFE_QUEUE_SERVICE is on only exists in the queue service, so resolving
-    // exclusively via the tx-service would 404 before the queue-delete branch
-    // below is ever reached.
+    // Queue-first resolution: a not-yet-executed transaction only exists in
+    // the queue service, so resolving exclusively via the tx-service would 404.
     const transaction = await this.resolveMultisigTransaction({
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
     });
     const safe = transaction.safe;
 
-    if (this.safeQueueEnabled) {
-      await this.safeQueueService.deleteTransaction(args);
-    } else {
-      await transactionService.deleteTransaction(args);
-    }
+    await this.safeQueueService.deleteTransaction(args);
 
     await this.clearQueuedTransactionCaches({
       chainId: args.chainId,
@@ -815,14 +728,10 @@ export class SafeRepository implements ISafeRepository {
     // invalidation.
     const results = await Promise.allSettled([
       transactionService.clearMultisigTransactions(args.safeAddress),
-      ...(this.safeQueueEnabled
-        ? [
-            this.safeQueueService.clearAllTransactions({
-              chainId: args.chainId,
-              safeAddress: args.safeAddress,
-            }),
-          ]
-        : []),
+      this.safeQueueService.clearAllTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
     ]);
     const errors = results
       .filter((r) => r.status === 'rejected')
@@ -857,13 +766,11 @@ export class SafeRepository implements ISafeRepository {
   async getMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;
-    executed?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
     to?: Address;
     value?: string;
     nonce?: string;
-    nonceGte?: number;
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
@@ -872,7 +779,7 @@ export class SafeRepository implements ISafeRepository {
     );
     const page = await transactionService.getMultisigTransactions({
       ...args,
-      ...(this.safeQueueEnabled && { executed: true }),
+      executed: true,
       ordering: '-nonce',
       trusted: true,
     });
@@ -1042,13 +949,9 @@ export class SafeRepository implements ISafeRepository {
     const { results } = MultisigTransactionPageSchema.parse(page);
     const lastTrusted = isEmpty(results) ? null : results[0];
 
-    if (!this.safeQueueEnabled) {
-      return lastTrusted;
-    }
-
-    // Queue-mode proposals only exist in the queue, so the tx-service result
-    // alone can miss the highest nonce. Compare both sources and keep the one
-    // with the higher nonce.
+    // Proposals only exist in the queue, so the tx-service result alone can
+    // miss the highest nonce. Compare both sources and keep the one with the
+    // higher nonce.
     const [safe, queuePage] = await Promise.all([
       this.getSafe({ chainId: args.chainId, address: args.safeAddress }),
       this.safeQueueService.getTransactionQueue({
@@ -1078,27 +981,16 @@ export class SafeRepository implements ISafeRepository {
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
     const safeTxHash = args.proposeTransactionDto.safeTxHash;
-    const [safe, txServiceProposal, queueProposal] = await Promise.all([
+    const [safe, queueProposal] = await Promise.all([
       this.getSafe({
         chainId: args.chainId,
         address: args.safeAddress,
       }),
-      this.safeQueueEnabled
-        ? null
-        : transactionService
-            .getMultisigTransactionWithNoCache(safeTxHash)
-            .then(MultisigTransactionSchema.parse)
-            .catch(() => null),
-      this.safeQueueEnabled
-        ? this.safeQueueService
-            .getMultisigTransactionWithNoCache({ safeTxHash })
-            .then(SafeQueueMultisigTransactionSchema.parse)
-            .catch(() => null)
-        : null,
+      this.safeQueueService
+        .getMultisigTransactionWithNoCache({ safeTxHash })
+        .then(SafeQueueMultisigTransactionSchema.parse)
+        .catch(() => null),
     ]);
 
     await this.transactionVerifier.verifyProposal({
@@ -1107,32 +999,14 @@ export class SafeRepository implements ISafeRepository {
       proposal: args.proposeTransactionDto,
       transaction: queueProposal
         ? mapSafeQueueToMultisigTransaction(queueProposal, safe)
-        : txServiceProposal,
+        : null,
     });
 
-    // The tx service has no notion of nested transactions: forwarding would
-    // store the parent without its child, and the queue service's
-    // conflict-on-either-hash means that parent could never gain the child
-    // later. Reject rather than silently dropping the child.
-    if (
-      !this.safeQueueEnabled &&
-      args.proposeTransactionDto.nestedTransaction
-    ) {
-      throw new HttpExceptionNoLog(
-        'Nested transactions are not supported',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-    const proposal = this.safeQueueEnabled
-      ? await this.safeQueueService.proposeTransaction({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
-          proposeTransactionDto: args.proposeTransactionDto,
-        })
-      : await transactionService.postMultisigTransaction({
-          address: args.safeAddress,
-          data: args.proposeTransactionDto,
-        });
+    const proposal = await this.safeQueueService.proposeTransaction({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      proposeTransactionDto: args.proposeTransactionDto,
+    });
 
     await this.clearQueuedTransactionCaches({
       chainId: args.chainId,

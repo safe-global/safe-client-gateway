@@ -64,6 +64,10 @@ import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/mu
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueDelegateFrom } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
+import type { SafeQueueDelegate } from '#/modules/safe-queue/entities/delegate.entity';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
@@ -87,6 +91,7 @@ describe('Space Policies Controller', () => {
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
   let indexerBaseUri: string;
+  let queueBaseUri: string;
 
   const chain = chainBuilder().with('chainId', SEPOLIA_CHAIN_ID).build();
   const polygonChain = chainBuilder().with('chainId', POLYGON_CHAIN_ID).build();
@@ -147,7 +152,7 @@ describe('Space Policies Controller', () => {
 
   /**
    * The chains, the Safes with the allowance module enabled, and the delegate
-   * registrations the Transaction Service holds for them.
+   * registrations and queue the Safe Queue Service holds for them.
    */
   function mockUpstream(
     args: {
@@ -162,6 +167,8 @@ describe('Space Policies Controller', () => {
       guard?: `0x${string}`;
       /** The module-guard slot; empty (the zero address) unless given. */
       moduleGuard?: `0x${string}`;
+      /** The threshold of the Safes; random unless given. */
+      threshold?: number;
     } = {},
   ): void {
     const modules = args.modules ?? [allowanceModule];
@@ -171,20 +178,19 @@ describe('Space Policies Controller', () => {
     const queuedTransactions = args.queuedTransactions ?? [];
     const tokens = args.tokens ?? [];
     const tokenNotFoundAddresses = args.tokenNotFoundAddresses ?? [];
-    const safe = safeBuilder()
-      .with('address', safeAddress)
-      .with('modules', modules)
-      .with('guard', guard)
-      .with('moduleGuard', moduleGuard)
-      .build();
-    const polygonSafe = safeBuilder()
-      .with('address', polygonSafeAddress)
-      .with('modules', modules)
-      .with('guard', guard)
-      .with('moduleGuard', moduleGuard)
-      .build();
+    const safeBase = (): ReturnType<typeof safeBuilder> => {
+      const builder = safeBuilder()
+        .with('modules', modules)
+        .with('guard', guard)
+        .with('moduleGuard', moduleGuard);
+      return args.threshold === undefined
+        ? builder
+        : builder.with('threshold', args.threshold);
+    };
+    const safe = safeBase().with('address', safeAddress).build();
+    const polygonSafe = safeBase().with('address', polygonSafeAddress).build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(({ url, networkRequest }) => {
       if (
         url.startsWith(`${safeConfigUrl}/api/v1/chains/${POLYGON_CHAIN_ID}`)
       ) {
@@ -210,28 +216,42 @@ describe('Space Policies Controller', () => {
       ) {
         return Promise.resolve({ data: rawify(polygonSafe), status: 200 });
       }
-      // The proposer half. The delegates API lands here while the Queue
-      // Service is switched off, which is what the test configuration sets.
-      if (url.endsWith('/api/v2/delegates/')) {
+      // The proposer half.
+      if (url === `${queueBaseUri}/api/v1/delegates`) {
         if (args.delegatesUnavailable) {
           return Promise.reject(new Error('Service unavailable'));
         }
+        const chainId = String(networkRequest?.params?.chainId);
         return Promise.resolve({
           data: rawify(
-            pageBuilder<Delegate>().with('results', delegates).build(),
+            pageBuilder<SafeQueueDelegate>()
+              .with(
+                'results',
+                delegates.map((delegate) =>
+                  safeQueueDelegateFrom(delegate, chainId).build(),
+                ),
+              )
+              .build(),
           ),
           status: 200,
         });
       }
-      // The queued transactions, read while the Queue Service flag is set false.
       if (
-        url ===
-        `${txServiceUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`
+        url === `${queueBaseUri}/api/v1/multisig-transactions/queue` &&
+        networkRequest?.params?.safes === `${safeAddress}:${SEPOLIA_CHAIN_ID}`
       ) {
         return Promise.resolve({
           data: rawify(
-            pageBuilder<MultisigTransaction>()
-              .with('results', queuedTransactions)
+            pageBuilder<SafeQueueMultisigTransactionEntity>()
+              .with(
+                'results',
+                queuedTransactions.map((transaction) =>
+                  safeQueueMultisigTransactionFrom(
+                    transaction,
+                    SEPOLIA_CHAIN_ID,
+                  ).build(),
+                ),
+              )
               .with('next', null)
               .build(),
           ),
@@ -358,6 +378,7 @@ describe('Space Policies Controller', () => {
     indexerBaseUri = configurationService.getOrThrow(
       'policies.indexer.baseUri',
     );
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -1338,8 +1359,10 @@ describe('Space Policies Controller', () => {
   describe('GET /v1/spaces/:spaceId/policies/pending - guard policies', () => {
     const [guard] = getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID);
     const expiry = faker.number.int({ min: 3_600, max: 86_400 });
+    // The queue reports the Safe's threshold as the confirmations required.
+    const threshold = 2;
 
-    /** A queued transaction with `confirmations` of 2 signatures. */
+    /** A queued transaction with `confirmations` of {@link threshold} signatures. */
     function queued(args: {
       to: Address;
       data: `0x${string}`;
@@ -1350,7 +1373,6 @@ describe('Space Policies Controller', () => {
         .with('to', args.to)
         .with('operation', args.operation ?? Operation.CALL)
         .with('data', args.data)
-        .with('confirmationsRequired', 2)
         .with(
           'confirmations',
           Array.from({ length: args.confirmations }, () =>
@@ -1431,7 +1453,11 @@ describe('Space Policies Controller', () => {
         data: batch,
         confirmations: 1,
       });
-      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockUpstream({
+        threshold,
+        guard: zeroAddress,
+        queuedTransactions: [transaction],
+      });
       mockIndexer(rawPolicyIndexerResponse());
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -1456,7 +1482,7 @@ describe('Space Policies Controller', () => {
           transaction: expect.objectContaining({
             safeTxHash: transaction.safeTxHash,
             confirmations: 1,
-            confirmationsRequired: 2,
+            confirmationsRequired: threshold,
           }),
         },
       ]);
@@ -1468,7 +1494,11 @@ describe('Space Policies Controller', () => {
         data: setGuardEncoder().with('guard', guard).encode(),
         confirmations: 1,
       });
-      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockUpstream({
+        threshold,
+        guard: zeroAddress,
+        queuedTransactions: [transaction],
+      });
       mockIndexer(rawPolicyIndexerResponse());
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -1484,7 +1514,7 @@ describe('Space Policies Controller', () => {
     });
 
     it('should reject an include_guard_installation value that is not a boolean', async () => {
-      mockUpstream();
+      mockUpstream({ threshold });
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -1512,6 +1542,7 @@ describe('Space Policies Controller', () => {
         confirmations: 1,
       });
       mockUpstream({
+        threshold,
         guard: zeroAddress,
         queuedTransactions: [spendingLimit, installation],
         tokens: [token],
@@ -1560,7 +1591,11 @@ describe('Space Policies Controller', () => {
         data: configureImmediately.encode(),
         confirmations: 2,
       });
-      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockUpstream({
+        threshold,
+        guard: zeroAddress,
+        queuedTransactions: [transaction],
+      });
       mockIndexer(rawPolicyIndexerResponse());
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -1582,7 +1617,7 @@ describe('Space Policies Controller', () => {
           transaction: expect.objectContaining({
             safeTxHash: transaction.safeTxHash,
             confirmations: 2,
-            confirmationsRequired: 2,
+            confirmationsRequired: threshold,
           }),
         },
       ]);
@@ -1592,6 +1627,7 @@ describe('Space Policies Controller', () => {
       const now = nowInSeconds();
       const toApply = [policyConfigurationBuilder().build()];
       mockUpstream({
+        threshold,
         guard,
         queuedTransactions: [
           queued({

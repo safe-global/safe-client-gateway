@@ -88,6 +88,7 @@ describe('PortfolioSummariesV2Controller', () => {
   let app: INestApplication<Server>;
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let zerionBaseUri: string;
   let currencies: Array<string>;
   let ttlSeconds: number;
@@ -125,6 +126,7 @@ describe('PortfolioSummariesV2Controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
     );
@@ -147,7 +149,7 @@ describe('PortfolioSummariesV2Controller', () => {
     rows: Array<ZerionBalance>;
   }): Mock<() => void> => {
     const getPositions = vi.fn<() => void>();
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(({ url, networkRequest }) => {
       const chain = args.chains.find(
         ({ chainId, transactionService }) =>
           url === `${safeConfigUrl}/api/v1/chains/${chainId}` ||
@@ -161,9 +163,9 @@ describe('PortfolioSummariesV2Controller', () => {
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       const queueOf = args.chains.find(
-        ({ transactionService }) =>
-          url ===
-          `${transactionService}/api/v2/safes/${args.address}/multisig-transactions/`,
+        ({ chainId }) =>
+          url === `${queueBaseUri}/api/v1/multisig-transactions/queue` &&
+          networkRequest?.params?.safes === `${args.address}:${chainId}`,
       );
       if (queueOf) {
         return Promise.resolve({

@@ -108,7 +108,7 @@ export class TransactionsController {
   @ApiOperation({
     summary: 'Get multisig transactions',
     description:
-      'Retrieves a paginated list of multisig transactions for a Safe with optional filtering by execution date, recipient, value, nonce, and execution status.',
+      'Retrieves a paginated list of executed multisig transactions for a Safe with optional filtering by execution date, recipient, value and nonce. Pending transactions are served by /transactions/queued.',
   })
   @ApiParam({
     name: 'chainId',
@@ -157,8 +157,9 @@ export class TransactionsController {
     name: 'executed',
     required: false,
     type: Boolean,
+    deprecated: true,
     description:
-      'Filter by execution status (true for executed, false for pending)',
+      'Deprecated: accepted for compatibility and has no effect. Only executed transactions are returned; pending ones are served by /transactions/queued.',
   })
   @ApiQuery({
     name: 'cursor',
@@ -185,8 +186,6 @@ export class TransactionsController {
     to?: Address,
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
-    @Query('executed', new ParseBoolPipe({ optional: true }))
-    executed?: boolean,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     return this.transactionsService.getMultisigTransactions({
       chainId,
@@ -198,7 +197,6 @@ export class TransactionsController {
       to,
       value,
       nonce,
-      executed,
     });
   }
 
@@ -637,8 +635,9 @@ export class TransactionsController {
     name: 'trusted',
     required: false,
     type: Boolean,
+    deprecated: true,
     description:
-      'Filter by trust status (true for trusted transactions, false for untrusted)',
+      'Deprecated: accepted for compatibility and has no effect. The queue is served by the Safe Queue Service, which has no trust filter.',
   })
   @ApiOkResponse({
     type: QueuedItemPage,
@@ -653,15 +652,12 @@ export class TransactionsController {
     safeAddress: Address,
     @Query('cursor', new ValidationPipe(PaginationCursorSchema))
     paginationData: PaginationData,
-    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
-    trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.transactionsService.getTransactionQueue({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
-      trusted,
     });
   }
 

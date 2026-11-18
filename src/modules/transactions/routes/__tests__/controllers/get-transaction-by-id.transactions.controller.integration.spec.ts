@@ -51,6 +51,7 @@ describe('Get by id - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
 
@@ -71,6 +72,7 @@ describe('Get by id - Transactions Controller', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -404,19 +406,18 @@ describe('Get by id - Transactions Controller', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${txHash}/`;
+    const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${txHash}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
+        case getQueueTransactionUrl:
         case getMultisigTransactionUrl: {
-          const error = new NetworkResponseError(
-            new URL(getMultisigTransactionUrl),
-            {
-              status: 404,
-            } as Response,
-          );
+          const error = new NetworkResponseError(new URL(url), {
+            status: 404,
+          } as Response);
           return Promise.reject(error);
         }
         default:

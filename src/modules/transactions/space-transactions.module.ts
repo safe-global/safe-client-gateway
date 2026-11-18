@@ -14,8 +14,7 @@ import { WalletsModule } from '#/modules/wallets/wallets.module';
  * because that module is unconditional and `SpacesModule` is not: importing
  * `SpacesModule` from there would serve its controllers even with
  * `features.users` off. `AppModule` registers this one alongside
- * `SpacesModule`, and only with `features.safeQueueService` on, the one
- * upstream able to list many Safes in a request.
+ * `SpacesModule`.
  *
  * `AuthGuard` resolves `IAuthRepository` here, `SpaceIdPipe`
  * `ISpacesRepository`, `assertMember` `IMembersRepository`, and the "sign"

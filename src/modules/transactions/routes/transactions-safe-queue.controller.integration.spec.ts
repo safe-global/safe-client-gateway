@@ -121,20 +121,19 @@ describe('Transactions Controller - Safe Queue Service', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const queueEnabledConfig: typeof configuration = () => {
+    const testConfiguration: typeof configuration = () => {
       const cfg = configuration();
       return {
         ...cfg,
         features: {
           ...cfg.features,
-          safeQueueService: true,
           ethSign: false,
         },
       };
     };
 
     const moduleFixture: TestingModule = await createTestModule({
-      config: queueEnabledConfig,
+      config: testConfiguration,
       providers: [{ provide: APP_FILTER, useClass: GlobalErrorFilter }],
     });
 
@@ -647,7 +646,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
         )
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const getTxServiceTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
       const postConfirmationUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`;

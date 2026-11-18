@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
 import {
   type Message,
-  MessagePageSchema,
   MessageSchema,
 } from '#/modules/messages/domain/entities/message.entity';
 import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
@@ -126,17 +124,6 @@ describe('Message entity schemas', () => {
           result.error.issues[0].path.length === 1 &&
           result.error.issues[0].path[0] === key,
       ).toBe(true);
-    });
-  });
-
-  describe('MessagePageSchema', () => {
-    it('should validate a valid Page<Message>', () => {
-      const message = messageBuilder().build();
-      const messagePage = pageBuilder().with('results', [message]).build();
-
-      const result = MessagePageSchema.safeParse(messagePage);
-
-      expect(result.success).toBe(true);
     });
   });
 });

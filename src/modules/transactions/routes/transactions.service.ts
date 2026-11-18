@@ -228,7 +228,6 @@ export class TransactionsService {
     to?: Address;
     value?: string;
     nonce?: string;
-    executed?: boolean;
   }): Promise<Partial<Page<MultisigTransaction>>> {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({
@@ -499,7 +498,6 @@ export class TransactionsService {
     routeUrl: Readonly<URL>;
     safeAddress: Address;
     paginationData: PaginationData;
-    trusted?: boolean;
   }): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
@@ -511,7 +509,6 @@ export class TransactionsService {
       safe: safeInfo,
       limit: pagination.limit,
       offset: pagination.offset,
-      trusted: args.trusted,
     });
 
     const nextURL = buildNextPageURL(args.routeUrl, transactions.count);

@@ -25,7 +25,6 @@ import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entit
 import type { Estimation } from '#/modules/estimations/domain/entities/estimation.entity';
 import type { GetEstimationDto } from '#/modules/estimations/domain/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '#/modules/indexing/domain/entities/indexing-status.entity';
-import type { Message } from '#/modules/messages/domain/entities/message.entity';
 import type { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -34,8 +33,6 @@ import type { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
 import type { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
-import type { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 
 export class TransactionApi implements ITransactionApi {
@@ -593,23 +590,6 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  async postConfirmation(args: {
-    safeTxHash: string;
-    addConfirmationDto: AddConfirmationDto;
-  }): Promise<unknown> {
-    try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${args.safeTxHash}/confirmations/`;
-      return await this.networkService.post({
-        url,
-        data: {
-          signature: args.addConfirmationDto.signature,
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
   async getSafesByModule(moduleAddress: Address): Promise<Raw<SafeList>> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
@@ -709,7 +689,6 @@ export class TransactionApi implements ITransactionApi {
     to?: Address;
     value?: string;
     nonce?: string;
-    nonceGte?: number;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>> {
@@ -737,7 +716,6 @@ export class TransactionApi implements ITransactionApi {
             to: args.to,
             value: args.value,
             nonce: args.nonce,
-            nonce__gte: args.nonceGte,
             limit: args.limit,
             offset: args.offset,
           },
@@ -775,42 +753,6 @@ export class TransactionApi implements ITransactionApi {
           circuitBreaker: {
             key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
           },
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async getMultisigTransactionWithNoCache(
-    safeTransactionHash: string,
-  ): Promise<Raw<MultisigTransaction>> {
-    try {
-      const url = `${this.baseUrl}/api/v2/multisig-transactions/${safeTransactionHash}/`;
-      const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
-        url,
-        networkRequest: {
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
-          },
-        },
-      });
-      return data;
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async deleteTransaction(args: {
-    safeTxHash: string;
-    signature: string;
-  }): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/api/v2/multisig-transactions/${args.safeTxHash}/`;
-      await this.networkService.delete({
-        url,
-        data: {
-          signature: args.signature,
         },
       });
     } catch (error) {
@@ -1058,150 +1000,6 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
-  }
-
-  async getMessageByHash(messageHash: string): Promise<Raw<Message>> {
-    try {
-      const url = `${this.baseUrl}/api/v1/messages/${messageHash}/`;
-      const cacheDir = CacheRouter.getMessageByHashCacheDir({
-        chainId: this.chainId,
-        messageHash,
-      });
-      return await this.dataSource.get<Message>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        networkRequest: {
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
-          },
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async getMessagesBySafe(args: {
-    safeAddress: Address;
-    ordering?: string;
-    limit?: number | undefined;
-    offset?: number | undefined;
-  }): Promise<Raw<Page<Message>>> {
-    try {
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
-      const cacheDir = CacheRouter.getMessagesBySafeCacheDir({
-        chainId: this.chainId,
-        ...args,
-      });
-      return await this.dataSource.get<Page<Message>>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            ordering: args.ordering,
-            limit: args.limit,
-            offset: args.offset,
-          },
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
-          },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async postMultisigTransaction(args: {
-    address: Address;
-    data: ProposeTransactionDto;
-  }): Promise<unknown> {
-    try {
-      const url = `${this.baseUrl}/api/v2/safes/${args.address}/multisig-transactions/`;
-      return await this.networkService.post({
-        url,
-        data: {
-          to: args.data.to,
-          value: args.data.value,
-          data: args.data.data,
-          operation: args.data.operation,
-          baseGas: args.data.baseGas,
-          gasPrice: args.data.gasPrice,
-          gasToken: args.data.gasToken,
-          refundReceiver: args.data.refundReceiver,
-          nonce: args.data.nonce,
-          safeTxGas: args.data.safeTxGas,
-          contractTransactionHash: args.data.safeTxHash,
-          sender: args.data.sender,
-          signature: args.data.signature,
-          origin: args.data.origin,
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async postMessage(args: {
-    safeAddress: Address;
-    message: unknown;
-    safeAppId: number | null;
-    signature: string;
-    origin: string | null;
-  }): Promise<Raw<Message>> {
-    try {
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
-      const { data } = await this.networkService.post<Message>({
-        url,
-        data: {
-          message: args.message,
-          safeAppId: args.safeAppId,
-          signature: args.signature,
-          origin: args.origin,
-        },
-      });
-      return data;
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async postMessageSignature(args: {
-    messageHash: string;
-    signature: string;
-  }): Promise<unknown> {
-    try {
-      const url = `${this.baseUrl}/api/v1/messages/${args.messageHash}/signatures/`;
-      const { data } = await this.networkService.post({
-        url,
-        data: {
-          signature: args.signature,
-        },
-      });
-      return data;
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async clearMessagesBySafe(args: { safeAddress: Address }): Promise<void> {
-    const key = CacheRouter.getMessagesBySafeCacheKey({
-      chainId: this.chainId,
-      safeAddress: args.safeAddress,
-    });
-    await this.cacheService.deleteByKey(key);
-  }
-
-  async clearMessagesByHash(args: { messageHash: string }): Promise<void> {
-    const key = CacheRouter.getMessageByHashCacheKey({
-      chainId: this.chainId,
-      messageHash: args.messageHash,
-    });
-    await this.cacheService.deleteByKey(key);
   }
 
   private mapError(error: unknown): unknown {

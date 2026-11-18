@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address, Hex } from 'viem';
+import type { Address } from 'viem';
 import type { Page } from '#/domain/entities/page.entity';
 import type { Backbone } from '#/modules/backbone/domain/entities/backbone.entity';
 import type { Singleton } from '#/modules/chains/domain/entities/singleton.entity';
@@ -8,7 +8,6 @@ import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entit
 import type { Estimation } from '#/modules/estimations/domain/entities/estimation.entity';
 import type { GetEstimationDto } from '#/modules/estimations/domain/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '#/modules/indexing/domain/entities/indexing-status.entity';
-import type { Message } from '#/modules/messages/domain/entities/message.entity';
 import type { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -17,8 +16,6 @@ import type { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
 import type { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
-import type { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 
 export interface ITransactionApi {
@@ -127,11 +124,6 @@ export interface ITransactionApi {
 
   clearIncomingTransfers(safeAddress: Address): Promise<void>;
 
-  postConfirmation(args: {
-    safeTxHash: string;
-    addConfirmationDto: AddConfirmationDto;
-  }): Promise<unknown>;
-
   getSafesByModule(moduleAddress: Address): Promise<Raw<SafeList>>;
 
   getModuleTransaction(
@@ -153,15 +145,6 @@ export interface ITransactionApi {
     safeTransactionHash: string,
   ): Promise<Raw<MultisigTransaction>>;
 
-  getMultisigTransactionWithNoCache(
-    safeTransactionHash: string,
-  ): Promise<Raw<MultisigTransaction>>;
-
-  deleteTransaction(args: {
-    safeTxHash: string;
-    signature: string;
-  }): Promise<void>;
-
   clearMultisigTransaction(safeTransactionHash: string): Promise<void>;
 
   getMultisigTransactions(args: {
@@ -174,7 +157,6 @@ export interface ITransactionApi {
     to?: Address;
     value?: string;
     nonce?: string;
-    nonceGte?: number;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>>;
@@ -219,35 +201,4 @@ export interface ITransactionApi {
     address: Address;
     getEstimationDto: GetEstimationDto;
   }): Promise<Raw<Estimation>>;
-
-  getMessageByHash(messageHash: string): Promise<Raw<Message>>;
-
-  getMessagesBySafe(args: {
-    safeAddress: Address;
-    ordering?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<Raw<Page<Message>>>;
-
-  postMultisigTransaction(args: {
-    address: Address;
-    data: ProposeTransactionDto;
-  }): Promise<unknown>;
-
-  postMessage(args: {
-    safeAddress: Address;
-    message: unknown;
-    safeAppId: number | null;
-    signature: string;
-    origin: string | null;
-  }): Promise<Raw<Message>>;
-
-  postMessageSignature(args: {
-    messageHash: string;
-    signature: Hex;
-  }): Promise<unknown>;
-
-  clearMessagesBySafe(args: { safeAddress: Address }): Promise<void>;
-
-  clearMessagesByHash(args: { messageHash: string }): Promise<void>;
 }

@@ -1225,50 +1225,6 @@ describe('Hook Events for Cache', () => {
 
   it.each([
     {
-      type: 'MESSAGE_CREATED',
-      messageHash: faker.string.hexadecimal({ length: 32 }),
-    },
-    {
-      type: 'MESSAGE_CONFIRMATION',
-      messageHash: faker.string.hexadecimal({ length: 32 }),
-    },
-  ])('$type clears messages', async (payload) => {
-    const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.string.numeric();
-    const cacheDir = new CacheDir(
-      `${chainId}_messages_${getAddress(safeAddress)}`,
-      faker.string.alpha(),
-    );
-    await fakeCacheService.hSet(
-      cacheDir,
-      faker.string.alpha(),
-      faker.number.int({ min: 1 }),
-    );
-    const data = {
-      address: safeAddress,
-      chainId: chainId,
-      ...payload,
-    };
-    networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-          return Promise.resolve({
-            data: rawify(chainBuilder().with('chainId', chainId).build()),
-            status: 200,
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-
-    const cb = getSubscriptionCallback(queuesApiService);
-    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
-
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
-  });
-
-  it.each([
-    {
       type: 'CHAIN_UPDATE',
     },
   ])('$type clears chain', async (payload) => {

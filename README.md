@@ -153,6 +153,7 @@ docker compose up -d redis
 If you run the service locally against a local Safe{Wallet} instance,
 
 - set `TX_SERVICE_API_KEY` to a valid key to avoid hitting the Transaction Service rate limit
+- set `SAFE_QUEUE_SERVICE_BASE_URI` to the Safe Queue Service of the environment you run against (it defaults to production, `https://api.safe.global/queue`; staging is `https://api.5afe.dev/queue`), and `SAFE_QUEUE_SERVICE_API_KEY` to a valid key
 - set `CGW_ENV=development`
 - set `ALLOW_CORS=true`
 

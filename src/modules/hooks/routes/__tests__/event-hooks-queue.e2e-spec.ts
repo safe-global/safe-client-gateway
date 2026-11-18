@@ -495,7 +495,7 @@ describe('Events queue processing e2e tests', () => {
     },
   ])('$type clears messages', async (payload) => {
     const cacheDir = new CacheDir(
-      `${TEST_SAFE.chainId}_messages_${getAddress(TEST_SAFE.address)}`,
+      `${TEST_SAFE.chainId}_safe_queue_messages_${getAddress(TEST_SAFE.address)}`,
       faker.string.alpha(),
     );
     await redisClient.hSet(

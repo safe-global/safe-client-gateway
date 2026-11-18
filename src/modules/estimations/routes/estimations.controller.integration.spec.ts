@@ -24,11 +24,13 @@ import {
   toJson as multisigTransactionToJson,
 } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { emptyQueueResponse } from '#/modules/safe-queue/__tests__/empty-queue.response';
 import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Estimations Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
 
   beforeEach(async () => {
@@ -42,6 +44,7 @@ describe('Estimations Controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -78,6 +81,9 @@ describe('Estimations Controller', () => {
             ),
             status: 200,
           });
+        }
+        if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+          return emptyQueueResponse();
         }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
@@ -132,6 +138,9 @@ describe('Estimations Controller', () => {
           ),
           status: 200,
         });
+      }
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return emptyQueueResponse();
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -211,6 +220,9 @@ describe('Estimations Controller', () => {
           status: 200,
         });
       }
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return emptyQueueResponse();
+      }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
     networkService.post.mockImplementation(({ url }) => {
@@ -262,6 +274,9 @@ describe('Estimations Controller', () => {
           ),
           status: 200,
         });
+      }
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return emptyQueueResponse();
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -320,6 +335,9 @@ describe('Estimations Controller', () => {
           ),
           status: 200,
         });
+      }
+      if (url === `${queueBaseUri}/api/v1/multisig-transactions/queue`) {
+        return emptyQueueResponse();
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
