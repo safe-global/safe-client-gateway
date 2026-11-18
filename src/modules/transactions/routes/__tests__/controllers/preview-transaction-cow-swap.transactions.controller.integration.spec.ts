@@ -464,7 +464,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             return Promise.resolve({ data: rawify(order), status: 200 });
           }
           if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
           ) {
             return Promise.resolve({ data: rawify(safe), status: 200 });
           }
