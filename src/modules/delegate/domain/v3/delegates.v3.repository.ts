@@ -125,7 +125,8 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.updateDelegateV2(args);
+    // The Transaction Service has no delegate update route: its POST upserts the label
+    await transactionService.postDelegateV2(args);
     await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
