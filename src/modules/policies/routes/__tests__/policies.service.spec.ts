@@ -47,10 +47,6 @@ import type {
 } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import {
-  MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
-  TransactionQueueHelper,
-} from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
@@ -246,10 +242,6 @@ describe('PoliciesService', () => {
       mockGuardInstallationMapper,
       mockImmediateGuardPoliciesMapper,
       mockDelayedGuardPoliciesMapper,
-      new TransactionQueueHelper(
-        mockSafeRepository as MockedObject<ISafeRepository>,
-        mockLoggingService,
-      ),
     );
   }
 
@@ -1342,14 +1334,14 @@ describe('PoliciesService', () => {
       await target.getSpacePendingPolicies(pendingRequest);
 
       expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledTimes(
-        MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+        PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
       );
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Truncated a Safe transaction queue at the page cap',
           chainId: SEPOLIA,
           safeAddress,
-          pages: MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+          pages: PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
         }),
       );
     });

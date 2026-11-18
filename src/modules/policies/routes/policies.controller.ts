@@ -13,7 +13,6 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
@@ -109,9 +108,9 @@ export class PoliciesController {
   }
 
   @ApiOperation({
-    summary: 'Delete a draft configuration request',
+    summary: 'Delete a stored configuration request',
     description:
-      'Deletes the configurations stored behind a root the Safe has not requested on-chain. A root that exists on-chain or is requested by a queued `requestConfiguration` is not a draft and cannot be deleted here.',
+      'Deletes the configurations stored behind a root, in any state. A root already requested on-chain stays there until invalidated.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -135,7 +134,7 @@ export class PoliciesController {
     type: 'string',
     description: 'The stored configuration root, a 32-byte hex',
   })
-  @ApiNoContentResponse({ description: 'Draft deleted' })
+  @ApiNoContentResponse({ description: 'Configuration request deleted' })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description: 'Invalid chain ID, Safe address or root',
@@ -147,9 +146,6 @@ export class PoliciesController {
   })
   @ApiNotFoundResponse({
     description: 'No configuration request is stored for this root',
-  })
-  @ApiConflictResponse({
-    description: 'The root exists on-chain or a queued transaction requests it',
   })
   @Delete('requests/:root')
   @HttpCode(HttpStatus.NO_CONTENT)

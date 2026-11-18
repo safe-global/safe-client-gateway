@@ -38,7 +38,6 @@ import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/dom
 import {
   applyConfigurationEncoder,
   configureImmediatelyEncoder,
-  requestConfigurationEncoder,
   setModuleGuardEncoder,
 } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
@@ -1653,9 +1652,8 @@ describe('Space Policies Controller', () => {
     async function storeRequest(args: {
       accessToken: string;
       spaceId: string;
-      body?: ReturnType<typeof payload>;
     }): Promise<`0x${string}`> {
-      const body = args.body ?? payload();
+      const body = payload();
       await request(app.getHttpServer())
         .post(
           `/v1/spaces/${args.spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
@@ -1681,7 +1679,7 @@ describe('Space Policies Controller', () => {
         .map((item) => item.root);
     }
 
-    it('should delete a draft, then report it as gone', async () => {
+    it('should delete a stored request, then report it as gone', async () => {
       mockUpstream();
       mockIndexer(rawPolicyIndexerResponse());
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -1702,64 +1700,6 @@ describe('Space Policies Controller', () => {
         .delete(url)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404);
-    });
-
-    it('should return 409 for a root that exists on-chain', async () => {
-      const body = payload();
-      mockUpstream();
-      // Set before storing: the store reads the indexer state, which is cached.
-      mockIndexer(
-        rawPolicyIndexerResponse({
-          ConfigurationRoot: [
-            rawIndexerConfigurationRootBuilder()
-              .with('safe', safeAddress)
-              .with('guard', safePolicyGuard)
-              .with('root', body.root)
-              .build(),
-          ],
-        }),
-      );
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-      const root = await storeRequest({ accessToken, spaceId, body });
-
-      await request(app.getHttpServer())
-        .delete(
-          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/${root}`,
-        )
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(409);
-    });
-
-    it('should return 409 for a root a queued transaction requests', async () => {
-      const body = payload();
-      mockUpstream({
-        queuedTransactions: [
-          multisigTransactionBuilder()
-            .with('to', getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID)[0])
-            .with('operation', Operation.CALL)
-            .with(
-              'data',
-              requestConfigurationEncoder()
-                .with('configureRoot', body.root)
-                .encode(),
-            )
-            .build(),
-        ],
-      });
-      mockIndexer(rawPolicyIndexerResponse());
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-      const root = await storeRequest({ accessToken, spaceId, body });
-
-      await request(app.getHttpServer())
-        .delete(
-          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/${root}`,
-        )
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(409);
     });
 
     it('should return 422 for a root that is not 32 bytes', async () => {

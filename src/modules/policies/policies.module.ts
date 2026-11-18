@@ -12,7 +12,6 @@ import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delega
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { SafeGuardManagerDecoder } from '#/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
 import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
-import { TransactionQueueHelper } from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
@@ -64,7 +63,6 @@ import { UsersModule } from '#/modules/users/users.module';
     GuardInstallationMapper,
     ImmediateGuardPoliciesMapper,
     DelayedGuardPoliciesMapper,
-    TransactionQueueHelper,
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,

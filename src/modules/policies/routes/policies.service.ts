@@ -29,7 +29,6 @@ import type {
   Token,
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
-import { TransactionQueueHelper } from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
@@ -67,6 +66,12 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
 
 @Injectable()
 export class PoliciesService {
+  /**
+   * Safety cap on the number of pages read from a single Safe's transaction
+   * queue to guard against an unbounded loop.
+   */
+  static readonly MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
+
   private readonly batchSize: number;
   private readonly maxPageSize: number;
   private readonly guardPoliciesEnabled: boolean;
@@ -99,7 +104,6 @@ export class PoliciesService {
     private readonly guardInstallationMapper: GuardInstallationMapper,
     private readonly immediateGuardPoliciesMapper: ImmediateGuardPoliciesMapper,
     private readonly delayedGuardPoliciesMapper: DelayedGuardPoliciesMapper,
-    private readonly transactionQueueHelper: TransactionQueueHelper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
@@ -542,15 +546,51 @@ export class PoliciesService {
   }
 
   /**
-   * The pending policy changes of one Safe, from its queue as {@link TransactionQueueHelper}
-   * reads it.
+   * The pending policy changes of one Safe.
+   *
+   * Reads the whole queue per Safe, capped at
+   * {@link PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN} pages as a safety valve
+   * against a runaway queue.
    */
   private async pendingPoliciesForSafe(
     safe: SafeRef,
     read: PendingRead,
   ): Promise<Array<PendingPolicy>> {
-    const { safeInfo, transactions } =
-      await this.transactionQueueHelper.read(safe);
+    const safeInfo = await this.safeRepository.getSafe({
+      chainId: safe.chainId,
+      address: safe.address,
+    });
+
+    const transactions: Array<MultisigTransaction> = [];
+    let next: string | null = null;
+
+    for (
+      let page = 0;
+      page < PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN;
+      page++
+    ) {
+      const queue = await this.safeRepository.getTransactionQueue({
+        chainId: safe.chainId,
+        safe: safeInfo,
+        limit: this.maxPageSize,
+        offset: page * this.maxPageSize,
+      });
+      transactions.push(...queue.results);
+      next = queue.next;
+
+      if (!next) {
+        break;
+      }
+    }
+
+    if (next) {
+      this.loggingService.warn({
+        message: 'Truncated a Safe transaction queue at the page cap',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        pages: PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+      });
+    }
 
     const policies: Array<PendingPolicy> = [];
 

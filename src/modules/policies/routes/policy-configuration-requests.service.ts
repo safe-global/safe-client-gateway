@@ -12,7 +12,6 @@ import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import { TransactionQueueHelper } from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
@@ -25,8 +24,6 @@ import type {
   CreatePolicyConfigurationRequestPayload,
   CreatePolicyConfigurationRequestResponse,
 } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
-import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
-import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
@@ -48,10 +45,6 @@ export class PolicyConfigurationRequestsService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(IPolicyIndexerRepository)
     private readonly policyIndexerRepository: IPolicyIndexerRepository,
-    @Inject(ISafeRepository)
-    private readonly safeRepository: ISafeRepository,
-    private readonly transactionQueueHelper: TransactionQueueHelper,
-    private readonly delayedGuardPoliciesMapper: DelayedGuardPoliciesMapper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
@@ -104,8 +97,8 @@ export class PolicyConfigurationRequestsService {
   }
 
   /**
-   * Deletes a draft: a stored root that is neither on-chain nor requested by
-   * a queued transaction. Cancelling a requested root needs `invalidateRoot`.
+   * Deletes a stored request in any state. Only the stored configurations go;
+   * a root requested on-chain stays there until invalidated.
    */
   public async delete(args: {
     spaceId: Space['id'];
@@ -132,51 +125,10 @@ export class PolicyConfigurationRequestsService {
         HttpStatus.NOT_FOUND,
       );
     }
-    if (!(await this.isDraft({ safe: args.safe, root }))) {
-      throw new HttpExceptionNoLog(
-        'Only a draft configuration request can be deleted',
-        HttpStatus.CONFLICT,
-      );
-    }
-
     await this.configurationRequestsRepository.delete({
       spaceId: args.spaceId,
       safe: args.safe,
       root,
-    });
-  }
-
-  /** Whether the root is a draft, by the rule the pending API reports. */
-  private async isDraft(args: { safe: SafeRef; root: Hex }): Promise<boolean> {
-    const [state, queue, executed] = await Promise.all([
-      // Roots are only read along with at least one guard kind.
-      this.policyIndexerRepository.getState({
-        safes: [args.safe],
-        guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
-      }),
-      this.transactionQueueHelper.read(args.safe),
-      // A request executed before the indexer caught up is in neither the
-      // queue nor the indexer, only in the latest executed transactions.
-      this.safeRepository.getMultisigTransactions({
-        chainId: args.safe.chainId,
-        safeAddress: args.safe.address,
-        executed: true,
-      }),
-    ]);
-    // A truncated queue may hide a request, so it is not treated as a draft.
-    if (queue.truncated) {
-      return false;
-    }
-    const { safeInfo, transactions } = queue;
-
-    return this.delayedGuardPoliciesMapper.isDraft({
-      safe: args.safe,
-      guard: safeInfo.guard,
-      moduleGuard: safeInfo.moduleGuard,
-      transactions: [...transactions, ...executed.results],
-      onChainConfigurations: state.roots,
-      guardEnforcedPolicies: state.guardPolicyBindings,
-      root: args.root,
     });
   }
 
