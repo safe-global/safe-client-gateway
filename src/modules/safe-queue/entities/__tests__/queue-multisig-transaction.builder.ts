@@ -54,8 +54,9 @@ export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisi
 /**
  * The queue-service record of a transaction built with the domain builders,
  * so a spec can serve an existing {@link MultisigTransaction} fixture from the
- * queue service. Confirmations without a signature are dropped: the queue
- * service only stores signed ones.
+ * queue service. The record is pending (`txHash` null) unless the spec sets
+ * one. Confirmations without a signature are dropped: the queue service only
+ * stores signed ones.
  */
 export function safeQueueMultisigTransactionFrom(
   transaction: MultisigTransaction,
@@ -97,7 +98,7 @@ export function safeQueueMultisigTransactionFrom(
     .with('notes', note ?? null)
     .with('originName', originName ?? null)
     .with('originUrl', originUrl ?? null)
-    .with('txHash', transaction.transactionHash)
+    .with('txHash', null)
     .with('created', transaction.submissionDate)
     .with('modified', transaction.modified ?? transaction.submissionDate)
     .with(

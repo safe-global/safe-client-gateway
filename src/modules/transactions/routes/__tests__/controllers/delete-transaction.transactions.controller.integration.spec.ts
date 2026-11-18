@@ -82,9 +82,10 @@ describe('Delete Transaction - Transactions Controller', () => {
       if (url === queueTransactionUrl(args.tx)) {
         return Promise.resolve({
           data: rawify(
-            safeQueueMultisigTransactionFrom(args.tx, args.chain.chainId)
-              .with('txHash', null)
-              .build(),
+            safeQueueMultisigTransactionFrom(
+              args.tx,
+              args.chain.chainId,
+            ).build(),
           ),
           status: 200,
         });

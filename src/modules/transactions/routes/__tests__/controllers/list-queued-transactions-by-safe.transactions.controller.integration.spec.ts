@@ -122,6 +122,48 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
+  it('should accept the deprecated trusted query and serve the same queue', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const page = pageBuilder()
+      .with('count', 0)
+      .with('next', null)
+      .with('previous', null)
+      .with('results', [])
+      .build();
+    const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        case getQueueUrl:
+          return Promise.resolve({ data: rawify(page), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    const queueUrl = `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`;
+
+    const withoutTrusted = await request(app.getHttpServer())
+      .get(queueUrl)
+      .expect(200);
+    const untrusted = await request(app.getHttpServer())
+      .get(`${queueUrl}?trusted=false`)
+      .expect(200);
+
+    expect(untrusted.body).toEqual(withoutTrusted.body);
+    expect(networkService.get).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: getQueueUrl,
+        networkRequest: expect.objectContaining({
+          params: expect.not.objectContaining({ trusted: expect.anything() }),
+        }),
+      }),
+    );
+  });
+
   it('should get a transactions queue with labels and conflict headers', async () => {
     const chainResponse = chainBuilder().build();
     const signers = Array.from({ length: 3 }, () => {
@@ -194,9 +236,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
               safeQueueMultisigTransactionFrom(
                 transaction,
                 chainResponse.chainId,
-              )
-                .with('txHash', null)
-                .build(),
+              ).build(),
             ),
           }),
           status: 200,
@@ -368,9 +408,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
               safeQueueMultisigTransactionFrom(
                 transaction,
                 chainResponse.chainId,
-              )
-                .with('txHash', null)
-                .build(),
+              ).build(),
             ),
           }),
           status: 200,
@@ -527,9 +565,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                 safeQueueMultisigTransactionFrom(
                   transaction,
                   chainResponse.chainId,
-                )
-                  .with('txHash', null)
-                  .build(),
+                ).build(),
               ),
             }),
             status: 200,
@@ -634,9 +670,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                 safeQueueMultisigTransactionFrom(
                   transaction,
                   chainResponse.chainId,
-                )
-                  .with('txHash', null)
-                  .build(),
+                ).build(),
               ),
             }),
             status: 200,
@@ -746,9 +780,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                 safeQueueMultisigTransactionFrom(
                   transaction,
                   chainResponse.chainId,
-                )
-                  .with('txHash', null)
-                  .build(),
+                ).build(),
               ),
             }),
             status: 200,
@@ -839,9 +871,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                 safeQueueMultisigTransactionFrom(
                   transaction,
                   chainResponse.chainId,
-                )
-                  .with('txHash', null)
-                  .build(),
+                ).build(),
               ),
             }),
             status: 200,
@@ -939,9 +969,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                   safeQueueMultisigTransactionFrom(
                     transaction,
                     chainResponse.chainId,
-                  )
-                    .with('txHash', null)
-                    .build(),
+                  ).build(),
                 ),
               }),
               status: 200,
@@ -1026,9 +1054,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                 safeQueueMultisigTransactionFrom(
                   transaction,
                   chainResponse.chainId,
-                )
-                  .with('txHash', null)
-                  .build(),
+                ).build(),
               ),
             }),
             status: 200,
@@ -1119,9 +1145,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
                 safeQueueMultisigTransactionFrom(
                   transaction,
                   chainResponse.chainId,
-                )
-                  .with('txHash', null)
-                  .build(),
+                ).build(),
               ),
             }),
             status: 200,

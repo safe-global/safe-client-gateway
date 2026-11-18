@@ -240,12 +240,16 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              safes: `${safeInfo.address}:${chain.chainId}`,
+            }),
+          }),
+        }),
       );
-      expect(
-        networkService.get.mock.calls[5][0].networkRequest?.params,
-      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
 
     it('should not return awaiting confirmations if no more confirmations are required', async () => {
@@ -410,12 +414,16 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              safes: `${safeInfo.address}:${chain.chainId}`,
+            }),
+          }),
+        }),
       );
-      expect(
-        networkService.get.mock.calls[5][0].networkRequest?.params,
-      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
 
     it('overview of multiple Safes across different chains is correctly serialised', async () => {
@@ -1013,12 +1021,16 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              safes: `${safeInfo.address}:${chain.chainId}`,
+            }),
+          }),
+        }),
       );
-      expect(
-        networkService.get.mock.calls[5][0].networkRequest?.params,
-      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
 
     it('forwards trusted and exclude spam queries', async () => {
@@ -1172,12 +1184,16 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
-        `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              safes: `${safeInfo.address}:${chain.chainId}`,
+            }),
+          }),
+        }),
       );
-      expect(
-        networkService.get.mock.calls[5][0].networkRequest?.params,
-      ).toMatchObject({ safes: `${safeInfo.address}:${chain.chainId}` });
     });
   });
 

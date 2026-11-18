@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { buildPageSchema } from '#/domain/entities/schemas/page.schema.factory';
 import { MessageConfirmationSchema } from '#/modules/messages/domain/entities/message-confirmation.entity';
 import { TypedDataSchema } from '#/modules/messages/domain/entities/typed-data.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
@@ -24,5 +23,3 @@ export const MessageSchema = z.object({
   preparedSignature: NullableHexSchema,
   origin: NullableStringSchema,
 });
-
-export const MessagePageSchema = buildPageSchema(MessageSchema);

@@ -167,9 +167,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       const queueTransaction = safeQueueMultisigTransactionFrom(
         transaction,
         chain.chainId,
-      )
-        .with('txHash', null)
-        .build();
+      ).build();
       const dataDecoder = dataDecodedBuilder().build();
       const addConfirmationDto = addConfirmationDtoBuilder()
         .with('signature', transaction.confirmations?.[0].signature as Address)

@@ -103,7 +103,6 @@ function toQueueTransaction(
 ): SafeQueueMultisigTransactionEntity {
   return safeQueueMultisigTransactionFrom(transaction, chainId)
     .with('safe', safe)
-    .with('txHash', null)
     .build();
 }
 

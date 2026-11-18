@@ -180,9 +180,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -209,9 +210,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case proposeTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 201,
             });
@@ -320,9 +322,10 @@ describe('Propose transaction - Transactions Controller', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({
             data: rawify(
-              safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                .with('txHash', null)
-                .build(),
+              safeQueueMultisigTransactionFrom(
+                transaction,
+                chain.chainId,
+              ).build(),
             ),
             status: 200,
           });
@@ -349,9 +352,10 @@ describe('Propose transaction - Transactions Controller', () => {
         case proposeTransactionUrl:
           return Promise.resolve({
             data: rawify(
-              safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                .with('txHash', null)
-                .build(),
+              safeQueueMultisigTransactionFrom(
+                transaction,
+                chain.chainId,
+              ).build(),
             ),
             status: 201,
           });
@@ -464,9 +468,10 @@ describe('Propose transaction - Transactions Controller', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({
             data: rawify(
-              safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                .with('txHash', null)
-                .build(),
+              safeQueueMultisigTransactionFrom(
+                transaction,
+                chain.chainId,
+              ).build(),
             ),
             status: 200,
           });
@@ -498,9 +503,10 @@ describe('Propose transaction - Transactions Controller', () => {
         case proposeTransactionUrl:
           return Promise.resolve({
             data: rawify(
-              safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                .with('txHash', null)
-                .build(),
+              safeQueueMultisigTransactionFrom(
+                transaction,
+                chain.chainId,
+              ).build(),
             ),
             status: 201,
           });
@@ -563,9 +569,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -666,9 +673,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -695,9 +703,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case proposeTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 201,
             });
@@ -775,9 +784,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -872,9 +882,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -906,9 +917,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case proposeTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 201,
             });
@@ -989,9 +1001,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -1062,9 +1075,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -1149,9 +1163,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -1334,9 +1349,10 @@ describe('Propose transaction - Transactions Controller', () => {
             case getMultisigTransactionUrl:
               return Promise.resolve({
                 data: rawify(
-                  safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                    .with('txHash', null)
-                    .build(),
+                  safeQueueMultisigTransactionFrom(
+                    transaction,
+                    chain.chainId,
+                  ).build(),
                 ),
                 status: 200,
               });
@@ -1413,9 +1429,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -1553,9 +1570,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -1582,9 +1600,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case proposeTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 201,
             });
@@ -1663,9 +1682,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });
@@ -1761,9 +1781,10 @@ describe('Propose transaction - Transactions Controller', () => {
           case getMultisigTransactionUrl:
             return Promise.resolve({
               data: rawify(
-                safeQueueMultisigTransactionFrom(transaction, chain.chainId)
-                  .with('txHash', null)
-                  .build(),
+                safeQueueMultisigTransactionFrom(
+                  transaction,
+                  chain.chainId,
+                ).build(),
               ),
               status: 200,
             });

@@ -637,8 +637,9 @@ export class TransactionsController {
     name: 'trusted',
     required: false,
     type: Boolean,
+    deprecated: true,
     description:
-      'Filter by trust status (true for trusted transactions, false for untrusted)',
+      'Deprecated: accepted for compatibility and has no effect. The queue is served by the Safe Queue Service, which has no trust filter.',
   })
   @ApiOkResponse({
     type: QueuedItemPage,
@@ -654,14 +655,13 @@ export class TransactionsController {
     @Query('cursor', new ValidationPipe(PaginationCursorSchema))
     paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
-    trusted: boolean,
+    _trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.transactionsService.getTransactionQueue({
       chainId,
       routeUrl,
       safeAddress,
       paginationData,
-      trusted,
     });
   }
 

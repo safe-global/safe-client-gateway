@@ -255,9 +255,7 @@ describe('Space Policies Controller', () => {
                   safeQueueMultisigTransactionFrom(
                     transaction,
                     SEPOLIA_CHAIN_ID,
-                  )
-                    .with('txHash', null)
-                    .build(),
+                  ).build(),
                 ),
               )
               .with('next', null)
