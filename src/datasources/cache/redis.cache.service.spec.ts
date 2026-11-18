@@ -8,7 +8,6 @@ import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.
 import type { RedisClientType } from '#/datasources/cache/cache.module';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '#/datasources/cache/redis.cache.service';
-import { SET_INVALIDATION_TIME_SCRIPT } from '#/datasources/cache/scripts/set-invalidation-time.script';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '#/logging/logging.interface';
 
@@ -16,7 +15,6 @@ type RedisTransaction = ReturnType<RedisClientType['multi']>;
 
 const transactionMock = {
   hSet: vi.fn(),
-  eval: vi.fn(),
   expire: vi.fn(),
   unlink: vi.fn(),
   exec: vi.fn(),
@@ -58,7 +56,6 @@ describe('RedisCacheService', () => {
     isOfflineQueueDisabled = false;
     multiMock.mockReturnValue(transactionMock);
     transactionMock.hSet.mockReturnValue(transactionMock);
-    transactionMock.eval.mockReturnValue(transactionMock);
     transactionMock.expire.mockReturnValue(transactionMock);
     transactionMock.unlink.mockReturnValue(transactionMock);
     transactionMock.exec.mockResolvedValue([]);
@@ -184,12 +181,10 @@ describe('RedisCacheService', () => {
 
       expect(result).toBe(unlinkedCount);
       expect(multiMock).toHaveBeenCalledOnce();
-      expect(transactionMock.eval).toHaveBeenCalledWith(
-        SET_INVALIDATION_TIME_SCRIPT,
-        {
-          keys: [`invalidationTimeMs:${key}`],
-          arguments: [now.toString()],
-        },
+      expect(transactionMock.hSet).toHaveBeenCalledWith(
+        `invalidationTimeMs:${key}`,
+        '',
+        now.toString(),
       );
       expect(transactionMock.expire).toHaveBeenCalledWith(
         `invalidationTimeMs:${key}`,
@@ -198,7 +193,7 @@ describe('RedisCacheService', () => {
       );
       expect(transactionMock.unlink).toHaveBeenCalledWith(key);
       expect(transactionMock.unlink).toHaveBeenCalledBefore(
-        transactionMock.eval,
+        transactionMock.hSet,
       );
       expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
       expect(transactionMock.exec).not.toHaveBeenCalled();
@@ -226,7 +221,6 @@ describe('RedisCacheService', () => {
       expect(result).toBe(unlinkedCount);
       expect(transactionMock.unlink).toHaveBeenCalledWith(key);
       expect(transactionMock.hSet).not.toHaveBeenCalled();
-      expect(transactionMock.eval).not.toHaveBeenCalled();
       expect(transactionMock.expire).not.toHaveBeenCalled();
       expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
     });
@@ -373,12 +367,10 @@ describe('RedisCacheService', () => {
       expect(transactionMock.unlink).toHaveBeenCalledWith(
         `${keyPrefix}-${key}`,
       );
-      expect(transactionMock.eval).toHaveBeenCalledWith(
-        SET_INVALIDATION_TIME_SCRIPT,
-        {
-          keys: [`${keyPrefix}-invalidationTimeMs:${key}`],
-          arguments: [now.toString()],
-        },
+      expect(transactionMock.hSet).toHaveBeenCalledWith(
+        `${keyPrefix}-invalidationTimeMs:${key}`,
+        '',
+        now.toString(),
       );
       expect(transactionMock.expire).toHaveBeenCalledWith(
         `${keyPrefix}-invalidationTimeMs:${key}`,
