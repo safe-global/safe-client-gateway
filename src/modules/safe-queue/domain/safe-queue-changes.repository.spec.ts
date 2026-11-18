@@ -139,27 +139,35 @@ describe('SafeQueueChangesRepository', () => {
     );
 
     it.each([
-      ['later', 1],
+      ['later', faker.number.int({ min: 1, max: 60_000 })],
       ['the same', 0],
-    ])('should keep the stored time when it is %s', async (_, secondsLater) => {
-      const changedAt = faker.date.recent();
-      mockSafeQueueChangesCacheService.getChangedAt.mockResolvedValue(
-        rawify(
-          new Date(changedAt.getTime() + secondsLater * 1_000).toISOString(),
-        ),
-      );
+    ])(
+      'should store one second after the stored time when it is %s',
+      async (_, msLater) => {
+        const change = faker.helpers.arrayElement(SafeQueueChanges);
+        const changedAt = faker.date.recent();
+        const storedChangedAt = new Date(changedAt.getTime() + msLater);
+        mockSafeQueueChangesCacheService.getChangedAt.mockResolvedValue(
+          rawify(storedChangedAt.toISOString()),
+        );
 
-      await createRepository(true).setChangedAt({
-        change: faker.helpers.arrayElement(SafeQueueChanges),
-        chainId,
-        safeAddress,
-        changedAt,
-      });
+        await createRepository(true).setChangedAt({
+          change,
+          chainId,
+          safeAddress,
+          changedAt,
+        });
 
-      expect(
-        mockSafeQueueChangesCacheService.setChangedAt,
-      ).not.toHaveBeenCalled();
-    });
+        expect(
+          mockSafeQueueChangesCacheService.setChangedAt,
+        ).toHaveBeenCalledExactlyOnceWith({
+          change,
+          chainId,
+          safeAddress,
+          changedAt: new Date(storedChangedAt.getTime() + 1_000),
+        });
+      },
+    );
 
     it('should replace an older stored time', async () => {
       const change = faker.helpers.arrayElement(SafeQueueChanges);

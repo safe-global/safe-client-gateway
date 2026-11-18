@@ -13,6 +13,9 @@ import { NullableCoercedDateSchema } from '#/validation/entities/schemas/nullabl
 
 @Injectable()
 export class SafeQueueChangesRepository implements ISafeQueueChangesRepository {
+  // The tags are served in whole seconds, so a smaller step could leave one
+  // unchanged
+  private static readonly MIN_TAG_STEP_MS = 1_000;
   private readonly safeQueueEnabled: boolean;
 
   constructor(
@@ -49,14 +52,22 @@ export class SafeQueueChangesRepository implements ISafeQueueChangesRepository {
     if (!this.safeQueueEnabled) {
       return;
     }
-    // Events are handled concurrently and can arrive late, so an older change
-    // must not take the tag back to a value a client already holds
+    // Every change moves the stored time forward: an event can arrive late or
+    // carry a clock behind ours, and must neither take the tag back nor leave
+    // it where a client already saw it
     const storedChangedAt = await this.getChangedAt(args);
-    if (storedChangedAt && storedChangedAt >= args.changedAt) {
-      return;
-    }
+    const changedAt =
+      storedChangedAt && storedChangedAt >= args.changedAt
+        ? new Date(
+            storedChangedAt.getTime() +
+              SafeQueueChangesRepository.MIN_TAG_STEP_MS,
+          )
+        : args.changedAt;
     try {
-      await this.safeQueueChangesCacheService.setChangedAt(args);
+      await this.safeQueueChangesCacheService.setChangedAt({
+        ...args,
+        changedAt,
+      });
     } catch (error) {
       this.loggingService.warn(
         `Failed to record when the ${args.change} changed. chainId=${args.chainId}, safeAddress=${args.safeAddress}, error=${asError(error).message}`,

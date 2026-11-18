@@ -19,7 +19,8 @@ export interface ISafeQueueChangesRepository {
   getChangedAt(args: SafeQueueChangeKey): Promise<Date | null>;
 
   /**
-   * Keeps the stored time when it is the same or later, so a late event never
+   * Stores one second after the stored time when that one is the same or
+   * later, so every change moves the tag forward and a late event never
    * takes the tag back. Best-effort: a failure is logged, as the tag then
    * falls back to the queue or the messages themselves.
    */
