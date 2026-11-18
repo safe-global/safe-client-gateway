@@ -6,6 +6,7 @@ import type { RedisClientType } from '#/datasources/cache/cache.module';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { CacheKeyPrefix, MAX_TTL } from '#/datasources/cache/constants';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { SET_INVALIDATION_TIME_SCRIPT } from '#/datasources/cache/scripts/set-invalidation-time.script';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { deviateRandomlyByPercentage } from '#/domain/common/utils/number';
 import type { ICacheReadiness } from '#/domain/interfaces/cache-readiness.interface';
@@ -113,7 +114,10 @@ export class RedisCacheService
     const pipeline = this.client.multi().unlink(keyWithPrefix);
     if (this.defaultExpirationTimeInSeconds > 0) {
       pipeline
-        .hSet(invalidationKey, '', Date.now().toString())
+        .eval(SET_INVALIDATION_TIME_SCRIPT, {
+          keys: [invalidationKey],
+          arguments: [Date.now().toString()],
+        })
         .expire(
           invalidationKey,
           this.enforceMaxRedisTTL(this.defaultExpirationTimeInSeconds),
