@@ -788,6 +788,13 @@ describe('HooksRepository (Unit)', () => {
           }),
         },
       ],
+      ['a timestamp in milliseconds', { timestamp: Date.now() }],
+      [
+        'a timestamp ahead of this clock',
+        {
+          timestamp: Math.ceil(faker.date.soon().getTime() / 1_000),
+        },
+      ],
       ['a timestamp that is not a number', { timestamp: faker.word.sample() }],
     ])(
       'should record the change at the time it is consumed when the message has %s',

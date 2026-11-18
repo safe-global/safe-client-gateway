@@ -10,7 +10,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
-import { PublishedAtSchema } from '#/modules/hooks/domain/entities/schemas/published-at.schema';
+import { PublishedMessageSchema } from '#/modules/hooks/domain/entities/schemas/published-at.schema';
 import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
 import type { IHooksRepository } from '#/modules/hooks/domain/hooks.repository.interface';
 import type { Event } from '#/modules/hooks/routes/entities/event.entity';
@@ -77,12 +77,18 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
   }
 
   /**
-   * When the event was published, or now when the publisher set no AMQP
-   * `timestamp` on the message.
+   * When the event was published, or now when the message carries no usable
+   * AMQP `timestamp`. Never later than now: a publish time ahead of this clock
+   * would hold back every later change until the stored time expires.
    */
   private getPublishedAt(msg: ConsumeMessage): Date {
-    const result = PublishedAtSchema.safeParse(msg.properties?.timestamp);
-    return result.success ? result.data : new Date();
+    const now = new Date();
+    const result = PublishedMessageSchema.safeParse(msg);
+    if (!result.success) {
+      return now;
+    }
+    const publishedAt = result.data.properties.timestamp;
+    return publishedAt < now ? publishedAt : now;
   }
 
   private logInvalidEvent(content: unknown, reason: string): void {
