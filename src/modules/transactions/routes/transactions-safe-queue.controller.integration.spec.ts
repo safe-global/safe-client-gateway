@@ -646,7 +646,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
         )
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const getTxServiceTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
       const postConfirmationUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`;
