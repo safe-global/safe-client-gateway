@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import type { SafeQueueDelegate } from '#/modules/safe-queue/entities/delegate.entity';
 
 export function safeQueueDelegateBuilder(): IBuilder<SafeQueueDelegate> {
@@ -14,4 +15,20 @@ export function safeQueueDelegateBuilder(): IBuilder<SafeQueueDelegate> {
     .with('label', faker.word.words())
     .with('created', faker.date.past())
     .with('modified', faker.date.recent());
+}
+
+/**
+ * The queue-service record of a delegate built with the domain builders, so a
+ * spec can serve an existing {@link Delegate} fixture from the queue service.
+ */
+export function safeQueueDelegateFrom(
+  delegate: Delegate,
+  chainId: string,
+): IBuilder<SafeQueueDelegate> {
+  return safeQueueDelegateBuilder()
+    .with('chainId', chainId)
+    .with('safe', delegate.safe)
+    .with('delegate', delegate.delegate)
+    .with('delegator', delegate.delegator)
+    .with('label', delegate.label);
 }

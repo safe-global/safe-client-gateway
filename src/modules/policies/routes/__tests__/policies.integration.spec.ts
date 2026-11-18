@@ -65,7 +65,7 @@ import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.build
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { safeQueueDelegateBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
+import { safeQueueDelegateFrom } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
 import type { SafeQueueDelegate } from '#/modules/safe-queue/entities/delegate.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
@@ -228,13 +228,7 @@ describe('Space Policies Controller', () => {
               .with(
                 'results',
                 delegates.map((delegate) =>
-                  safeQueueDelegateBuilder()
-                    .with('chainId', chainId)
-                    .with('safe', delegate.safe)
-                    .with('delegate', delegate.delegate)
-                    .with('delegator', delegate.delegator)
-                    .with('label', delegate.label)
-                    .build(),
+                  safeQueueDelegateFrom(delegate, chainId).build(),
                 ),
               )
               .build(),

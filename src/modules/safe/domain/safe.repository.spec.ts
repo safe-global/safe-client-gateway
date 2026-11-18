@@ -1239,39 +1239,13 @@ describe('SafeRepository', () => {
         trusted: true,
       });
     });
-
-    it('should request executed transactions even when pending ones are asked for', async () => {
-      const page = pageBuilder<unknown>()
-        .with('results', [])
-        .with('count', 0)
-        .with('next', null)
-        .with('previous', null)
-        .build();
-      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
-        rawify(page),
-      );
-
-      await repository.getMultisigTransactions({
-        chainId,
-        safeAddress,
-        executed: false,
-      });
-
-      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
-        chainId,
-        safeAddress,
-        executed: true,
-        ordering: '-nonce',
-        trusted: true,
-      });
-    });
   });
 
   describe('deleteTransaction', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should clear both tx-service and queue caches ', async () => {
+    it('should clear both tx-service and queue caches', async () => {
       const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       const signature = faker.string.hexadecimal({ length: 16 });
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(

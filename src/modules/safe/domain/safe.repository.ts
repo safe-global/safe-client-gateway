@@ -763,7 +763,6 @@ export class SafeRepository implements ISafeRepository {
   async getMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;
-    executed?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
     to?: Address;

@@ -157,8 +157,9 @@ export class TransactionsController {
     name: 'executed',
     required: false,
     type: Boolean,
+    deprecated: true,
     description:
-      'Filter by execution status (true for executed, false for pending)',
+      'Deprecated: accepted for compatibility and has no effect. Only executed transactions are returned; pending ones are served by /transactions/queued.',
   })
   @ApiQuery({
     name: 'cursor',
@@ -185,8 +186,6 @@ export class TransactionsController {
     to?: Address,
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
-    @Query('executed', new ParseBoolPipe({ optional: true }))
-    executed?: boolean,
   ): Promise<Partial<Page<MultisigTransaction>>> {
     return this.transactionsService.getMultisigTransactions({
       chainId,
@@ -198,7 +197,6 @@ export class TransactionsController {
       to,
       value,
       nonce,
-      executed,
     });
   }
 
@@ -654,8 +652,6 @@ export class TransactionsController {
     safeAddress: Address,
     @Query('cursor', new ValidationPipe(PaginationCursorSchema))
     paginationData: PaginationData,
-    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
-    _trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.transactionsService.getTransactionQueue({
       chainId,

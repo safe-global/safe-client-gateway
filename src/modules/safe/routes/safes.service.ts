@@ -298,7 +298,6 @@ export class SafesService {
         chainId,
         safeAddress,
         limit: 1,
-        executed: true,
       }),
       this.safeRepository.getModuleTransactions({
         chainId,

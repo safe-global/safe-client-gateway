@@ -26,7 +26,6 @@ import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
-import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
@@ -39,7 +38,6 @@ import type { IncomingEtherEvent } from '#/modules/hooks/routes/entities/schemas
 import type { IncomingTokenEvent } from '#/modules/hooks/routes/entities/schemas/incoming-token.schema';
 import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
 import { messageConfirmationBuilder } from '#/modules/messages/domain/entities/__tests__/message-confirmation.builder';
-import type { Message } from '#/modules/messages/domain/entities/message.entity';
 import {
   addr,
   createSubscribers,
@@ -61,39 +59,10 @@ import type {
   NativeTokenTransfer,
 } from '#/modules/safe/domain/entities/transfer.entity';
 import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { safeQueueDelegateBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
-import { safeQueueMessageBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
-import type { SafeQueueDelegate } from '#/modules/safe-queue/entities/delegate.entity';
-import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import { safeQueueDelegateFrom } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
+import { safeQueueMessageFrom } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { rawify } from '#/validation/entities/raw.entity';
-
-function toQueueDelegate(
-  delegate: Delegate,
-  chainId: string,
-): SafeQueueDelegate {
-  return safeQueueDelegateBuilder()
-    .with('chainId', chainId)
-    .with('safe', delegate.safe)
-    .with('delegate', delegate.delegate)
-    .with('delegator', delegate.delegator)
-    .with('label', delegate.label)
-    .build();
-}
-
-function toQueueMessage(message: Message, chainId: string): SafeQueueMessage {
-  return safeQueueMessageBuilder()
-    .with('chainId', Number(chainId))
-    .with('messageHash', message.messageHash)
-    .with('safe', message.safe)
-    .with('message', message.message)
-    .with('proposer', message.proposedBy)
-    .with('preparedSignature', message.preparedSignature)
-    .with('created', message.created)
-    .with('modified', message.modified)
-    .with('confirmations', message.confirmations)
-    .build();
-}
 
 /** The pending queue-service record of `transaction`, held by `safe`. */
 function toQueueTransaction(
@@ -645,7 +614,9 @@ describe('Push notification queue integration', () => {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [toQueueDelegate(delegate, event.chainId)])
+                .with('results', [
+                  safeQueueDelegateFrom(delegate, event.chainId).build(),
+                ])
                 .build(),
             ),
             status: 200,
@@ -728,7 +699,9 @@ describe('Push notification queue integration', () => {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [toQueueDelegate(delegate, event.chainId)])
+                .with('results', [
+                  safeQueueDelegateFrom(delegate, event.chainId).build(),
+                ])
                 .build(),
             ),
             status: 200,
@@ -856,7 +829,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -918,7 +891,10 @@ describe('Push notification queue integration', () => {
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
             data: rawify(
-              toQueueMessage(messageBuilder().build(), event.chainId),
+              safeQueueMessageFrom(
+                messageBuilder().build(),
+                event.chainId,
+              ).build(),
             ),
             status: 200,
           });
@@ -983,7 +959,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -1050,7 +1026,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -1058,7 +1034,9 @@ describe('Push notification queue integration', () => {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [toQueueDelegate(delegate, event.chainId)])
+                .with('results', [
+                  safeQueueDelegateFrom(delegate, event.chainId).build(),
+                ])
                 .build(),
             ),
             status: 200,
@@ -1128,7 +1106,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -1136,7 +1114,9 @@ describe('Push notification queue integration', () => {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [toQueueDelegate(delegate, event.chainId)])
+                .with('results', [
+                  safeQueueDelegateFrom(delegate, event.chainId).build(),
+                ])
                 .build(),
             ),
             status: 200,
@@ -1208,7 +1188,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -1219,7 +1199,7 @@ describe('Push notification queue integration', () => {
               data: rawify(
                 pageBuilder()
                   .with('results', [
-                    toQueueDelegate(delegateObjA, event.chainId),
+                    safeQueueDelegateFrom(delegateObjA, event.chainId).build(),
                   ])
                   .build(),
               ),
@@ -1231,7 +1211,7 @@ describe('Push notification queue integration', () => {
               data: rawify(
                 pageBuilder()
                   .with('results', [
-                    toQueueDelegate(delegateObjB, event.chainId),
+                    safeQueueDelegateFrom(delegateObjB, event.chainId).build(),
                   ])
                   .build(),
               ),
@@ -1300,7 +1280,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -1488,7 +1468,7 @@ describe('Push notification queue integration', () => {
               data: rawify(
                 pageBuilder()
                   .with('results', [
-                    toQueueDelegate(delegateObj, event.chainId),
+                    safeQueueDelegateFrom(delegateObj, event.chainId).build(),
                   ])
                   .build(),
               ),
@@ -1577,7 +1557,7 @@ describe('Push notification queue integration', () => {
         }
         if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(toQueueMessage(message, event.chainId)),
+            data: rawify(safeQueueMessageFrom(message, event.chainId).build()),
             status: 200,
           });
         }
@@ -1588,7 +1568,7 @@ describe('Push notification queue integration', () => {
               data: rawify(
                 pageBuilder()
                   .with('results', [
-                    toQueueDelegate(delegateObj, event.chainId),
+                    safeQueueDelegateFrom(delegateObj, event.chainId).build(),
                   ])
                   .build(),
               ),

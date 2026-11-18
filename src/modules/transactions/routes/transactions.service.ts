@@ -228,7 +228,6 @@ export class TransactionsService {
     to?: Address;
     value?: string;
     nonce?: string;
-    executed?: boolean;
   }): Promise<Partial<Page<MultisigTransaction>>> {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({

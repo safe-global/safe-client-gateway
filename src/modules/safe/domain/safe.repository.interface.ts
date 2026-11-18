@@ -175,7 +175,6 @@ export interface ISafeRepository {
   getMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;
-    executed?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
     to?: string;
