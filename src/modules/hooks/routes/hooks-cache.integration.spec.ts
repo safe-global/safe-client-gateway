@@ -169,7 +169,7 @@ describe('Hook Events for Cache', () => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
-        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
           return Promise.resolve({ data: rawify(safe), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -235,7 +235,7 @@ describe('Hook Events for Cache', () => {
             data: rawify(chain),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
           return Promise.resolve({ data: rawify(safe), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -995,7 +995,7 @@ describe('Hook Events for Cache', () => {
             data: rawify(chain),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
           return Promise.resolve({ data: rawify(safe), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));

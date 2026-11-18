@@ -153,7 +153,7 @@ describe('PortfolioSummariesV2Controller', () => {
       const chain = args.chains.find(
         ({ chainId, transactionService }) =>
           url === `${safeConfigUrl}/api/v1/chains/${chainId}` ||
-          url === `${transactionService}/api/v1/safes/${args.address}`,
+          url === `${transactionService}/api/v1/safes/${args.address}/`,
       );
       if (chain && url.startsWith(safeConfigUrl)) {
         return Promise.resolve({ data: rawify(chain), status: 200 });

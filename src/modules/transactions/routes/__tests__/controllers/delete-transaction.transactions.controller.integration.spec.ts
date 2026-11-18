@@ -75,7 +75,7 @@ describe('Delete Transaction - Transactions Controller', () => {
       }
       if (
         url ===
-        `${args.chain.transactionService}/api/v1/safes/${args.safe.address}`
+        `${args.chain.transactionService}/api/v1/safes/${args.safe.address}/`
       ) {
         return Promise.resolve({ data: rawify(args.safe), status: 200 });
       }

@@ -169,11 +169,11 @@ describe('Propose transaction - Transactions Controller', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
         const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
-        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}/`;
+        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -311,11 +311,11 @@ describe('Propose transaction - Transactions Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
-      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}/`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -456,11 +456,11 @@ describe('Propose transaction - Transactions Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
-      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}/`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getDelegatesUrl = `${queueBaseUri}/api/v1/delegates`;
       switch (url) {
         case getChainUrl:
@@ -561,7 +561,7 @@ describe('Propose transaction - Transactions Controller', () => {
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -662,11 +662,11 @@ describe('Propose transaction - Transactions Controller', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
         const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getContractsUrl = `${safeDecoderUrl}/api/v1/contracts`;
-        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}/`;
+        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -777,7 +777,7 @@ describe('Propose transaction - Transactions Controller', () => {
       networkService.get.mockImplementation(({ url }) => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -871,11 +871,11 @@ describe('Propose transaction - Transactions Controller', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
         const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getContractsUrl = `${safeDecoderUrl}/api/v1/contracts`;
-        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+        const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}/`;
+        const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
         switch (url) {
           case getChainUrl:
             return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -992,7 +992,7 @@ describe('Propose transaction - Transactions Controller', () => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
         const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getContractsUrl = `${safeDecoderUrl}/api/v1/contracts`;
         switch (url) {
@@ -1067,7 +1067,7 @@ describe('Propose transaction - Transactions Controller', () => {
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1155,7 +1155,7 @@ describe('Propose transaction - Transactions Controller', () => {
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1341,7 +1341,7 @@ describe('Propose transaction - Transactions Controller', () => {
           .build();
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case getChainUrl:
@@ -1421,7 +1421,7 @@ describe('Propose transaction - Transactions Controller', () => {
       transaction.confirmations = [];
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1558,11 +1558,11 @@ describe('Propose transaction - Transactions Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transaction.to}`;
-      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
-      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}/`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1674,7 +1674,7 @@ describe('Propose transaction - Transactions Controller', () => {
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -1773,7 +1773,7 @@ describe('Propose transaction - Transactions Controller', () => {
       networkService.get.mockImplementation(({ url }) => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getMultisigTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
         const getDelegatesUrl = `${queueBaseUri}/api/v1/delegates`;
         switch (url) {
           case getChainUrl:

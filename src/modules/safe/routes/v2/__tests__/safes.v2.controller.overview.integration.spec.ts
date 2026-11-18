@@ -153,7 +153,7 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -274,7 +274,7 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
@@ -377,8 +377,8 @@ describe('Safes V2 Controller Overview', () => {
               status: 200,
             });
           }
-          case `${polygonChain.transactionService}/api/v1/safes/${safeInfo.address}`:
-          case `${ethereumChain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${polygonChain.transactionService}/api/v1/safes/${safeInfo.address}/`:
+          case `${ethereumChain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
@@ -465,7 +465,8 @@ describe('Safes V2 Controller Overview', () => {
           return Promise.resolve({ data: rawify(chain), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
+          url ===
+          `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`
         ) {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         }
@@ -585,7 +586,7 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -776,10 +777,10 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo1.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo1), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo2.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
           }
           case `${zerionBaseUri}/v1/wallets/${safeInfo1.address}/portfolio`: {
@@ -860,7 +861,7 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
@@ -932,7 +933,7 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
@@ -1007,7 +1008,7 @@ describe('Safes V2 Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -1100,7 +1101,8 @@ describe('Safes V2 Controller Overview', () => {
           return Promise.reject(new Error('Zerion unavailable'));
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
+          url ===
+          `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`
         ) {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         }

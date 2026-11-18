@@ -132,7 +132,7 @@ export class TransactionApi implements ITransactionApi {
   async getBackbone(): Promise<Raw<Backbone>> {
     try {
       const cacheDir = CacheRouter.getBackboneCacheDir(this.chainId);
-      const url = `${this.baseUrl}/api/v1/about`;
+      const url = `${this.baseUrl}/api/v1/about/`;
       return await this.dataSource.get<Backbone>({
         cacheDir,
         url,
@@ -182,7 +182,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         safeAddress,
       });
-      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/`;
       return await this.dataSource.get<Safe>({
         cacheDir,
         url,
@@ -233,7 +233,7 @@ export class TransactionApi implements ITransactionApi {
 
     const isSafe = await (async (): Promise<boolean> => {
       try {
-        const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
+        const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/`;
         const { data } = await this.networkService.get({
           url,
         });
@@ -405,7 +405,7 @@ export class TransactionApi implements ITransactionApi {
     signature: string;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/delegates/${args.delegate}`;
+      const url = `${this.baseUrl}/api/v1/delegates/${args.delegate}/`;
       return await this.networkService.delete({
         url,
         data: {
@@ -425,7 +425,7 @@ export class TransactionApi implements ITransactionApi {
     signature: string;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/delegates/${args.delegate}`;
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/delegates/${args.delegate}/`;
       return await this.networkService.delete({
         url,
         data: {
@@ -446,7 +446,7 @@ export class TransactionApi implements ITransactionApi {
     signature: string;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUrl}/api/v2/delegates/${args.delegate}`;
+      const url = `${this.baseUrl}/api/v2/delegates/${args.delegate}/`;
       return await this.networkService.delete({
         url,
         data: {
@@ -468,7 +468,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         transferId,
       });
-      const url = `${this.baseUrl}/api/v1/transfer/${transferId}`;
+      const url = `${this.baseUrl}/api/v1/transfer/${transferId}/`;
       return await this.dataSource.get<Transfer>({
         cacheDir,
         url,
@@ -617,7 +617,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         moduleTransactionId,
       });
-      const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
+      const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}/`;
       return await this.dataSource.get<ModuleTransaction>({
         cacheDir,
         url,
@@ -870,7 +870,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         address,
       });
-      const url = `${this.baseUrl}/api/v1/tokens/${address}`;
+      const url = `${this.baseUrl}/api/v1/tokens/${address}/`;
       return await this.dataSource.get<Token>({
         cacheDir,
         url,

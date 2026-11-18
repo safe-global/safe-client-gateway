@@ -207,12 +207,12 @@ describe('Space Policies Controller', () => {
       if (url.startsWith(`${safeConfigUrl}/api/v2/chains`)) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
-      if (url === `${txServiceUrl}/api/v1/safes/${safeAddress}`) {
+      if (url === `${txServiceUrl}/api/v1/safes/${safeAddress}/`) {
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (
         url ===
-        `${polygonChain.transactionService}/api/v1/safes/${polygonSafeAddress}`
+        `${polygonChain.transactionService}/api/v1/safes/${polygonSafeAddress}/`
       ) {
         return Promise.resolve({ data: rawify(polygonSafe), status: 200 });
       }
@@ -265,14 +265,14 @@ describe('Space Policies Controller', () => {
         });
       }
       const token = tokens.find(
-        (item) => url === `${txServiceUrl}/api/v1/tokens/${item.address}`,
+        (item) => url === `${txServiceUrl}/api/v1/tokens/${item.address}/`,
       );
       if (token) {
         return Promise.resolve({ data: rawify(token), status: 200 });
       }
       if (
         tokenNotFoundAddresses.some(
-          (address) => url === `${txServiceUrl}/api/v1/tokens/${address}`,
+          (address) => url === `${txServiceUrl}/api/v1/tokens/${address}/`,
         )
       ) {
         return Promise.reject(

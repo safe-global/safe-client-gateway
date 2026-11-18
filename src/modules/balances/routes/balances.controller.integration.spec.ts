@@ -107,7 +107,7 @@ describe('Balances Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
@@ -254,7 +254,7 @@ describe('Balances Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
@@ -310,7 +310,7 @@ describe('Balances Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
@@ -379,7 +379,7 @@ describe('Balances Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
@@ -448,7 +448,7 @@ describe('Balances Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
@@ -531,7 +531,7 @@ describe('Balances Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
@@ -637,7 +637,7 @@ describe('Balances Controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
               return Promise.resolve({
                 data: rawify(safeBuilder().build()),
                 status: 200,
@@ -702,7 +702,7 @@ describe('Balances Controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
               return Promise.resolve({
                 data: rawify(safeBuilder().build()),
                 status: 200,
@@ -770,7 +770,7 @@ describe('Balances Controller', () => {
           }
           if (
             url ===
-            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
+            `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`
           ) {
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
@@ -893,7 +893,7 @@ describe('Balances Controller', () => {
         }
         if (
           url ===
-          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
+          `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`
         ) {
           return Promise.resolve({
             data: rawify(safeBuilder().build()),
