@@ -58,7 +58,11 @@ import {
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
-import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
+import {
+  getPolicyContracts,
+  getSafePolicyGuardDeployments,
+} from '#/modules/policies/domain/policy-deployments.constants';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
@@ -75,6 +79,9 @@ const SEPOLIA_CHAIN_ID = '11155111';
 const DAY_IN_MINUTES = 1440;
 const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
+const KNOWN_POLICY = faker.helpers.arrayElement(
+  getPolicyContracts(SEPOLIA_CHAIN_ID),
+);
 
 function randomSepoliaMultiSendAddress(): Address {
   return faker.helpers.arrayElement(
@@ -273,12 +280,12 @@ describe('Space Policies Controller', () => {
   }
 
   /** A store payload whose root is the hash of its configurations. */
-  function payload(): {
+  function payload(policy: Address = KNOWN_POLICY): {
     root: `0x${string}`;
     configurations: Array<PolicyConfiguration>;
   } {
     const configurations: [PolicyConfiguration] = [
-      policyConfigurationBuilder().build(),
+      policyConfigurationBuilder().with('policy', policy).build(),
     ];
     return { root: configurationRoot(configurations), configurations };
   }
@@ -1291,6 +1298,51 @@ describe('Space Policies Controller', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ ...payload(), root: `0x${'11'.repeat(32)}` })
         .expect(422);
+    });
+
+    it('should store the removal of a policy', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const body = payload(zeroAddress);
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ root: body.root });
+    });
+
+    it('should reject an unknown policy contract without storing it', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const create = vi.spyOn(
+        app.get<ISafePolicyGuardConfigurationRequestsRepository>(
+          ISafePolicyGuardConfigurationRequestsRepository,
+        ),
+        'create',
+      );
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(payload(policy))
+        .expect(422)
+        .expect(({ body }) =>
+          expect(body.message).toBe(
+            `Unknown policy contract ${policy} on chain ${SEPOLIA_CHAIN_ID}`,
+          ),
+        );
+      expect(create).not.toHaveBeenCalled();
     });
 
     it('should reject an empty configuration list', async () => {
