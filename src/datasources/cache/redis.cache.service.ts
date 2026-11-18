@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { ClientOfflineError } from 'redis';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import type { RedisClientType } from '#/datasources/cache/cache.module';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -20,6 +21,7 @@ export class RedisCacheService
   private readonly quitTimeoutInSeconds: number = 2;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultExpirationDeviatePercent: number;
+  private readonly isOfflineQueueDisabled: boolean;
 
   constructor(
     @Inject('RedisClient') private readonly client: RedisClientType,
@@ -36,6 +38,9 @@ export class RedisCacheService
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.deviatePercent',
       );
+    this.isOfflineQueueDisabled = this.configurationService.getOrThrow<boolean>(
+      'redis.disableOfflineQueue',
+    );
   }
 
   ping(): Promise<unknown> {
@@ -71,6 +76,7 @@ export class RedisCacheService
     );
 
     try {
+      this.failFastWhenOffline();
       // One MULTI/EXEC: a single round trip, and the value is never stored
       // without its TTL.
       // NX - Set expiry only when the key has no expiry
@@ -101,11 +107,10 @@ export class RedisCacheService
     const invalidationKey = this._prefixKey(
       RedisCacheService.invalidationTimeMsCacheDir(key).key,
     );
-    // One pipelined round trip. The marker is written before the UNLINK, so
-    // the entry is never gone while its marker is still missing. A pipeline
-    // rather than MULTI, so the UNLINK still runs if Redis refuses the marker
-    // write (e.g. maxmemory reached).
-    const pipeline = this.client.multi();
+    // One pipelined round trip. A pipeline rather than MULTI, so the UNLINK
+    // still runs if Redis refuses the marker write (e.g. maxmemory reached).
+    // see https://redis.io/commands/unlink/
+    const pipeline = this.client.multi().unlink(keyWithPrefix);
     if (this.defaultExpirationTimeInSeconds > 0) {
       pipeline
         .hSet(invalidationKey, '', Date.now().toString())
@@ -115,12 +120,11 @@ export class RedisCacheService
           'NX',
         );
     }
-    // see https://redis.io/commands/unlink/
-    pipeline.unlink(keyWithPrefix);
 
     try {
-      const replies = await pipeline.execAsPipeline();
-      return Number(replies.at(-1));
+      this.failFastWhenOffline();
+      const [unlinkedCount] = await pipeline.execAsPipeline();
+      return Number(unlinkedCount);
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
@@ -186,6 +190,17 @@ export class RedisCacheService
     await this.client.set(this._prefixKey(key), value, {
       EX: expirationTime,
     });
+  }
+
+  /**
+   * node-redis rejects single commands with {@link ClientOfflineError} while
+   * reconnecting when `disableOfflineQueue` is set, but queues MULTI and
+   * pipelines regardless. Applies the same fail-fast to those batches.
+   */
+  private failFastWhenOffline(): void {
+    if (this.isOfflineQueueDisabled && !this.client.isReady) {
+      throw new ClientOfflineError();
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { ClientOfflineError } from 'redis';
 import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
@@ -23,8 +24,12 @@ const transactionMock = {
 } as unknown as MockedObject<RedisTransaction>;
 
 const multiMock = vi.fn();
+let isClientReady = true;
 
 const redisClientMock = {
+  get isReady(): boolean {
+    return isClientReady;
+  },
   multi: multiMock,
   hSet: vi.fn(),
   expire: vi.fn(),
@@ -44,6 +49,7 @@ describe('RedisCacheService', () => {
   let defaultExpirationTimeInSeconds: number;
 
   beforeEach(() => {
+    isClientReady = true;
     multiMock.mockReturnValue(transactionMock);
     transactionMock.hSet.mockReturnValue(transactionMock);
     transactionMock.expire.mockReturnValue(transactionMock);
@@ -63,6 +69,7 @@ describe('RedisCacheService', () => {
       'expirationTimeInSeconds.deviatePercent',
       faker.number.int({ min: 1, max: 99 }),
     );
+    fakeConfigurationService.set('redis.disableOfflineQueue', false);
 
     target = new RedisCacheService(
       redisClientMock,
@@ -140,15 +147,15 @@ describe('RedisCacheService', () => {
   });
 
   describe('deleteByKey', () => {
-    it('stamps the invalidation marker, then unlinks the key, in a single pipeline', async () => {
+    it('unlinks the key and stamps the invalidation marker in a single pipeline', async () => {
       vi.useFakeTimers();
       const now = Date.now();
       const key = faker.string.alphanumeric();
       const unlinkedCount = faker.number.int({ min: 0, max: 1 });
       transactionMock.execAsPipeline.mockResolvedValue([
-        faker.number.int({ min: 0, max: 1 }),
-        faker.number.int({ min: 0, max: 1 }),
         unlinkedCount,
+        faker.number.int({ min: 0, max: 1 }),
+        faker.number.int({ min: 0, max: 1 }),
       ]);
 
       const result = await target.deleteByKey(key);
@@ -166,8 +173,8 @@ describe('RedisCacheService', () => {
         'NX',
       );
       expect(transactionMock.unlink).toHaveBeenCalledWith(key);
-      expect(transactionMock.hSet).toHaveBeenCalledBefore(
-        transactionMock.unlink,
+      expect(transactionMock.unlink).toHaveBeenCalledBefore(
+        transactionMock.hSet,
       );
       expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
       expect(transactionMock.exec).not.toHaveBeenCalled();
@@ -215,6 +222,67 @@ describe('RedisCacheService', () => {
         `invalidationTimeMs:${key}`,
       );
     });
+  });
+
+  describe('with the offline queue disabled', () => {
+    beforeEach(() => {
+      fakeConfigurationService.set('redis.disableOfflineQueue', true);
+      target = new RedisCacheService(
+        redisClientMock,
+        mockLoggingService,
+        fakeConfigurationService,
+        '',
+      );
+    });
+
+    it('hSet fails fast with ClientOfflineError while the client is not ready', async () => {
+      isClientReady = false;
+
+      await expect(
+        target.hSet(
+          new CacheDir(
+            faker.string.alphanumeric(),
+            faker.string.alphanumeric(),
+          ),
+          fakeJson(),
+          faker.number.int({ min: 1, max: 3600 }),
+        ),
+      ).rejects.toThrow(ClientOfflineError);
+
+      expect(transactionMock.exec).not.toHaveBeenCalled();
+    });
+
+    it('deleteByKey fails fast with ClientOfflineError while the client is not ready', async () => {
+      isClientReady = false;
+
+      await expect(
+        target.deleteByKey(faker.string.alphanumeric()),
+      ).rejects.toThrow(ClientOfflineError);
+
+      expect(transactionMock.execAsPipeline).not.toHaveBeenCalled();
+    });
+
+    it('sends the batch while the client is ready', async () => {
+      await target.hSet(
+        new CacheDir(faker.string.alphanumeric(), faker.string.alphanumeric()),
+        fakeJson(),
+        faker.number.int({ min: 1, max: 3600 }),
+      );
+
+      expect(transactionMock.exec).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('queues the batch while the client is not ready when the offline queue is enabled', async () => {
+    isClientReady = false;
+
+    await target.hSet(
+      new CacheDir(faker.string.alphanumeric(), faker.string.alphanumeric()),
+      fakeJson(),
+      faker.number.int({ min: 1, max: 3600 }),
+    );
+
+    expect(transactionMock.exec).toHaveBeenCalledOnce();
   });
 
   describe('increment', () => {
