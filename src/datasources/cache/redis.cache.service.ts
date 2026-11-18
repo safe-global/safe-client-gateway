@@ -71,10 +71,15 @@ export class RedisCacheService
     );
 
     try {
-      await this.client.hSet(key, cacheDir.field, value);
+      // One MULTI/EXEC: a single round trip, and the value is never stored
+      // without its TTL.
       // NX - Set expiry only when the key has no expiry
       // See https://redis.io/commands/expire/
-      await this.client.expire(key, expirationTime, 'NX');
+      await this.client
+        .multi()
+        .hSet(key, cacheDir.field, value)
+        .expire(key, expirationTime, 'NX')
+        .exec();
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
@@ -93,16 +98,33 @@ export class RedisCacheService
 
   async deleteByKey(key: string): Promise<number> {
     const keyWithPrefix = this._prefixKey(key);
-    // see https://redis.io/commands/unlink/
-    const result = await this.client.unlink(keyWithPrefix);
-
-    await this.hSet(
-      RedisCacheService.invalidationTimeMsCacheDir(key),
-      Date.now().toString(),
-      this.defaultExpirationTimeInSeconds,
-      0,
+    const invalidationKey = this._prefixKey(
+      RedisCacheService.invalidationTimeMsCacheDir(key).key,
     );
-    return result;
+    // see https://redis.io/commands/unlink/
+    const transaction = this.client.multi().unlink(keyWithPrefix);
+    if (this.defaultExpirationTimeInSeconds > 0) {
+      transaction
+        .hSet(invalidationKey, '', Date.now().toString())
+        .expire(
+          invalidationKey,
+          this.enforceMaxRedisTTL(this.defaultExpirationTimeInSeconds),
+          'NX',
+        );
+    }
+
+    try {
+      const [unlinkedCount] = await transaction.exec();
+      return Number(unlinkedCount);
+    } catch (error) {
+      this.loggingService.error({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: `Error deleting ${keyWithPrefix} or setting/expiring ${invalidationKey}`,
+      });
+      await this.client.unlink(invalidationKey);
+      throw error;
+    }
   }
 
   async getInvalidationTimeMs(key: string): Promise<number | null> {
@@ -139,7 +161,7 @@ export class RedisCacheService
 
       transaction.expire(key, expirationTime, 'NX');
     }
-    const [incrRes] = await transaction.get(key).exec();
+    const [incrRes] = await transaction.exec();
     return Number(incrRes);
   }
 

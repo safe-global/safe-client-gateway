@@ -9,8 +9,18 @@ import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '#/datasources/cache/redis.cache.service';
 import type { ILoggingService } from '#/logging/logging.interface';
 
+const transactionMock = {
+  hSet: vi.fn(),
+  expire: vi.fn(),
+  unlink: vi.fn(),
+  exec: vi.fn(),
+} as unknown as MockedObject<ReturnType<RedisClientType['multi']>>;
+
+const multiMock = vi.fn();
+
 const redisClientTypeMock = {
   isReady: true,
+  multi: multiMock,
   hGet: vi.fn(),
   hSet: vi.fn(),
   hDel: vi.fn(),
@@ -40,6 +50,11 @@ describe('RedisCacheService with a Key Prefix', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    multiMock.mockReturnValue(transactionMock);
+    transactionMock.hSet.mockReturnValue(transactionMock);
+    transactionMock.expire.mockReturnValue(transactionMock);
+    transactionMock.unlink.mockReturnValue(transactionMock);
+    transactionMock.exec.mockResolvedValue([]);
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 3600 });
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
@@ -70,12 +85,12 @@ describe('RedisCacheService with a Key Prefix', () => {
 
     await redisCacheService.hSet(cacheDir, value, expireTime, 0);
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
+    expect(transactionMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
       cacheDir.field,
       value,
     );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+    expect(transactionMock.expire).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
       expireTime,
       'NX',
@@ -102,12 +117,13 @@ describe('RedisCacheService with a Key Prefix', () => {
 
     await redisCacheService.deleteByKey(key);
 
-    expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
+    expect(transactionMock.unlink).toHaveBeenCalledWith(`${keyPrefix}-${key}`);
+    expect(transactionMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-invalidationTimeMs:${key}`,
       '',
       now.toString(),
     );
-    expect(redisClientTypeMock.expire).toHaveBeenCalledWith(
+    expect(transactionMock.expire).toHaveBeenCalledWith(
       `${keyPrefix}-invalidationTimeMs:${key}`,
       defaultExpirationTimeInSeconds,
       'NX',

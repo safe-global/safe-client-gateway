@@ -178,6 +178,20 @@ describe('RedisCacheService', () => {
     );
   });
 
+  it('Deleting key returns the number of removed keys', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    await redisClient.hSet(cacheDir.key, cacheDir.field, fakeJson());
+
+    const firstResult = await redisCacheService.deleteByKey(cacheDir.key);
+    const secondResult = await redisCacheService.deleteByKey(cacheDir.key);
+
+    expect(firstResult).toBe(1);
+    expect(secondResult).toBe(0);
+  });
+
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
