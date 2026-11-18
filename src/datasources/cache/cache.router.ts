@@ -38,6 +38,7 @@ export class CacheRouter {
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
+  private static readonly SAFE_QUEUE_CHANGED_AT_KEY = 'changed_at';
   private static readonly SAFE_QUEUE_DELEGATES_KEY = 'safe_queue_delegates';
   private static readonly SAFE_QUEUE_MESSAGE_KEY = 'safe_queue_message';
   private static readonly SAFE_QUEUE_MESSAGES_KEY = 'safe_queue_messages';
@@ -462,7 +463,7 @@ export class CacheRouter {
     safeAddress: Address;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_safe_queue_${args.change}_changed_at_${args.safeAddress}`,
+      `${args.chainId}_safe_queue_${args.change}_${CacheRouter.SAFE_QUEUE_CHANGED_AT_KEY}_${args.safeAddress}`,
       '',
     );
   }

@@ -2,21 +2,17 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import type { ILoggingService } from '#/logging/logging.interface';
-import type { SafeQueueChange } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
+import { SafeQueueChanges } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
 import { SafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository';
 
 const mockCacheService = {
   hGet: vi.fn(),
   hSet: vi.fn(),
 } as unknown as MockedObject<ICacheService>;
-
-const mockConfigurationService = {
-  getOrThrow: vi.fn(),
-} as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -26,7 +22,6 @@ const mockLoggingService = {
 } as MockedObject<ILoggingService>;
 
 describe('SafeQueueChangesRepository', () => {
-  const changes: Array<SafeQueueChange> = ['transaction_queue', 'messages'];
   const expirationTimeInSeconds = faker.number.int({ min: 1 });
   const chainId = faker.string.numeric();
   const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -34,18 +29,15 @@ describe('SafeQueueChangesRepository', () => {
   function createRepository(
     safeQueueEnabled: boolean,
   ): SafeQueueChangesRepository {
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.safeQueueService') {
-        return safeQueueEnabled;
-      }
-      if (key === 'expirationTimeInSeconds.default') {
-        return expirationTimeInSeconds;
-      }
-      throw new Error(`Unexpected key: ${key}`);
-    });
+    const configurationService = new FakeConfigurationService();
+    configurationService.set('features.safeQueueService', safeQueueEnabled);
+    configurationService.set(
+      'expirationTimeInSeconds.default',
+      expirationTimeInSeconds,
+    );
     return new SafeQueueChangesRepository(
       mockCacheService,
-      mockConfigurationService,
+      configurationService,
       mockLoggingService,
     );
   }
@@ -55,27 +47,30 @@ describe('SafeQueueChangesRepository', () => {
   });
 
   describe('getChangedAt', () => {
-    it.each(changes)('should read when the %s changed', async (change) => {
-      const changedAt = faker.date.recent();
-      mockCacheService.hGet.mockResolvedValue(changedAt.toISOString());
+    it.each(SafeQueueChanges)(
+      'should read when the %s changed',
+      async (change) => {
+        const changedAt = faker.date.recent();
+        mockCacheService.hGet.mockResolvedValue(changedAt.toISOString());
 
-      await expect(
-        createRepository(true).getChangedAt({ change, chainId, safeAddress }),
-      ).resolves.toEqual(changedAt);
-      expect(mockCacheService.hGet).toHaveBeenCalledExactlyOnceWith(
-        new CacheDir(
-          `${chainId}_safe_queue_${change}_changed_at_${safeAddress}`,
-          '',
-        ),
-      );
-    });
+        await expect(
+          createRepository(true).getChangedAt({ change, chainId, safeAddress }),
+        ).resolves.toEqual(changedAt);
+        expect(mockCacheService.hGet).toHaveBeenCalledExactlyOnceWith(
+          new CacheDir(
+            `${chainId}_safe_queue_${change}_changed_at_${safeAddress}`,
+            '',
+          ),
+        );
+      },
+    );
 
     it('should return null when no change was recorded', async () => {
       mockCacheService.hGet.mockResolvedValue(null);
 
       await expect(
         createRepository(true).getChangedAt({
-          change: faker.helpers.arrayElement(changes),
+          change: faker.helpers.arrayElement(SafeQueueChanges),
           chainId,
           safeAddress,
         }),
@@ -83,7 +78,7 @@ describe('SafeQueueChangesRepository', () => {
     });
 
     it('should return null and warn when the recorded value is not a date', async () => {
-      const change = faker.helpers.arrayElement(changes);
+      const change = faker.helpers.arrayElement(SafeQueueChanges);
       mockCacheService.hGet.mockResolvedValue(faker.word.sample());
 
       await expect(
@@ -97,7 +92,7 @@ describe('SafeQueueChangesRepository', () => {
     });
 
     it('should return null and warn when the read fails', async () => {
-      const change = faker.helpers.arrayElement(changes);
+      const change = faker.helpers.arrayElement(SafeQueueChanges);
       const error = new Error(faker.lorem.sentence());
       mockCacheService.hGet.mockRejectedValue(error);
 
@@ -112,7 +107,7 @@ describe('SafeQueueChangesRepository', () => {
     it('should return null without reading when FF_SAFE_QUEUE_SERVICE is off', async () => {
       await expect(
         createRepository(false).getChangedAt({
-          change: faker.helpers.arrayElement(changes),
+          change: faker.helpers.arrayElement(SafeQueueChanges),
           chainId,
           safeAddress,
         }),
@@ -122,7 +117,7 @@ describe('SafeQueueChangesRepository', () => {
   });
 
   describe('setChangedAt', () => {
-    it.each(changes)(
+    it.each(SafeQueueChanges)(
       'should store when the %s changed for the default cache TTL',
       async (change) => {
         const changedAt = faker.date.recent();
@@ -146,7 +141,7 @@ describe('SafeQueueChangesRepository', () => {
     );
 
     it('should resolve and warn when the write fails', async () => {
-      const change = faker.helpers.arrayElement(changes);
+      const change = faker.helpers.arrayElement(SafeQueueChanges);
       const error = new Error(faker.lorem.sentence());
       mockCacheService.hSet.mockRejectedValue(error);
 
@@ -165,7 +160,7 @@ describe('SafeQueueChangesRepository', () => {
 
     it('should not store anything when FF_SAFE_QUEUE_SERVICE is off', async () => {
       await createRepository(false).setChangedAt({
-        change: faker.helpers.arrayElement(changes),
+        change: faker.helpers.arrayElement(SafeQueueChanges),
         chainId,
         safeAddress,
         changedAt: faker.date.recent(),
