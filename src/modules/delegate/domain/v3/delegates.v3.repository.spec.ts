@@ -24,7 +24,6 @@ const mockTransactionApiManager = {
 const mockTransactionApi = {
   getDelegatesV2: vi.fn(),
   postDelegateV2: vi.fn(),
-  updateDelegateV2: vi.fn(),
   deleteDelegateV2: vi.fn(),
   clearDelegates: vi.fn(),
 } as MockedObject<ITransactionApi>;
@@ -123,7 +122,7 @@ describe('DelegatesV3Repository', () => {
     });
 
     describe('updateDelegate', () => {
-      it('uses the transaction service and not the queue service', async () => {
+      it('upserts through the transaction service and not the queue service', async () => {
         const args = {
           chainId: faker.string.numeric(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
@@ -135,9 +134,20 @@ describe('DelegatesV3Repository', () => {
 
         await repository.updateDelegate(args);
 
-        expect(mockTransactionApi.updateDelegateV2).toHaveBeenCalledTimes(1);
-        expect(mockTransactionApi.updateDelegateV2).toHaveBeenCalledWith(args);
+        expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledTimes(1);
+        expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledWith(args);
         expect(mockSafeQueueService.updateDelegate).not.toHaveBeenCalled();
+
+        await new Promise(setImmediate);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+          args.safeAddress,
+        );
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+        });
       });
     });
 
@@ -309,7 +319,7 @@ describe('DelegatesV3Repository', () => {
 
         expect(mockSafeQueueService.updateDelegate).toHaveBeenCalledTimes(1);
         expect(mockSafeQueueService.updateDelegate).toHaveBeenCalledWith(args);
-        expect(mockTransactionApi.updateDelegateV2).not.toHaveBeenCalled();
+        expect(mockTransactionApi.postDelegateV2).not.toHaveBeenCalled();
 
         await new Promise(setImmediate);
         expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledTimes(1);

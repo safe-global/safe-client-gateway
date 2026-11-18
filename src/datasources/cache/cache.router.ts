@@ -907,10 +907,15 @@ export class CacheRouter {
     );
   }
 
-  static getStakingDeploymentsCacheDir(
-    cacheType: 'earn' | 'staking',
-  ): CacheDir {
-    return new CacheDir(CacheRouter.STAKING_DEPLOYMENTS_KEY, cacheType);
+  // Keyed by chain: testnet chains are served by a different Kiln environment
+  static getStakingDeploymentsCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.STAKING_DEPLOYMENTS_KEY}`,
+      args.cacheType,
+    );
   }
 
   static getStakingRewardsFeeCacheDir(args: {
@@ -924,27 +929,33 @@ export class CacheRouter {
     );
   }
 
-  static getStakingNetworkStatsCacheDir(
-    cacheType: 'earn' | 'staking',
-  ): CacheDir {
-    return new CacheDir(CacheRouter.STAKING_NETWORK_STATS_KEY, cacheType);
+  static getStakingNetworkStatsCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.STAKING_NETWORK_STATS_KEY}`,
+      args.cacheType,
+    );
   }
 
-  static getStakingDedicatedStakingStatsCacheDir(
-    cacheType: 'earn' | 'staking',
-  ): CacheDir {
+  static getStakingDedicatedStakingStatsCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+  }): CacheDir {
     return new CacheDir(
-      CacheRouter.STAKING_DEDICATED_STAKING_STATS_KEY,
-      cacheType,
+      `${args.chainId}_${CacheRouter.STAKING_DEDICATED_STAKING_STATS_KEY}`,
+      args.cacheType,
     );
   }
 
   static getStakingPooledStakingStatsCacheDir(args: {
     cacheType: 'earn' | 'staking';
+    chainId: string;
     pool: Address;
   }): CacheDir {
     return new CacheDir(
-      `${CacheRouter.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
+      `${args.chainId}_${CacheRouter.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
       args.cacheType,
     );
   }

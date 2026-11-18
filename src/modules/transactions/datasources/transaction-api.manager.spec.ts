@@ -111,7 +111,7 @@ describe('Transaction API Manager Tests', () => {
 
     expect(dataSourceMock.get).toHaveBeenCalledWith({
       cacheDir: expect.anything(),
-      url: `${expectedUrl}/api/v1/about`,
+      url: `${expectedUrl}/api/v1/about/`,
       notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
       expireTimeSeconds: expirationTimeInSeconds,
     });

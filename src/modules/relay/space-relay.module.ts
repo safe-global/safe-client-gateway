@@ -3,7 +3,6 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '#/modules/auth/auth.module';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
-import { RelayApiModule } from '#/modules/relay/datasources/relay-api.module';
 import { RelayDomainModule } from '#/modules/relay/domain/relay.domain.module';
 import { WorkspaceRelayer } from '#/modules/relay/domain/relayers/workspace.relayer';
 import { SpaceRelayController } from '#/modules/relay/routes/space-relay.controller';
@@ -24,7 +23,6 @@ import { UsersModule } from '#/modules/users/users.module';
  */
 @Module({
   imports: [
-    RelayApiModule,
     RelayDomainModule,
     ChainsModule,
     EntitlementsModule,

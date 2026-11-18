@@ -130,7 +130,7 @@ describe('Get by id - Transactions Controller', () => {
     const safe = safeBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const moduleTransactionId = faker.string.alphanumeric();
-    const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
+    const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -177,8 +177,8 @@ describe('Get by id - Transactions Controller', () => {
     const safe = safeBuilder().build();
     const id = faker.string.alphanumeric();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+    const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -226,9 +226,9 @@ describe('Get by id - Transactions Controller', () => {
       .with('operation', Operation.CALL)
       .with('isSuccessful', true)
       .build();
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
+    const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}/`;
     const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${moduleTransaction.to}`;
     const getModuleContractUrl = `${safeDecoderUrl}/api/v1/contracts/${moduleTransaction.module}`;
     networkService.get.mockImplementation(({ url }) => {
@@ -300,8 +300,8 @@ describe('Get by id - Transactions Controller', () => {
     const safe = safeBuilder().build();
     const id = faker.string.alphanumeric();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+    const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -341,9 +341,9 @@ describe('Get by id - Transactions Controller', () => {
       .with('transferId', transferId)
       .with('to', safe.address)
       .build();
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${transferId}`;
+    const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${transferId}/`;
     const getFromContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transfer.from}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transfer.to}`;
     networkService.get.mockImplementation(({ url }) => {
@@ -402,7 +402,7 @@ describe('Get by id - Transactions Controller', () => {
     const safe = safeBuilder().build();
     const txHash = faker.string.hexadecimal({ length: 64 });
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${txHash}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
@@ -479,13 +479,13 @@ describe('Get by id - Transactions Controller', () => {
     ];
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
-    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
+    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}/`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
-    const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
+    const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -651,15 +651,15 @@ describe('Get by id - Transactions Controller', () => {
     ];
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${
       chain.transactionService
     }/api/v2/multisig-transactions/${tx.safeTxHash.slice(2)}/`;
-    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
+    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}/`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
-    const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
+    const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -824,11 +824,11 @@ describe('Get by id - Transactions Controller', () => {
         .build(),
     ];
     const gasToken = tokenBuilder().build();
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
-    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
+    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}/`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
@@ -955,7 +955,7 @@ describe('Get by id - Transactions Controller', () => {
       .with('safeTxHash', faker.string.hexadecimal({ length: 64 }) as Hash)
       .build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
@@ -1027,7 +1027,7 @@ describe('Get by id - Transactions Controller', () => {
           safe,
         });
       safe.version = null;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
@@ -1108,7 +1108,7 @@ describe('Get by id - Transactions Controller', () => {
       multisigTransaction.data = faker.string.hexadecimal({
         length: 64,
       }) as Address;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
@@ -1186,7 +1186,7 @@ describe('Get by id - Transactions Controller', () => {
           typeof multisigTransaction.confirmations
         >
       )[0].signature = `0xdeadbee`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
@@ -1248,7 +1248,7 @@ describe('Get by id - Transactions Controller', () => {
           typeof multisigTransaction.confirmations
         >
       )[0].signature = `0xdeadbee`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {
@@ -1314,7 +1314,7 @@ describe('Get by id - Transactions Controller', () => {
         const v = confirmations[0].signature?.slice(-2);
         confirmations[0].signature = `0x${'-'.repeat(128)}${v}`;
 
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
         networkService.get.mockImplementation(({ url }) => {
@@ -1370,7 +1370,7 @@ describe('Get by id - Transactions Controller', () => {
           typeof multisigTransaction.confirmations
         >
       )[0].owner = getAddress(faker.finance.ethereumAddress());
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       networkService.get.mockImplementation(({ url }) => {

@@ -117,7 +117,7 @@ describe('Notifications Controller V2', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
           ) {
             return Promise.resolve({
               data: rawify(
@@ -190,7 +190,7 @@ describe('Notifications Controller V2', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
           ) {
             return Promise.resolve({
               data: rawify(safeBuilder().with('address', safe.address).build()),
@@ -269,7 +269,7 @@ describe('Notifications Controller V2', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
           ) {
             return Promise.resolve({
               data: rawify(
@@ -346,7 +346,7 @@ describe('Notifications Controller V2', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
           ) {
             return Promise.resolve({
               data: rawify(
@@ -432,7 +432,7 @@ describe('Notifications Controller V2', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
           ) {
             return Promise.resolve({
               data: rawify(
