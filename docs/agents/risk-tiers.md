@@ -65,7 +65,7 @@ The computed tier is a floor. An implementer or reviewer may **raise** it ("this
 
 ## Tier map
 
-Patterns are globs relative to the repository root, with `**` meaning any depth. The block below is the machine-readable source of truth: an automated check that labels PRs or computes their tier must parse this block rather than keep its own copy (see [Enforcement status](#enforcement-status)). The tables after it explain the choices.
+Patterns are globs relative to the repository root, with `**` meaning any depth. The block below is the machine-readable source of truth: `scripts/risk-tier.ts` parses it to compute and label each PR's tier, so nothing else may keep its own copy (see [Enforcement status](#enforcement-status)). The tables after it explain the choices.
 
 <!-- tier-map:start -->
 ```yaml
@@ -107,8 +107,10 @@ tier1:
   - .github/workflows/**
   - .github/CODEOWNERS
   - Dockerfile
-  # Agent guardrails
+  # Agent guardrails, and the check that enforces them
   - docs/agents/risk-tiers.md
+  - scripts/risk-tier.ts
+  - scripts/risk-tier.spec.ts
   - AGENTS.md
   - CLAUDE.md
   - .claude/settings.json
@@ -242,7 +244,7 @@ tier4:
 
 1. **Work out the tier before writing code.** Use the files you plan to touch plus rule 3. If the work turns out to touch a more critical path than planned, the tier rises with it, and you tell the human you are working with.
 2. **Tier 1 needs an agreed plan.** Write down what will change and why, and have a human agree to it before you implement. Keep the diff to that plan; scope creep in a Tier 1 PR is the most expensive kind ([reviewing.md](reviewing.md) Part 2).
-3. **State the tier in the PR.** The first line of `## Summary` is `**Risk tier:** <n> — <the path or rule that set it>`, as in [commits-and-prs.md](commits-and-prs.md)'s "PR body". If a reviewer has to compute the tier themselves, they will check whether you understated it.
+3. **State the tier in the PR.** The first line of `## Summary` is `**Risk tier:** <n> — <the path or rule that set it>`, as in [commits-and-prs.md](commits-and-prs.md)'s "PR body". The `Risk tier` check fails without it, or when it is less critical than the changed paths allow.
 4. **Never approve or merge your own Tier 1 or Tier 2 work.** An agent never does this, in any role. At Tier 3 and 4, an agent's approval still needs a review with no findings by an agent other than the one that wrote the change.
 5. **Never edit the tier map in the same PR that benefits from the edit.** A PR that changes this file is Tier 1. A reviewer flags any tier lowered by a PR that also changes the reclassified paths.
 
@@ -255,25 +257,30 @@ tier4:
 
 ## Enforcement status
 
-Today these rules are applied by the agents and people who read them, not by a machine. Specifically:
+**Applied automatically today:**
 
-- **Applied automatically:**
+- **Agents learn the rules on their own.**
   - The `cgw-risk-tiers` skill loads this guide whenever a task or review starts.
-  - [reviewing.md](reviewing.md) requires the tier at the top of every review, so the review hook that runs before each commit applies it.
-  - The `Architecture Check` workflow (`@claude arch-review`) applies it to PRs.
-- **Not machine-enforced yet:**
-  - No workflow computes the tier from changed paths.
-  - Branch protection does not vary required approvals by tier.
-  - `CODEOWNERS` assigns one team to every path.
+  - [reviewing.md](reviewing.md) requires the tier at the top of every review. The review hook that runs before each commit applies it, and so does the `Architecture Check` workflow (`@claude arch-review`).
+- **CI computes the tier.** The `Risk tier` workflow (`.github/workflows/risk-tier.yml`, script `scripts/risk-tier.ts`) runs on every PR:
+  - It parses the `tier-map` block above and computes the tier from the changed paths. A rename counts its old path too, and the size row of rule 3 applies.
+  - It writes the result to the job summary and labels the PR `tier-1` to `tier-4`.
+  - Its `Compute risk tier` job **fails** when the PR description has no `**Risk tier:** <n>` line, or states a less critical tier than the one computed.
+  - It reads the map and the script from the PR's **base** commit, so a PR can't lower its own tier by editing them.
+  - Fork PRs get the check but no label, because their token is read-only.
+- **The repository keeps the map honest.** `scripts/risk-tier.spec.ts` runs in `yarn test`. It fails when a module under `src/modules/` has no explicit tier, so a new module can't silently default, and when a pattern no longer matches any file.
 
-  An agent that ignores this guide is caught only by review.
+**What the CI check does not do:**
 
-The planned enforcement, to land in follow-up PRs:
+- It doesn't compute the content-based escalations of rule 3 (guards, signatures, secrets, migrations, new dependencies, signing-flow display data). The reviewer applies those. The computed tier is a floor, not the final word.
+- It doesn't block a merge on its own. Until the items below are configured, an agent that ignores this guide is caught only by review and a red check.
 
-1. **A CI tier check.** A workflow parses the `tier-map` block above and computes each PR's tier from its changed paths, then labels the PR `tier-1` to `tier-4`. It fails when the PR description states a less critical tier than the one computed. It reads the block from the default branch, so a PR can't relabel itself by editing the map.
-2. **`CODEOWNERS` plus branch protection.**
-   - Tier 1 and Tier 2 paths are owned by a human-only maintainers team, and branch protection requires code-owner review, so no bot approval satisfies them.
+**Still needed, as repository settings rather than code (admin only):**
+
+1. **Make the check required.** Add `Compute risk tier` as a required status check in branch protection for `main`.
+2. **Gate approvals on the tier.**
+   - Tier 1 and Tier 2 paths are owned in `CODEOWNERS` by a human-only maintainers team, and branch protection requires code-owner review, so no bot approval satisfies them.
    - Tier 1 additionally requires two approvals. One way is a ruleset that needs two approvals on PRs labelled `tier-1`. Another is two owning teams that must both approve.
-   - A dedicated review bot gets approve rights, and the workflow lets it approve only PRs labelled `tier-3` or `tier-4`.
+   - A dedicated review bot gets approve rights and approves only PRs labelled `tier-3` or `tier-4`.
 
-Layer 2 is the only part an agent can't be talked out of, so this guide should not be considered enforced until it exists.
+Item 2 is the only part an agent can't get around, so this guide should not be considered fully enforced until it is in place.

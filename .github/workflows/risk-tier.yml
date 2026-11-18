@@ -1,0 +1,136 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# Risk tier: computes a PR's tier from its changed paths and labels the PR
+# =============================================================================
+# Applies docs/agents/risk-tiers.md: the most critical tier of any path the PR
+# touches (a rename counts its old path too), raised one tier for a large
+# Tier 3/4 change. The job fails when the PR description has no
+# `**Risk tier:** <n>` line or states a less critical tier than computed.
+# Content-based escalations (guards, secrets, migrations, …) stay with the
+# reviewer: this check computes a floor, not the final word.
+#
+# The tier map and the script are read from the PR's BASE commit, so a PR
+# cannot lower its own tier by editing them. Only while the base has no copy
+# yet (the PR that introduces this check) does it fall back to the PR's own.
+# The PR head is never checked out beyond those two files.
+#
+# This check informs; it does not gate on its own. To block merges, mark the
+# "Compute risk tier" check as required in branch protection, and key the
+# approval rules off the tier-N labels (see risk-tiers.md, Enforcement status).
+# -----------------------------------------------------------------------------
+name: Risk tier
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  compute:
+    name: Compute risk tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    concurrency:
+      group: risk-tier-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    outputs:
+      tier: ${{ steps.tier.outputs.tier }}
+    steps:
+      - name: Check out the tier map and script from the base commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .nvmrc
+            docs/agents/risk-tiers.md
+            scripts/risk-tier.ts
+
+      - name: Choose where the tier map and script come from
+        id: source
+        run: |
+          if [ -f base/scripts/risk-tier.ts ] && [ -f base/docs/agents/risk-tiers.md ]; then
+            echo "dir=base" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Risk tier::The base commit has no risk-tier check yet; using this PR's own copy (bootstrap)."
+            echo "dir=head" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the tier map and script from the PR (bootstrap only)
+        if: steps.source.outputs.dir == 'head'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .nvmrc
+            docs/agents/risk-tiers.md
+            scripts/risk-tier.ts
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ${{ steps.source.outputs.dir }}/.nvmrc
+
+      - name: List changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api --paginate "repos/$REPO/pulls/$PR/files" \
+            --jq '.[] | {filename, previous_filename, additions, deletions} | tojson' \
+            > "$RUNNER_TEMP/changed-files.ndjson"
+
+      - name: Compute and check the tier
+        id: tier
+        env:
+          # Passed through the environment, never interpolated into the
+          # script: the description is untrusted input.
+          PR_BODY: ${{ github.event.pull_request.body }}
+          DIR: ${{ steps.source.outputs.dir }}
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$DIR/scripts/risk-tier.ts" \
+            --map "$DIR/docs/agents/risk-tiers.md" \
+            --files "$RUNNER_TEMP/changed-files.ndjson"
+
+  label:
+    name: Label risk tier
+    needs: compute
+    # Runs even when `compute` failed on a missing or understated tier line, so
+    # the computed label still lands. Fork PRs get a read-only token, so they
+    # are not labelled; the check result still reports the tier.
+    if: >-
+      always() &&
+      needs.compute.outputs.tier != '' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Apply the tier-N label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TIER: ${{ needs.compute.outputs.tier }}
+        run: |
+          gh label create tier-1 --force --color b60205 --description "Risk tier 1: two human maintainer approvals (docs/agents/risk-tiers.md)"
+          gh label create tier-2 --force --color d93f0b --description "Risk tier 2: one human maintainer approval (docs/agents/risk-tiers.md)"
+          gh label create tier-3 --force --color fbca04 --description "Risk tier 3: agent may approve, a human merges (docs/agents/risk-tiers.md)"
+          gh label create tier-4 --force --color 0e8a16 --description "Risk tier 4: agent may approve and merge (docs/agents/risk-tiers.md)"
+          remove=""
+          for t in 1 2 3 4; do
+            if [ "$t" != "$TIER" ]; then remove="${remove:+$remove,}tier-$t"; fi
+          done
+          gh pr edit "$PR" --add-label "tier-$TIER" --remove-label "$remove"

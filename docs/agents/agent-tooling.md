@@ -4,7 +4,7 @@
 
 # Agent Tooling
 
-The guides in this directory are the content. This file documents the three mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, and the `Architecture Check` CI workflow, which reviews a pull request on demand — plus the conventions for adding to any of them.
+The guides in this directory are the content. This file documents the mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, the `Architecture Check` CI workflow, which reviews a pull request on demand, and the `Risk tier` workflow, which computes every PR's risk tier — plus the conventions for adding to any of them.
 
 The first two are **automatic by design**. Nothing here needs a slash command typed to take effect, which is why the repo ships none of its own (see "Commands" below).
 
@@ -62,6 +62,18 @@ A newly created `.claude/settings.json` may not be picked up until the settings 
 One Part 2 item is adapted for CI: "pre-commit commands ran clean" is skipped because the CI pipeline's lint/format/test jobs are the evidence. The spec-match item needs no adaptation — no approved spec/plan is committed here, so [reviewing.md](reviewing.md)'s own fallback applies and the diff is judged against the PR title and description.
 
 The review agent reads untrusted PR content, so its prompt carries the same injection warning as `claude-code-review.yml`, and its tools are read-only plus `gh pr comment` for the single result comment. The runner never checks out the PR head: the checkout is the default branch, used only for the guides, and the PR's content arrives solely through `gh pr view`/`gh pr diff` — so untrusted code never reaches the runner's disk and a force-push mid-review cannot swap what gets analyzed (the CodeQL untrusted-checkout and TOCTOU alerts this design avoids). Each allowed `gh` command is also pinned to the triggering PR's number, so an injection cannot redirect a comment at another PR. The verdict is still an LLM judgment: a finding it misses stays missed, so the gate complements, not replaces, the skills and the hook that run while the code is being written.
+
+## The risk-tier check
+
+`.github/workflows/risk-tier.yml` runs on every pull request. It is the CI half of [risk-tiers.md](risk-tiers.md), and that guide's "Enforcement status" section is where its behaviour is documented. Unlike the review hook and `Architecture Check`, it is not an LLM: `scripts/risk-tier.ts` computes the tier deterministically from the guide's `tier-map` block.
+
+Three constraints shape it, and any edit must keep them:
+
+- **No dependency install.** The script imports only Node built-ins and runs as TypeScript through Node's type stripping, so the job needs only the `.nvmrc` Node version. Adding an import from `node_modules` or the `#/` alias breaks the job, not the tests.
+- **Read from the base commit.** The map and the script come from the PR's base. The workflow uses the PR's own copy only while the base has none, which is the bootstrap case of the PR that introduced them.
+- **Untrusted input stays in the environment.** The PR description reaches the script as `PR_BODY`, never interpolated into a `run:` line.
+
+Its tests (`scripts/risk-tier.spec.ts`) also guard the map itself: an unclassified module, or a pattern that has gone stale, fails `yarn test`.
 
 ## Commands
 
