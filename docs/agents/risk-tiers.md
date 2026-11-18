@@ -65,7 +65,7 @@ The computed tier is a floor. An implementer or reviewer may **raise** it ("this
 
 ## Tier map
 
-Patterns are globs relative to the repository root, with `**` meaning any depth. The block below is the machine-readable source of truth: `scripts/risk-tier.ts` parses it to compute and label each PR's tier, so nothing else may keep its own copy (see [Enforcement status](#enforcement-status)). The tables after it explain the choices.
+Patterns are globs relative to the repository root, with `**` meaning any depth. The block below is the machine-readable source of truth: `scripts/risk-tier.ts` parses it to compute and report each PR's tier, so nothing else may keep its own copy (see [Enforcement status](#enforcement-status)). The tables after it explain the choices.
 
 <!-- tier-map:start -->
 ```yaml
@@ -264,10 +264,9 @@ tier4:
   - [reviewing.md](reviewing.md) requires the tier at the top of every review. The review hook that runs before each commit applies it, and so does the `Architecture Check` workflow (`@claude arch-review`).
 - **CI computes the tier.** The `Risk tier` workflow (`.github/workflows/risk-tier.yml`, script `scripts/risk-tier.ts`) runs on every PR:
   - It parses the `tier-map` block above and computes the tier from the changed paths. A rename counts its old path too, and the size row of rule 3 applies.
-  - It writes the result to the job summary and labels the PR `tier-1` to `tier-4`.
+  - It reports the result without any write permission on the PR. The tier appears as a check named `Tier <n> — <what it allows>` in the PR's checks list, as an annotation, and in the job summary with every path listed by tier. There is no label or comment, because both would need `pull-requests: write`.
   - Its `Compute risk tier` job **fails** when the PR description has no `**Risk tier:** <n>` line, or states a less critical tier than the one computed.
   - It reads the map and the script from the PR's **base** commit, so a PR can't lower its own tier by editing them.
-  - Fork PRs get the check but no label, because their token is read-only.
 - **The repository keeps the map honest.** `scripts/risk-tier.spec.ts` runs in `yarn test`. It fails when a module under `src/modules/` has no explicit tier, so a new module can't silently default, and when a pattern no longer matches any file.
 
 **What the CI check does not do:**
@@ -280,7 +279,7 @@ tier4:
 1. **Make the check required.** Add `Compute risk tier` as a required status check in branch protection for `main`.
 2. **Gate approvals on the tier.**
    - Tier 1 and Tier 2 paths are owned in `CODEOWNERS` by a human-only maintainers team, and branch protection requires code-owner review, so no bot approval satisfies them.
-   - Tier 1 additionally requires two approvals. One way is a ruleset that needs two approvals on PRs labelled `tier-1`. Another is two owning teams that must both approve.
-   - A dedicated review bot gets approve rights and approves only PRs labelled `tier-3` or `tier-4`.
+   - Tier 1 additionally requires two approvals. GitHub can't vary the required approval count by path or label, so either require two approvals on `main` for every PR, or extend `Compute risk tier` to read the PR's reviews (read-only) and fail a Tier 1 PR with fewer than two maintainer approvals.
+   - A dedicated review bot gets approve rights and approves only PRs whose `Compute risk tier` result is Tier 3 or 4.
 
 Item 2 is the only part an agent can't get around, so this guide should not be considered fully enforced until it is in place.

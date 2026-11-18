@@ -13,6 +13,9 @@
  *            files" API entries: { filename, previous_filename?, additions, deletions }
  *   PR_BODY  (env) the pull request description
  *   GITHUB_OUTPUT / GITHUB_STEP_SUMMARY (env, optional) written when set
+ *
+ * Reports through outputs, the job summary and a `::notice` annotation only:
+ * it needs no write access to the pull request.
  */
 import * as fs from 'node:fs';
 
@@ -298,9 +301,12 @@ function main(): void {
   if (process.env.GITHUB_OUTPUT) {
     fs.appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `tier=${verdict.effectiveTier}\n`,
+      `tier=${verdict.effectiveTier}\nallows=${ALLOWS[verdict.effectiveTier]}\n`,
     );
   }
+  process.stdout.write(
+    `::notice title=Risk tier ${verdict.effectiveTier}::${ALLOWS[verdict.effectiveTier]} (docs/agents/risk-tiers.md)\n`,
+  );
   if (verdict.failures.length > 0) {
     for (const failure of verdict.failures) {
       process.stdout.write(`::error title=Risk tier::${failure}\n`);

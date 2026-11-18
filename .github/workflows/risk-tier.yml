@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: FSL-1.1-MIT
 # =============================================================================
-# Risk tier: computes a PR's tier from its changed paths and labels the PR
+# Risk tier: computes a PR's tier from its changed paths and reports it
 # =============================================================================
 # Applies docs/agents/risk-tiers.md: the most critical tier of any path the PR
 # touches (a rename counts its old path too), raised one tier for a large
@@ -14,9 +14,13 @@
 # yet (the PR that introduces this check) does it fall back to the PR's own.
 # The PR head is never checked out beyond those two files.
 #
+# The workflow needs no write permission: the tier is reported through the
+# job summary, an annotation, and the `report` job's name in the checks list,
+# never a label or a comment.
+#
 # This check informs; it does not gate on its own. To block merges, mark the
-# "Compute risk tier" check as required in branch protection, and key the
-# approval rules off the tier-N labels (see risk-tiers.md, Enforcement status).
+# "Compute risk tier" check as required in branch protection (see
+# risk-tiers.md, Enforcement status).
 # -----------------------------------------------------------------------------
 name: Risk tier
 
@@ -40,6 +44,7 @@ jobs:
       cancel-in-progress: true
     outputs:
       tier: ${{ steps.tier.outputs.tier }}
+      allows: ${{ steps.tier.outputs.allows }}
     steps:
       - name: Check out the tier map and script from the base commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -102,35 +107,23 @@ jobs:
             --map "$DIR/docs/agents/risk-tiers.md" \
             --files "$RUNNER_TEMP/changed-files.ndjson"
 
-  label:
-    name: Label risk tier
+  # Shows the tier in the PR's checks list through this job's name, e.g.
+  # "Tier 1 — two human maintainer approvals required". A job name may use
+  # `needs` outputs, so this costs no write permission: no label, no comment.
+  # The name changes with the tier, so never make THIS job a required check;
+  # require "Compute risk tier", whose name is stable.
+  report:
+    name: Tier ${{ needs.compute.outputs.tier }} — ${{ needs.compute.outputs.allows }}
     needs: compute
-    # Runs even when `compute` failed on a missing or understated tier line, so
-    # the computed label still lands. Fork PRs get a read-only token, so they
-    # are not labelled; the check result still reports the tier.
-    if: >-
-      always() &&
-      needs.compute.outputs.tier != '' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+    # Runs even when `compute` failed on a missing or understated tier line,
+    # so the computed tier is still shown.
+    if: always() && needs.compute.outputs.tier != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      issues: write
-      pull-requests: write
+    timeout-minutes: 2
+    permissions: {}
     steps:
-      - name: Apply the tier-N label
+      - name: Report the tier
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
           TIER: ${{ needs.compute.outputs.tier }}
-        run: |
-          gh label create tier-1 --force --color b60205 --description "Risk tier 1: two human maintainer approvals (docs/agents/risk-tiers.md)"
-          gh label create tier-2 --force --color d93f0b --description "Risk tier 2: one human maintainer approval (docs/agents/risk-tiers.md)"
-          gh label create tier-3 --force --color fbca04 --description "Risk tier 3: agent may approve, a human merges (docs/agents/risk-tiers.md)"
-          gh label create tier-4 --force --color 0e8a16 --description "Risk tier 4: agent may approve and merge (docs/agents/risk-tiers.md)"
-          remove=""
-          for t in 1 2 3 4; do
-            if [ "$t" != "$TIER" ]; then remove="${remove:+$remove,}tier-$t"; fi
-          done
-          gh pr edit "$PR" --add-label "tier-$TIER" --remove-label "$remove"
+          ALLOWS: ${{ needs.compute.outputs.allows }}
+        run: echo "Risk tier $TIER — $ALLOWS (docs/agents/risk-tiers.md)"
