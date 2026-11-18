@@ -236,12 +236,29 @@ describe('risk-tier', () => {
     });
 
     it('accepts a "Tier" prefix', () => {
-      expect(parseStatedTier('**Risk tier:** Tier 3 — docs')).toBe(3);
+      expect(
+        parseStatedTier('## Summary\n\n**Risk tier:** Tier 3 — docs'),
+      ).toBe(3);
     });
 
     it('ignores the unfilled template placeholder', () => {
-      const body = '**Risk tier:** <!-- 1–4 and the path or rule -->';
+      const body =
+        '## Summary\n\n**Risk tier:** <!-- 1–4 and the path or rule -->';
 
+      expect(parseStatedTier(body)).toBeNull();
+    });
+
+    it('skips a leading license comment and accepts CRLF', () => {
+      const body = '<!-- license -->\r\n\r\n## Summary\r\n\r\n**Risk tier:** 2';
+      expect(parseStatedTier(body)).toBe(2);
+    });
+
+    it.each([
+      '<!--\n## Summary\n**Risk tier:** 1',
+      '## Summary\n**Risk <!-- internal -->tier:** 1',
+      '## Summary\nSome text\n**Risk tier:** 1',
+      '## Changes\n**Risk tier:** 1',
+    ])('rejects a hidden, split or misplaced declaration', (body) => {
       expect(parseStatedTier(body)).toBeNull();
     });
 

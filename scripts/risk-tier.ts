@@ -72,8 +72,8 @@ const MAP_START = '<!-- tier-map:start -->';
 const MAP_END = '<!-- tier-map:end -->';
 const TIER_KEY_REGEX = /^tier([1-4]):\s*$/;
 const PATTERN_LINE_REGEX = /^\s+-\s+"?([^"#]+?)"?\s*(?:#.*)?$/;
-const STATED_TIER_REGEX = /\*\*Risk tier:\*\*\s*(?:tier\s*)?([1-4])\b/i;
-const HTML_COMMENT_REGEX = /<!--[\s\S]*?-->/g;
+const STATED_TIER_REGEX =
+  /^## Summary[ \t]*\r?\n(?:[ \t]*\r?\n)*\*\*Risk tier:\*\*[ \t]*(?:tier[ \t]+)?([1-4])\b/i;
 const SIZE_EXEMPT_REGEX =
   /(?:\.spec\.ts|\.e2e-spec\.ts)$|(?:^|\/)__tests__\/|^test\/|(?:^|\/)yarn\.lock$/;
 
@@ -208,7 +208,17 @@ export function assessTier(
 
 /** The tier stated on the description's `**Risk tier:** <n>` line, if any. */
 export function parseStatedTier(body: string): Tier | null {
-  const match = body.replace(HTML_COMMENT_REGEX, '').match(STATED_TIER_REGEX);
+  // The template can start with a license comment. Consume leading comments
+  // without joining text from opposite sides of a comment into a declaration.
+  let summary = body.trimStart();
+  while (summary.startsWith('<!--')) {
+    const end = summary.indexOf('-->', 4);
+    if (end === -1) {
+      return null;
+    }
+    summary = summary.slice(end + 3).trimStart();
+  }
+  const match = summary.match(STATED_TIER_REGEX);
   return match ? toTier(Number(match[1])) : null;
 }
 
