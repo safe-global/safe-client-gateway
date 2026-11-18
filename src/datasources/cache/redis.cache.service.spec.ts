@@ -19,6 +19,7 @@ const transactionMock = {
   incr: vi.fn(),
   get: vi.fn(),
   exec: vi.fn(),
+  execAsPipeline: vi.fn(),
 } as unknown as MockedObject<RedisTransaction>;
 
 const multiMock = vi.fn();
@@ -39,6 +40,7 @@ const mockLoggingService = {
 
 describe('RedisCacheService', () => {
   let target: RedisCacheService;
+  let fakeConfigurationService: FakeConfigurationService;
   let defaultExpirationTimeInSeconds: number;
 
   beforeEach(() => {
@@ -48,9 +50,11 @@ describe('RedisCacheService', () => {
     transactionMock.unlink.mockReturnValue(transactionMock);
     transactionMock.incr.mockReturnValue(transactionMock);
     transactionMock.get.mockReturnValue(transactionMock);
+    transactionMock.exec.mockResolvedValue([]);
+    transactionMock.execAsPipeline.mockResolvedValue([]);
 
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
-    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'expirationTimeInSeconds.default',
       defaultExpirationTimeInSeconds,
@@ -136,18 +140,21 @@ describe('RedisCacheService', () => {
   });
 
   describe('deleteByKey', () => {
-    it('unlinks the key and stamps the invalidation marker in a single transaction', async () => {
+    it('stamps the invalidation marker, then unlinks the key, in a single pipeline', async () => {
       vi.useFakeTimers();
       const now = Date.now();
       const key = faker.string.alphanumeric();
       const unlinkedCount = faker.number.int({ min: 0, max: 1 });
-      transactionMock.exec.mockResolvedValue([unlinkedCount, 1, true]);
+      transactionMock.execAsPipeline.mockResolvedValue([
+        faker.number.int({ min: 0, max: 1 }),
+        faker.number.int({ min: 0, max: 1 }),
+        unlinkedCount,
+      ]);
 
       const result = await target.deleteByKey(key);
 
       expect(result).toBe(unlinkedCount);
       expect(multiMock).toHaveBeenCalledOnce();
-      expect(transactionMock.unlink).toHaveBeenCalledWith(key);
       expect(transactionMock.hSet).toHaveBeenCalledWith(
         `invalidationTimeMs:${key}`,
         '',
@@ -158,15 +165,44 @@ describe('RedisCacheService', () => {
         defaultExpirationTimeInSeconds,
         'NX',
       );
-      expect(transactionMock.exec).toHaveBeenCalledOnce();
+      expect(transactionMock.unlink).toHaveBeenCalledWith(key);
+      expect(transactionMock.hSet).toHaveBeenCalledBefore(
+        transactionMock.unlink,
+      );
+      expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
+      expect(transactionMock.exec).not.toHaveBeenCalled();
       expect(redisClientMock.unlink).not.toHaveBeenCalled();
       expect(redisClientMock.hSet).not.toHaveBeenCalled();
     });
 
-    it('logs, unlinks the invalidation marker and rethrows when the transaction fails', async () => {
+    it('only unlinks the key when the default TTL is not positive', async () => {
+      fakeConfigurationService.set(
+        'expirationTimeInSeconds.default',
+        faker.number.int({ min: -3600, max: 0 }),
+      );
+      target = new RedisCacheService(
+        redisClientMock,
+        mockLoggingService,
+        fakeConfigurationService,
+        '',
+      );
+      const key = faker.string.alphanumeric();
+      const unlinkedCount = faker.number.int({ min: 0, max: 1 });
+      transactionMock.execAsPipeline.mockResolvedValue([unlinkedCount]);
+
+      const result = await target.deleteByKey(key);
+
+      expect(result).toBe(unlinkedCount);
+      expect(transactionMock.unlink).toHaveBeenCalledWith(key);
+      expect(transactionMock.hSet).not.toHaveBeenCalled();
+      expect(transactionMock.expire).not.toHaveBeenCalled();
+      expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
+    });
+
+    it('logs, unlinks the invalidation marker and rethrows when the pipeline fails', async () => {
       const key = faker.string.alphanumeric();
       const error = new Error(faker.lorem.sentence());
-      transactionMock.exec.mockRejectedValue(error);
+      transactionMock.execAsPipeline.mockRejectedValue(error);
 
       await expect(target.deleteByKey(key)).rejects.toThrow(error);
 
@@ -185,7 +221,10 @@ describe('RedisCacheService', () => {
     it('returns the INCR reply without a separate GET', async () => {
       const key = faker.string.alphanumeric();
       const count = faker.number.int({ min: 1 });
-      transactionMock.exec.mockResolvedValue([count, true]);
+      transactionMock.exec.mockResolvedValue([
+        count,
+        faker.number.int({ min: 0, max: 1 }),
+      ]);
 
       const result = await target.increment(
         key,

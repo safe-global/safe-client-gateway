@@ -14,6 +14,7 @@ const transactionMock = {
   expire: vi.fn(),
   unlink: vi.fn(),
   exec: vi.fn(),
+  execAsPipeline: vi.fn(),
 } as unknown as MockedObject<ReturnType<RedisClientType['multi']>>;
 
 const multiMock = vi.fn();
@@ -55,6 +56,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     transactionMock.expire.mockReturnValue(transactionMock);
     transactionMock.unlink.mockReturnValue(transactionMock);
     transactionMock.exec.mockResolvedValue([]);
+    transactionMock.execAsPipeline.mockResolvedValue([]);
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 3600 });
     mockConfigurationService.getOrThrow.mockImplementation((key) => {

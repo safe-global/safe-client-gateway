@@ -101,10 +101,13 @@ export class RedisCacheService
     const invalidationKey = this._prefixKey(
       RedisCacheService.invalidationTimeMsCacheDir(key).key,
     );
-    // see https://redis.io/commands/unlink/
-    const transaction = this.client.multi().unlink(keyWithPrefix);
+    // One pipelined round trip. The marker is written before the UNLINK, so
+    // the entry is never gone while its marker is still missing. A pipeline
+    // rather than MULTI, so the UNLINK still runs if Redis refuses the marker
+    // write (e.g. maxmemory reached).
+    const pipeline = this.client.multi();
     if (this.defaultExpirationTimeInSeconds > 0) {
-      transaction
+      pipeline
         .hSet(invalidationKey, '', Date.now().toString())
         .expire(
           invalidationKey,
@@ -112,10 +115,12 @@ export class RedisCacheService
           'NX',
         );
     }
+    // see https://redis.io/commands/unlink/
+    pipeline.unlink(keyWithPrefix);
 
     try {
-      const [unlinkedCount] = await transaction.exec();
-      return Number(unlinkedCount);
+      const replies = await pipeline.execAsPipeline();
+      return Number(replies.at(-1));
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
