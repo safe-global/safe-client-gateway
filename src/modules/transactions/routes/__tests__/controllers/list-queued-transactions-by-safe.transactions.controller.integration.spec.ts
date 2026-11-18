@@ -122,38 +122,76 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
-  it('should accept the deprecated trusted query and serve the same queue', async () => {
+  it('should serve the queue for the deprecated trusted query without forwarding it', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
-    const page = pageBuilder()
-      .with('count', 0)
-      .with('next', null)
-      .with('previous', null)
-      .with('results', [])
+    const signer = privateKeyToAccount(generatePrivateKey());
+    const safe = safeBuilder()
+      .with('nonce', 1)
+      .with('owners', [signer.address])
       .build();
+    const transaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .with('nonce', 1)
+      .buildWithConfirmations({
+        safe,
+        chainId: chain.chainId,
+        signers: [signer],
+      });
     const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        case getQueueUrl:
-          return Promise.resolve({ data: rawify(page), status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}/`) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getQueueUrl) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('count', 1)
+              .with('next', null)
+              .with('previous', null)
+              .with('results', [
+                safeQueueMultisigTransactionFrom(
+                  multisigToJson(transaction) as MultisigTransaction,
+                  chain.chainId,
+                ).build(),
+              ])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === `${safeConfigUrl}/api/v1/safe-apps/`) {
+        return Promise.resolve({ data: rawify([]), status: 200 });
+      }
+      if (url.includes(`${safeDecoderUrl}/api/v1/contracts/`)) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', []).build()),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
-    const queueUrl = `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`;
 
-    const withoutTrusted = await request(app.getHttpServer())
-      .get(queueUrl)
-      .expect(200);
-    const untrusted = await request(app.getHttpServer())
-      .get(`${queueUrl}?trusted=false`)
-      .expect(200);
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued?trusted=false`,
+      )
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.results).toContainEqual(
+          expect.objectContaining({
+            type: 'TRANSACTION',
+            transaction: expect.objectContaining({
+              id: `multisig_${safe.address}_${transaction.safeTxHash}`,
+            }),
+          }),
+        );
+      });
 
-    expect(untrusted.body).toEqual(withoutTrusted.body);
     expect(networkService.get).toHaveBeenCalledWith(
       expect.objectContaining({
         url: getQueueUrl,

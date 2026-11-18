@@ -13,19 +13,29 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { Page } from '#/domain/entities/page.entity';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
 } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '#/validation/entities/raw.entity';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 describe('Safes Controller Nonces', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string | undefined;
   let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
+
+  // No proposal waiting in the queue, so the Transaction Service's last
+  // trusted transaction is the latest one.
+  function emptyQueue(): Promise<{ data: Raw<Page<never>>; status: number }> {
+    return Promise.resolve({
+      data: rawify(pageBuilder<never>().with('results', []).build()),
+      status: 200,
+    });
+  }
   let configurationService: MockedObject<IConfigurationService>;
 
   beforeEach(async () => {
@@ -70,13 +80,8 @@ describe('Safes Controller Nonces', () => {
             data: rawify(multisigTransactionsPage),
             status: 200,
           });
-        // No proposal waiting in the queue, so the Transaction Service's last
-        // trusted transaction is the latest one.
         case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', []).build()),
-            status: 200,
-          });
+          return emptyQueue();
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -114,13 +119,8 @@ describe('Safes Controller Nonces', () => {
             data: rawify(multisigTransactionsPage),
             status: 200,
           });
-        // No proposal waiting in the queue, so the Transaction Service's last
-        // trusted transaction is the latest one.
         case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', []).build()),
-            status: 200,
-          });
+          return emptyQueue();
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
@@ -150,13 +150,8 @@ describe('Safes Controller Nonces', () => {
             data: rawify(multisigTransactionsPage),
             status: 200,
           });
-        // No proposal waiting in the queue, so the Transaction Service's last
-        // trusted transaction is the latest one.
         case `${queueBaseUri}/api/v1/multisig-transactions/queue`:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', []).build()),
-            status: 200,
-          });
+          return emptyQueue();
       }
       return Promise.reject(`No matching rule for url: ${url}`);
     });
