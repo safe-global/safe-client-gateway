@@ -13,6 +13,10 @@ import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import {
+  getPolicyContracts,
+  POLICY_ENGINE_CHAIN_IDS,
+} from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
@@ -25,8 +29,12 @@ import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
-/** `AllowPolicy`, a known policy contract on the policy-engine chains. */
-const KNOWN_POLICY = getAddress('0x92e94Af03982C2486dffa8DcBc5d069D33996eF2');
+const POLICY_ENGINE_CHAIN_ID = faker.helpers.arrayElement([
+  ...POLICY_ENGINE_CHAIN_IDS,
+]);
+const KNOWN_POLICY = faker.helpers.arrayElement(
+  getPolicyContracts(POLICY_ENGINE_CHAIN_ID),
+);
 /** Gnosis Chain, which has no policy engine. */
 const NON_POLICY_ENGINE_CHAIN_ID = '100';
 
@@ -64,7 +72,7 @@ describe('PolicyConfigurationRequestsService', () => {
   const spaceId = faker.number.int({ min: 1, max: 100 });
   const userId = faker.number.int({ min: 1, max: 100 });
   const safe = {
-    chainId: '11155111',
+    chainId: POLICY_ENGINE_CHAIN_ID,
     address: getAddress(faker.finance.ethereumAddress()),
   };
   const request = {

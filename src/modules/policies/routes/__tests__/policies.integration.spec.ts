@@ -57,7 +57,10 @@ import {
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
-import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
+import {
+  getPolicyContracts,
+  getSafePolicyGuardDeployments,
+} from '#/modules/policies/domain/policy-deployments.constants';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
@@ -75,8 +78,9 @@ const SEPOLIA_CHAIN_ID = '11155111';
 const DAY_IN_MINUTES = 1440;
 const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
-/** `AllowPolicy`, a known policy contract on the policy-engine chains. */
-const KNOWN_POLICY = getAddress('0x92e94Af03982C2486dffa8DcBc5d069D33996eF2');
+const KNOWN_POLICY = faker.helpers.arrayElement(
+  getPolicyContracts(SEPOLIA_CHAIN_ID),
+);
 
 function randomSepoliaMultiSendAddress(): Address {
   return faker.helpers.arrayElement(
