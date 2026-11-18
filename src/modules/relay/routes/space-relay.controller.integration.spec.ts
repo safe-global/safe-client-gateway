@@ -301,7 +301,7 @@ describe('SpaceRelayController', () => {
             data: rawify(args.chain ?? chain),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${args.safe}`:
+        case `${chain.transactionService}/api/v1/safes/${args.safe}/`:
           return safe
             ? Promise.resolve({ data: rawify(safe), status: 200 })
             : Promise.reject(`No matching rule for url: ${url}`);

@@ -82,7 +82,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`:
             return Promise.resolve({ data: rawify(args.chain), status: 200 });
-          case `${args.chain.transactionService}/api/v1/safes/${args.safe.address}`:
+          case `${args.chain.transactionService}/api/v1/safes/${args.safe.address}/`:
             return Promise.resolve({ data: rawify(args.safe), status: 200 });
           case `${args.chain.transactionService}/api/v2/safes/${args.safe.address}/multisig-transactions/`:
             return Promise.resolve({
@@ -239,7 +239,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`:
             return Promise.resolve({ data: rawify(args.chain), status: 200 });
-          case `${args.chain.transactionService}/api/v1/safes/${args.safe.address}`:
+          case `${args.chain.transactionService}/api/v1/safes/${args.safe.address}/`:
             return Promise.resolve({ data: rawify(args.safe), status: 200 });
           case `${args.chain.transactionService}/api/v1/about/singletons/`:
             return Promise.resolve({ data: rawify(singletons), status: 200 });
@@ -453,7 +453,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}/balances/`:
             return Promise.resolve({ data: rawify([]), status: 200 });

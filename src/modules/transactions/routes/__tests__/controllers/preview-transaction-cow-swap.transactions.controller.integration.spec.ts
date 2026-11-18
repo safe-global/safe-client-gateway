@@ -109,17 +109,18 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(order), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
+          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
+          url ===
+          `${chain.transactionService}/api/v1/tokens/${order.sellToken}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -254,17 +255,18 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(order), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
+          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
+          url ===
+          `${chain.transactionService}/api/v1/tokens/${order.sellToken}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -279,7 +281,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${swapTransaction.to}`
+          `${chain.transactionService}/api/v1/tokens/${swapTransaction.to}/`
         ) {
           return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
@@ -389,7 +391,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.reject({ status: 500 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -452,17 +454,18 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(order), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
+          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}/`
         ) {
           return Promise.reject({ status: 500 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
+          url ===
+          `${chain.transactionService}/api/v1/tokens/${order.sellToken}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -525,17 +528,18 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(order), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
+          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
+          url ===
+          `${chain.transactionService}/api/v1/tokens/${order.sellToken}/`
         ) {
           return Promise.reject({ status: 500 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -601,17 +605,18 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(order), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
+          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
+          url ===
+          `${chain.transactionService}/api/v1/tokens/${order.sellToken}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -692,13 +697,13 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${buyToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${sellToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
@@ -706,7 +711,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(fullAppData), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -831,13 +836,13 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${buyToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${sellToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
@@ -845,7 +850,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(fullAppData), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -854,7 +859,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${twapTransaction.to}`
+          `${chain.transactionService}/api/v1/tokens/${twapTransaction.to}/`
         ) {
           return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
@@ -960,13 +965,13 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${buyToken.address}/`
         ) {
           return Promise.reject({ status: 500 });
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${sellToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
@@ -974,7 +979,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(fullAppData), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -1020,13 +1025,13 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${buyToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${sellToken.address}/`
         ) {
           return Promise.reject({ status: 500 });
         }
@@ -1034,7 +1039,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(fullAppData), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
@@ -1087,13 +1092,13 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${buyToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(buyToken), status: 200 });
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${sellToken.address}/`
         ) {
           return Promise.resolve({ data: rawify(sellToken), status: 200 });
         }
@@ -1101,7 +1106,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
           return Promise.resolve({ data: rawify(fullAppData), status: 200 });
         }
         if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
