@@ -45,7 +45,7 @@ type Call = {
 export type SwapOrderCalls = {
   preSignature: Hex;
   approvedTokens: Array<Address>;
-  wraps: Array<{ token: Address; value: bigint }>;
+  wrappedTokens: Array<Address>;
 };
 
 @Injectable()
@@ -90,7 +90,7 @@ export class SwapOrderHelper {
    * The transaction is either the presignature itself, or a batch sent with
    * DELEGATECALL to an official MultiSend deployment. The batch must contain
    * exactly one presignature, and otherwise only approvals to the VaultRelayer
-   * and wraps (WETH `deposit()`), whose tokens and amounts the caller checks
+   * and wraps (WETH `deposit()`), whose tokens the caller checks
    * against the order.
    * The presignature is a CALL without value to the Settlement contract that
    * signs an order owned by the Safe.
@@ -130,7 +130,7 @@ export class SwapOrderHelper {
     const orderCalls: SwapOrderCalls = {
       preSignature: preSignature.data,
       approvedTokens: [],
-      wraps: [],
+      wrappedTokens: [],
     };
 
     for (const call of calls) {
@@ -147,7 +147,7 @@ export class SwapOrderHelper {
       }
 
       if (call.data.toLowerCase() === SwapOrderHelper.WrapSelector) {
-        orderCalls.wraps.push({ token: call.to, value: call.value });
+        orderCalls.wrappedTokens.push(call.to);
         continue;
       }
 

@@ -359,7 +359,7 @@ describe('SwapOrderHelper.findSwapOrder', () => {
     expect(target.findSwapOrder(single(call))).toStrictEqual({
       preSignature: call.data,
       approvedTokens: [],
-      wraps: [],
+      wrappedTokens: [],
     });
   });
 
@@ -373,7 +373,7 @@ describe('SwapOrderHelper.findSwapOrder', () => {
     ).toStrictEqual({
       preSignature: presignCall.data,
       approvedTokens: [approveCall.to],
-      wraps: [{ token: wrapCall.to, value: wrapCall.value }],
+      wrappedTokens: [wrapCall.to],
     });
   });
 

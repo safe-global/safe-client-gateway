@@ -18,10 +18,6 @@ import {
 
 @Injectable()
 export class SwapOrderMapper {
-  // Wraps may exceed the order's sell amount plus fee by this percentage
-  private static readonly WrapTolerancePercent = BigInt(1);
-  private static readonly PercentBase = BigInt(100);
-
   constructor(
     private readonly gpv2Decoder: GPv2Decoder,
     private readonly swapOrderHelper: SwapOrderHelper,
@@ -100,8 +96,8 @@ export class SwapOrderMapper {
 
   /**
    * Checks the approvals and wraps batched with the presignature against the order:
-   * they must be for its sell token, and wraps only of a trusted token, for at most the sell amount plus fee
-   * and a 1% tolerance.
+   * they must be for its sell token, and wraps only of a trusted token.
+   * The wrapped amount is not checked, as it may differ from the order's sell amount.
    */
   private assertCallsMatchOrder(args: {
     orderCalls: SwapOrderCalls;
@@ -116,23 +112,12 @@ export class SwapOrderMapper {
       throw new Error('Approval is not for the order sell token');
     }
 
-    if (orderCalls.wraps.length === 0) {
+    if (orderCalls.wrappedTokens.length === 0) {
       return;
     }
 
-    const wrappedAmount = orderCalls.wraps.reduce(
-      (total, wrap) => total + wrap.value,
-      BigInt(0),
-    );
-    // wrappedAmount <= (sellAmount + feeAmount) * (100 + tolerance) / 100, without rounding
-    const isWithinOrderAmount =
-      wrappedAmount * SwapOrderMapper.PercentBase <=
-      (order.sellAmount + order.feeAmount) *
-        (SwapOrderMapper.PercentBase + SwapOrderMapper.WrapTolerancePercent);
     const isOrderWrap =
-      sellToken.trusted &&
-      orderCalls.wraps.every((wrap) => isSellToken(wrap.token)) &&
-      isWithinOrderAmount;
+      sellToken.trusted && orderCalls.wrappedTokens.every(isSellToken);
 
     if (!isOrderWrap) {
       throw new Error('Wrap does not match the order sell token');
