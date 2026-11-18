@@ -38,13 +38,27 @@ export interface IMessagesRepository {
     signature: string;
   }): Promise<unknown>;
 
+  /**
+   * Clears the Safe's messages (and the message, when `messageHash` is given)
+   * on every cache layer, then records when the Safe's messages changed. The
+   * change is not recorded when a layer fails to clear.
+   */
+  clearMessagesAndRecordChange(args: {
+    chainId: string;
+    safeAddress: Address;
+    messageHash?: string;
+    changedAt: Date;
+  }): Promise<void>;
+
+  /** Resolves to whether every cache layer was cleared; failures are logged. */
   clearMessagesBySafe(args: {
     chainId: string;
     safeAddress: Address;
-  }): Promise<void>;
+  }): Promise<boolean>;
 
+  /** Resolves to whether every cache layer was cleared; failures are logged. */
   clearMessagesByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<void>;
+  }): Promise<boolean>;
 }

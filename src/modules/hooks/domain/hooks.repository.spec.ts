@@ -67,8 +67,7 @@ const mockDelegatesRepository = vi.mocked({
 } as MockedObject<DelegatesV3Repository>);
 
 const mockMessagesRepository = vi.mocked({
-  clearMessagesBySafe: vi.fn(),
-  clearMessagesByHash: vi.fn(),
+  clearMessagesAndRecordChange: vi.fn(),
 } as unknown as MockedObject<MessagesRepository>);
 
 const mockSafeAppsRepository = vi.mocked({
@@ -245,15 +244,8 @@ describe('HooksRepository (Unit)', () => {
       ['DELETED_MULTISIG_TRANSACTION', deletedMultisigTransactionEventBuilder],
     ] as const;
 
-    const messageEvents = [
-      ['MESSAGE_CREATED', messageCreatedEventBuilder],
-      ['MESSAGE_CONFIRMATION', newMessageConfirmationEventBuilder],
-    ] as const;
-
     beforeEach(() => {
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
-      mockMessagesRepository.clearMessagesBySafe.mockResolvedValue();
-      mockMessagesRepository.clearMessagesByHash.mockResolvedValue();
     });
 
     afterEach(() => {
@@ -279,24 +271,36 @@ describe('HooksRepository (Unit)', () => {
       },
     );
 
-    it.each(messageEvents)(
-      'should record when the messages changed on %s',
-      async (_, builder) => {
-        const event = builder().build();
-        const publishedAt = faker.date.recent();
+    it('should clear the messages and record when they changed on MESSAGE_CREATED', async () => {
+      const event = messageCreatedEventBuilder().build();
+      const publishedAt = faker.date.recent();
 
-        await hooksRepository.onEvent(event, publishedAt);
+      await hooksRepository.onEvent(event, publishedAt);
 
-        expect(
-          mockSafeQueueChangesRepository.setChangedAt,
-        ).toHaveBeenCalledExactlyOnceWith({
-          change: 'messages',
-          chainId: event.chainId,
-          safeAddress: event.address,
-          changedAt: publishedAt,
-        });
-      },
-    );
+      expect(
+        mockMessagesRepository.clearMessagesAndRecordChange,
+      ).toHaveBeenCalledExactlyOnceWith({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        changedAt: publishedAt,
+      });
+    });
+
+    it('should clear the message and the messages and record when they changed on MESSAGE_CONFIRMATION', async () => {
+      const event = newMessageConfirmationEventBuilder().build();
+      const publishedAt = faker.date.recent();
+
+      await hooksRepository.onEvent(event, publishedAt);
+
+      expect(
+        mockMessagesRepository.clearMessagesAndRecordChange,
+      ).toHaveBeenCalledExactlyOnceWith({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        messageHash: event.messageHash,
+        changedAt: publishedAt,
+      });
+    });
 
     it('should not record a change on an event that leaves the queue and the messages as they are', async () => {
       await hooksRepository.onEvent(
@@ -306,6 +310,9 @@ describe('HooksRepository (Unit)', () => {
 
       expect(
         mockSafeQueueChangesRepository.setChangedAt,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockMessagesRepository.clearMessagesAndRecordChange,
       ).not.toHaveBeenCalled();
     });
 

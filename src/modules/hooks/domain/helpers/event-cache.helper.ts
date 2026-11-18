@@ -651,18 +651,11 @@ export class EventCacheHelper {
     // A message created affects:
     // - the messages associated to the Safe
     return [
-      this.messagesRepository
-        .clearMessagesBySafe({
-          chainId: event.chainId,
-          safeAddress: event.address,
-        })
-        .then(() =>
-          this.recordMessagesChange({
-            chainId: event.chainId,
-            safeAddress: event.address,
-            changedAt,
-          }),
-        ),
+      this.messagesRepository.clearMessagesAndRecordChange({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        changedAt,
+      }),
     ];
   }
 
@@ -674,36 +667,13 @@ export class EventCacheHelper {
     // - the message itself
     // - the messages associated to the Safe
     return [
-      Promise.all([
-        this.messagesRepository.clearMessagesByHash({
-          chainId: event.chainId,
-          messageHash: event.messageHash,
-        }),
-        this.messagesRepository.clearMessagesBySafe({
-          chainId: event.chainId,
-          safeAddress: event.address,
-        }),
-      ]).then(() =>
-        this.recordMessagesChange({
-          chainId: event.chainId,
-          safeAddress: event.address,
-          changedAt,
-        }),
-      ),
+      this.messagesRepository.clearMessagesAndRecordChange({
+        chainId: event.chainId,
+        safeAddress: event.address,
+        messageHash: event.messageHash,
+        changedAt,
+      }),
     ];
-  }
-
-  // The messages clears log their failures instead of rejecting, so this runs
-  // once they settle
-  private recordMessagesChange(args: {
-    chainId: string;
-    safeAddress: Address;
-    changedAt: Date;
-  }): Promise<void> {
-    return this.safeQueueChangesRepository.setChangedAt({
-      change: 'messages',
-      ...args,
-    });
   }
 
   // Config Service events
