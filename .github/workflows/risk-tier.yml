@@ -9,17 +9,24 @@
 # Content-based escalations (guards, secrets, migrations, …) stay with the
 # reviewer: this check computes a floor, not the final word.
 #
+# A second check, "Risk tier approvals", fails until the PR has the human
+# approvals its tier needs (Tier 1: two, Tier 2: one, Tier 3/4: none). It
+# counts each reviewer's latest decisive review, and ignores bots, the PR
+# author, commit authors, and reviewers with no OWNER/MEMBER/COLLABORATOR
+# association. It re-runs on every review event, so it turns green as soon as
+# the last needed approval lands.
+#
 # The tier map and the script are read from the PR's BASE commit, so a PR
 # cannot lower its own tier by editing them. Only while the base has no copy
 # yet (the PR that introduces this check) does it fall back to the PR's own.
 # The PR head is never checked out beyond those two files.
 #
-# The workflow needs no write permission: the tier is reported through the
-# job summary, an annotation, and the `report` job's name in the checks list,
-# never a label or a comment.
+# The workflow needs no write permission: it only reads the PR's files,
+# reviews and commits, and reports through the job summary, annotations and
+# job names, never a label or a comment.
 #
-# This check informs; it does not gate on its own. To block merges, mark the
-# "Compute risk tier" check as required in branch protection (see
+# Neither check gates on its own. To block merges, mark "Compute risk tier"
+# and "Risk tier approvals" as required in branch protection (see
 # risk-tiers.md, Enforcement status).
 # -----------------------------------------------------------------------------
 name: Risk tier
@@ -27,6 +34,9 @@ name: Risk tier
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, ready_for_review]
+  # Re-count approvals whenever a review is submitted, edited or dismissed.
+  pull_request_review:
+    types: [submitted, edited, dismissed]
 
 permissions:
   contents: read
@@ -45,6 +55,9 @@ jobs:
     outputs:
       tier: ${{ steps.tier.outputs.tier }}
       allows: ${{ steps.tier.outputs.allows }}
+      approvals_required: ${{ steps.tier.outputs.approvals_required }}
+      approvals_count: ${{ steps.tier.outputs.approvals_count }}
+      approvals_ok: ${{ steps.tier.outputs.approvals_ok }}
     steps:
       - name: Check out the tier map and script from the base commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -85,7 +98,7 @@ jobs:
         with:
           node-version-file: ${{ steps.source.outputs.dir }}/.nvmrc
 
-      - name: List changed files
+      - name: List changed files, reviews and commit authors
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -94,6 +107,12 @@ jobs:
           gh api --paginate "repos/$REPO/pulls/$PR/files" \
             --jq '.[] | {filename, previous_filename, additions, deletions} | tojson' \
             > "$RUNNER_TEMP/changed-files.ndjson"
+          gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
+            --jq '.[] | select(.user != null) | {login: .user.login, type: .user.type, association: .author_association, state} | tojson' \
+            > "$RUNNER_TEMP/reviews.ndjson"
+          gh api --paginate "repos/$REPO/pulls/$PR/commits" \
+            --jq '.[] | .author.login // empty' \
+            > "$RUNNER_TEMP/commit-authors.txt"
 
       - name: Compute and check the tier
         id: tier
@@ -101,11 +120,14 @@ jobs:
           # Passed through the environment, never interpolated into the
           # script: the description is untrusted input.
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           DIR: ${{ steps.source.outputs.dir }}
         run: |
           node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$DIR/scripts/risk-tier.ts" \
             --map "$DIR/docs/agents/risk-tiers.md" \
-            --files "$RUNNER_TEMP/changed-files.ndjson"
+            --files "$RUNNER_TEMP/changed-files.ndjson" \
+            --reviews "$RUNNER_TEMP/reviews.ndjson" \
+            --commit-authors "$RUNNER_TEMP/commit-authors.txt"
 
   # Shows the tier in the PR's checks list through this job's name, e.g.
   # "Tier 1 — two human maintainer approvals required". A job name may use
@@ -127,3 +149,28 @@ jobs:
           TIER: ${{ needs.compute.outputs.tier }}
           ALLOWS: ${{ needs.compute.outputs.allows }}
         run: echo "Risk tier $TIER — $ALLOWS (docs/agents/risk-tiers.md)"
+
+  # The approval gate. Its name is stable, so it can be a required check. It
+  # stays red until the tier's human approvals are in; a new push resets it
+  # only if branch protection dismisses stale approvals.
+  approvals:
+    name: Risk tier approvals
+    needs: compute
+    if: always() && needs.compute.outputs.tier != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Check human approvals for the tier
+        env:
+          TIER: ${{ needs.compute.outputs.tier }}
+          REQUIRED: ${{ needs.compute.outputs.approvals_required }}
+          COUNT: ${{ needs.compute.outputs.approvals_count }}
+          OK: ${{ needs.compute.outputs.approvals_ok }}
+        run: |
+          if [ "$OK" = "true" ]; then
+            echo "Tier $TIER: $COUNT of $REQUIRED required human approvals."
+          else
+            echo "::error title=Risk tier approvals::Tier $TIER needs $REQUIRED human maintainer approvals; it has $COUNT. The PR author, commit authors and bots do not count (docs/agents/risk-tiers.md)."
+            exit 1
+          fi

@@ -8,11 +8,17 @@ import {
   type ChangedFile,
   DEFAULT_TIER,
   globToRegExp,
+  humanApprovers,
   judge,
+  judgeApprovals,
   matchTier,
   parseChangedFiles,
+  parseLogins,
+  parseReviews,
   parseStatedTier,
   parseTierMap,
+  REQUIRED_HUMAN_APPROVALS,
+  type Review,
   renderSummary,
   SIZE_ESCALATION_LINES,
   type TierMap,
@@ -28,6 +34,14 @@ function changedFileBuilder(): IBuilder<ChangedFile> {
     .with('filename', faker.system.filePath().slice(1))
     .with('previousFilename', null)
     .with('changes', faker.number.int({ min: 1, max: 50 }));
+}
+
+function reviewBuilder(): IBuilder<Review> {
+  return new Builder<Review>()
+    .with('login', faker.internet.username())
+    .with('isBot', false)
+    .with('association', 'MEMBER')
+    .with('state', 'APPROVED');
 }
 
 function moduleName(): string {
@@ -315,13 +329,178 @@ describe('risk-tier', () => {
         changedFileBuilder().with('filename', 'a/x.ts').build(),
       ]);
 
-      const summary = renderSummary(assessment, judge(1, null));
+      const approver = faker.internet.username();
+
+      const summary = renderSummary(
+        assessment,
+        judge(1, null),
+        judgeApprovals(1, [approver]),
+      );
 
       expect(summary).toContain(
         '**Risk tier:** 1 — two human maintainer approvals required.',
       );
       expect(summary).toContain('### Failures');
       expect(summary).toContain('- `a/x.ts`');
+      expect(summary).toContain(
+        `Human approvals: 1 of 2 required (${approver})`,
+      );
+    });
+  });
+
+  describe('parseReviews', () => {
+    it('reads GitHub review entries and flags bots', () => {
+      const human = faker.internet.username();
+      const bot = `${faker.internet.username()}[bot]`;
+      const ndjson = [
+        JSON.stringify({
+          login: human,
+          type: 'User',
+          association: 'MEMBER',
+          state: 'APPROVED',
+        }),
+        '',
+        JSON.stringify({
+          login: bot,
+          type: 'User',
+          association: 'NONE',
+          state: 'APPROVED',
+        }),
+      ].join('\n');
+
+      expect(parseReviews(ndjson)).toEqual([
+        {
+          login: human,
+          isBot: false,
+          association: 'MEMBER',
+          state: 'APPROVED',
+        },
+        { login: bot, isBot: true, association: 'NONE', state: 'APPROVED' },
+      ]);
+    });
+
+    it('flags an account of type Bot', () => {
+      const [review] = parseReviews(
+        JSON.stringify({
+          login: faker.internet.username(),
+          type: 'Bot',
+          association: 'MEMBER',
+          state: 'APPROVED',
+        }),
+      );
+
+      expect(review.isBot).toBe(true);
+    });
+
+    it('throws on an entry without a login or state', () => {
+      expect(() => parseReviews(JSON.stringify({ state: 'APPROVED' }))).toThrow(
+        'Malformed review entry',
+      );
+    });
+  });
+
+  describe('parseLogins', () => {
+    it('reads one login per line, ignoring blanks and whitespace', () => {
+      const [a, b] = [faker.internet.username(), faker.internet.username()];
+
+      expect(parseLogins(`${a}\n\n  ${b}  \n`)).toEqual([a, b]);
+    });
+  });
+
+  describe('humanApprovers', () => {
+    it('counts each human approver once', () => {
+      const login = faker.internet.username();
+      const reviews = [
+        reviewBuilder().with('login', login).build(),
+        reviewBuilder().with('login', login).build(),
+      ];
+
+      expect(humanApprovers(reviews, [])).toEqual([login]);
+    });
+
+    it("uses each reviewer's latest decisive review", () => {
+      const withdrawn = faker.internet.username();
+      const renewed = faker.internet.username();
+      const reviews = [
+        reviewBuilder().with('login', withdrawn).build(),
+        reviewBuilder()
+          .with('login', withdrawn)
+          .with('state', 'CHANGES_REQUESTED')
+          .build(),
+        reviewBuilder()
+          .with('login', renewed)
+          .with('state', 'DISMISSED')
+          .build(),
+        reviewBuilder().with('login', renewed).build(),
+      ];
+
+      expect(humanApprovers(reviews, [])).toEqual([renewed]);
+    });
+
+    it('keeps an approval that a later comment follows', () => {
+      const login = faker.internet.username();
+      const reviews = [
+        reviewBuilder().with('login', login).build(),
+        reviewBuilder().with('login', login).with('state', 'COMMENTED').build(),
+      ];
+
+      expect(humanApprovers(reviews, [])).toEqual([login]);
+    });
+
+    it('drops an approval that was later dismissed', () => {
+      const login = faker.internet.username();
+      const reviews = [
+        reviewBuilder().with('login', login).build(),
+        reviewBuilder().with('login', login).with('state', 'DISMISSED').build(),
+      ];
+
+      expect(humanApprovers(reviews, [])).toEqual([]);
+    });
+
+    it('ignores bots and reviewers with no standing association', () => {
+      const reviews = [
+        reviewBuilder().with('isBot', true).build(),
+        reviewBuilder().with('association', 'CONTRIBUTOR').build(),
+        reviewBuilder().with('association', 'NONE').build(),
+      ];
+
+      expect(humanApprovers(reviews, [])).toEqual([]);
+    });
+
+    it('counts OWNER, MEMBER and COLLABORATOR approvals', () => {
+      const reviews = ['OWNER', 'MEMBER', 'COLLABORATOR'].map((association) =>
+        reviewBuilder().with('association', association).build(),
+      );
+
+      expect(humanApprovers(reviews, [])).toHaveLength(3);
+    });
+
+    it('ignores the excluded logins, case-insensitively', () => {
+      const author = faker.internet.username();
+      const reviews = [reviewBuilder().with('login', author).build()];
+
+      expect(humanApprovers(reviews, [author.toUpperCase()])).toEqual([]);
+    });
+  });
+
+  describe('judgeApprovals', () => {
+    it.each([1, 2, 3, 4] as const)(
+      'requires the tier table count of human approvals for Tier %i',
+      (tier) => {
+        const required = REQUIRED_HUMAN_APPROVALS[tier];
+        const enough = Array.from({ length: required }, () =>
+          faker.internet.username(),
+        );
+
+        expect(judgeApprovals(tier, enough).satisfied).toBe(true);
+        if (required > 0) {
+          expect(judgeApprovals(tier, enough.slice(1)).satisfied).toBe(false);
+        }
+      },
+    );
+
+    it('requires two human approvals at Tier 1 and one at Tier 2', () => {
+      expect(REQUIRED_HUMAN_APPROVALS).toEqual({ 1: 2, 2: 1, 3: 0, 4: 0 });
     });
   });
 

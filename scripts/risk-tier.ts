@@ -1,17 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Computes a pull request's risk tier from the files it changes, using the
- * `tier-map` block in docs/agents/risk-tiers.md, and checks it against the
- * tier the PR description states.
+ * `tier-map` block in docs/agents/risk-tiers.md, checks it against the tier
+ * the PR description states, and counts whether the PR has the human
+ * approvals that tier requires.
  *
  * Run by .github/workflows/risk-tier.yml as plain Node (type stripping), so it
  * imports nothing but Node built-ins: the workflow runs it without installing
  * the repository's dependencies.
  *
  * Usage: node scripts/risk-tier.ts --map <risk-tiers.md> --files <files.ndjson>
- *   --files  one JSON object per line, shaped like the GitHub "list pull request
- *            files" API entries: { filename, previous_filename?, additions, deletions }
- *   PR_BODY  (env) the pull request description
+ *          --reviews <reviews.ndjson> --commit-authors <logins.txt>
+ *   --files           one JSON object per line, shaped like the GitHub "list
+ *                     pull request files" API entries:
+ *                     { filename, previous_filename?, additions, deletions }
+ *   --reviews         one JSON object per line, in submission order:
+ *                     { login, type, association, state }
+ *   --commit-authors  one GitHub login per line: everyone who authored a commit
+ *   PR_BODY           (env) the pull request description
+ *   PR_AUTHOR         (env) the login that opened the pull request
  *   GITHUB_OUTPUT / GITHUB_STEP_SUMMARY (env, optional) written when set
  *
  * Reports through outputs, the job summary and a `::notice` annotation only:
@@ -43,6 +50,19 @@ export type TierVerdict = {
   failures: Array<string>;
 };
 
+export type Review = {
+  login: string;
+  isBot: boolean;
+  association: string;
+  state: string;
+};
+
+export type ApprovalVerdict = {
+  required: number;
+  approvers: Array<string>;
+  satisfied: boolean;
+};
+
 export const TIERS: ReadonlyArray<Tier> = [1, 2, 3, 4];
 export const DEFAULT_TIER: Tier = 2;
 export const SIZE_ESCALATION_LINES = 400;
@@ -55,6 +75,26 @@ const STATED_TIER_REGEX = /\*\*Risk tier:\*\*\s*(?:tier\s*)?([1-4])\b/i;
 const HTML_COMMENT_REGEX = /<!--[\s\S]*?-->/g;
 const SIZE_EXEMPT_REGEX =
   /(?:\.spec\.ts|\.e2e-spec\.ts)$|(?:^|\/)__tests__\/|^test\/|(?:^|\/)yarn\.lock$/;
+
+/** Human approvals each tier needs before merge (risk-tiers.md, the tier table). */
+export const REQUIRED_HUMAN_APPROVALS: Record<Tier, number> = {
+  1: 2,
+  2: 1,
+  3: 0,
+  4: 0,
+};
+
+// Associations GitHub reports for people with a standing relationship to the
+// repository. Code-owner review in branch protection narrows this to the
+// maintainers team; this check only guarantees the count.
+const MAINTAINER_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+// Review states that change a reviewer's standing. COMMENTED and PENDING do
+// not: a comment after an approval leaves the approval in place.
+const DECISIVE_REVIEW_STATES = new Set([
+  'APPROVED',
+  'CHANGES_REQUESTED',
+  'DISMISSED',
+]);
 
 const ALLOWS: Record<Tier, string> = {
   1: 'two human maintainer approvals required',
@@ -234,9 +274,89 @@ export function parseChangedFiles(ndjson: string): Array<ChangedFile> {
     });
 }
 
+export function parseReviews(ndjson: string): Array<Review> {
+  return ndjson
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .map((line): Review => {
+      const entry: unknown = JSON.parse(line);
+      if (
+        typeof entry !== 'object' ||
+        entry === null ||
+        !('login' in entry) ||
+        typeof entry.login !== 'string' ||
+        !('state' in entry) ||
+        typeof entry.state !== 'string'
+      ) {
+        throw new Error(`Malformed review entry: ${line}`);
+      }
+      const type =
+        'type' in entry && typeof entry.type === 'string' ? entry.type : '';
+      const association =
+        'association' in entry && typeof entry.association === 'string'
+          ? entry.association
+          : '';
+      return {
+        login: entry.login,
+        isBot: type === 'Bot' || entry.login.endsWith('[bot]'),
+        association,
+        state: entry.state,
+      };
+    });
+}
+
+/** One GitHub login per line; blank lines ignored. */
+export function parseLogins(text: string): Array<string> {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+}
+
+/**
+ * The humans whose latest decisive review is an approval. Bots, people without
+ * a standing association to the repository, and anyone in `excluded` (the PR
+ * author and every commit author: whoever wrote or directed the change cannot
+ * approve it) are not counted. Logins compare case-insensitively, as on GitHub.
+ */
+export function humanApprovers(
+  reviews: ReadonlyArray<Review>,
+  excluded: ReadonlyArray<string>,
+): Array<string> {
+  const excludedLogins = new Set(excluded.map((login) => login.toLowerCase()));
+  const latest = new Map<string, Review>();
+  for (const review of reviews) {
+    if (DECISIVE_REVIEW_STATES.has(review.state)) {
+      latest.set(review.login.toLowerCase(), review);
+    }
+  }
+  return [...latest.entries()]
+    .filter(
+      ([login, review]) =>
+        review.state === 'APPROVED' &&
+        !review.isBot &&
+        MAINTAINER_ASSOCIATIONS.has(review.association) &&
+        !excludedLogins.has(login),
+    )
+    .map(([, review]) => review.login);
+}
+
+export function judgeApprovals(
+  tier: Tier,
+  approvers: ReadonlyArray<string>,
+): ApprovalVerdict {
+  const required = REQUIRED_HUMAN_APPROVALS[tier];
+  return {
+    required,
+    approvers: [...approvers],
+    satisfied: approvers.length >= required,
+  };
+}
+
 export function renderSummary(
   assessment: TierAssessment,
   verdict: TierVerdict,
+  approvals: ApprovalVerdict,
 ): string {
   const lines = [
     '## Risk tier',
@@ -249,6 +369,7 @@ export function renderSummary(
         : '.'),
     `- Stated in the PR description: ${verdict.statedTier === null ? 'none' : `Tier ${verdict.statedTier}`}.`,
     '- Content-based escalations (guards, signatures, secrets, migrations, new dependencies, …) are not computed here; the reviewer applies them per docs/agents/risk-tiers.md.',
+    `- Human approvals: ${approvals.approvers.length} of ${approvals.required} required${approvals.approvers.length > 0 ? ` (${approvals.approvers.join(', ')})` : ''}. The PR author, commit authors and bots are not counted.`,
     '',
   ];
   if (verdict.failures.length > 0) {
@@ -292,7 +413,17 @@ function main(): void {
     assessment.computedTier,
     parseStatedTier(process.env.PR_BODY ?? ''),
   );
-  const summary = renderSummary(assessment, verdict);
+  const approvals = judgeApprovals(
+    verdict.effectiveTier,
+    humanApprovers(
+      parseReviews(fs.readFileSync(argValue('--reviews'), 'utf8')),
+      [
+        process.env.PR_AUTHOR ?? '',
+        ...parseLogins(fs.readFileSync(argValue('--commit-authors'), 'utf8')),
+      ].filter((login) => login !== ''),
+    ),
+  );
+  const summary = renderSummary(assessment, verdict, approvals);
 
   process.stdout.write(`${summary}\n`);
   if (process.env.GITHUB_STEP_SUMMARY) {
@@ -301,7 +432,14 @@ function main(): void {
   if (process.env.GITHUB_OUTPUT) {
     fs.appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `tier=${verdict.effectiveTier}\nallows=${ALLOWS[verdict.effectiveTier]}\n`,
+      [
+        `tier=${verdict.effectiveTier}`,
+        `allows=${ALLOWS[verdict.effectiveTier]}`,
+        `approvals_required=${approvals.required}`,
+        `approvals_count=${approvals.approvers.length}`,
+        `approvals_ok=${approvals.satisfied}`,
+        '',
+      ].join('\n'),
     );
   }
   process.stdout.write(

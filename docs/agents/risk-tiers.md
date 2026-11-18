@@ -264,22 +264,30 @@ tier4:
   - [reviewing.md](reviewing.md) requires the tier at the top of every review. The review hook that runs before each commit applies it, and so does the `Architecture Check` workflow (`@claude arch-review`).
 - **CI computes the tier.** The `Risk tier` workflow (`.github/workflows/risk-tier.yml`, script `scripts/risk-tier.ts`) runs on every PR:
   - It parses the `tier-map` block above and computes the tier from the changed paths. A rename counts its old path too, and the size row of rule 3 applies.
-  - It reports the result without any write permission on the PR. The tier appears as a check named `Tier <n> — <what it allows>` in the PR's checks list, as an annotation, and in the job summary with every path listed by tier. There is no label or comment, because both would need `pull-requests: write`.
-  - Its `Compute risk tier` job **fails** when the PR description has no `**Risk tier:** <n>` line, or states a less critical tier than the one computed.
+  - Its `Compute risk tier` check **fails** when the PR description has no `**Risk tier:** <n>` line, or states a less critical tier than the one computed.
   - It reads the map and the script from the PR's **base** commit, so a PR can't lower its own tier by editing them.
+  - It shows the tier in three places: a check named `Tier <n> — <what it allows>` in the PR's checks list, an annotation, and the job summary, which lists every path by tier.
+- **CI counts the human approvals.** The `Risk tier approvals` check **fails** until the PR has the human approvals the tier table requires: two at Tier 1, one at Tier 2, none at Tiers 3 and 4.
+  - It re-runs on every review submitted, edited or dismissed, so it turns green as soon as the last needed approval lands.
+  - It counts each reviewer's latest approve or request-changes decision. A later comment doesn't cancel an approval, but a dismissal or a request for changes does.
+  - An approval counts only from a human (not a bot account) whose GitHub association with the repository is `OWNER`, `MEMBER` or `COLLABORATOR`.
+  - The PR's author and everyone who authored one of its commits are excluded, because whoever wrote the change can't approve it.
+  - The tier it uses is the stricter of the computed tier and the one the description states.
+- **No write permission anywhere.** The workflow only reads the PR's files, reviews and commits. It never labels, comments, or changes the PR.
 - **The repository keeps the map honest.** `scripts/risk-tier.spec.ts` runs in `yarn test`. It fails when a module under `src/modules/` has no explicit tier, so a new module can't silently default, and when a pattern no longer matches any file.
 
-**What the CI check does not do:**
+**What the checks do not do:**
 
-- It doesn't compute the content-based escalations of rule 3 (guards, signatures, secrets, migrations, new dependencies, signing-flow display data). The reviewer applies those. The computed tier is a floor, not the final word.
-- It doesn't block a merge on its own. Until the items below are configured, an agent that ignores this guide is caught only by review and a red check.
+- They don't compute the content-based escalations of rule 3 (guards, signatures, secrets, migrations, new dependencies, signing-flow display data). The reviewer applies those. If those raise the tier, the reviewer states it, and the description must then carry the higher tier, which the approvals check follows.
+- They don't check that an approver is in the maintainers team specifically. A workflow token can't read team membership. Code-owner review (below) makes that guarantee.
+- They don't know who *directed* an agent. That person is excluded only if they authored a commit or opened the PR, so they must not approve otherwise; this stays a rule for people.
+- They don't block a merge on their own. Until the settings below are configured, a red check is a warning that can be ignored.
 
 **Still needed, as repository settings rather than code (admin only):**
 
-1. **Make the check required.** Add `Compute risk tier` as a required status check in branch protection for `main`.
-2. **Gate approvals on the tier.**
-   - Tier 1 and Tier 2 paths are owned in `CODEOWNERS` by a human-only maintainers team, and branch protection requires code-owner review, so no bot approval satisfies them.
-   - Tier 1 additionally requires two approvals. GitHub can't vary the required approval count by path or label, so either require two approvals on `main` for every PR, or extend `Compute risk tier` to read the PR's reviews (read-only) and fail a Tier 1 PR with fewer than two maintainer approvals.
-   - A dedicated review bot gets approve rights and approves only PRs whose `Compute risk tier` result is Tier 3 or 4.
+1. **Make both checks required.** In branch protection for `main`, add `Compute risk tier` and `Risk tier approvals` as required status checks. Don't require the `Tier <n> — …` check: its name changes with the tier.
+2. **Require code-owner review.** Own Tier 1 and Tier 2 paths in `CODEOWNERS` by a human-only maintainers team, and turn on "Require review from Code Owners". Then the approvals the check counts must include a maintainer.
+3. **Dismiss stale approvals on new commits.** Without this, an approval given before a later push still counts toward the tier's total.
+4. **Restrict agent approvals.** If a review bot gets approve rights, it approves only PRs whose `Compute risk tier` result is Tier 3 or 4. The approvals check already ignores bot approvals at every tier.
 
-Item 2 is the only part an agent can't get around, so this guide should not be considered fully enforced until it is in place.
+Items 1 to 3 are what agents can't get around, so this guide should not be considered fully enforced until they are in place.
