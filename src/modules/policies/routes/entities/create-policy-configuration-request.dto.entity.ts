@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import type { Address, Hex } from 'viem';
+import { type Address, type Hex, size } from 'viem';
 import { z } from 'zod';
 import {
   MAX_POLICY_CONFIGURATIONS_PER_REQUEST,
@@ -9,11 +9,17 @@ import {
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { HexBytesSchema } from '#/validation/entities/schemas/hexbytes.schema';
 
 export const CreatePolicyConfigurationRequestSchema = z.object({
   root: HexSchema,
   configurations: PolicyConfigurationsSchema,
 });
+
+export const PolicyConfigurationRootSchema = HexBytesSchema.refine(
+  (root) => size(root) === 32,
+  { error: 'Invalid 32-byte hex' },
+);
 
 export type CreatePolicyConfigurationRequestPayload = z.infer<
   typeof CreatePolicyConfigurationRequestSchema
