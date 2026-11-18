@@ -294,6 +294,13 @@ const UNGATED_ROUTES: Array<Route> = [
       `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
     body: {},
   },
+  // Deleting one only removes the stored proposal; nothing changes on-chain.
+  {
+    name: 'DELETE /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests/:root',
+    method: 'delete',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests/${faker.string.hexadecimal({ length: 64, casing: 'lower' })}`,
+  },
   {
     name: 'POST /v1/spaces/:spaceId/address-book/requests (propose contact)',
     method: 'post',

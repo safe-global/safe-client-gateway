@@ -60,7 +60,7 @@ describe('Estimations Controller', () => {
       const lastTransaction = multisigTransactionBuilder().build();
       networkService.get.mockImplementation(({ url }) => {
         const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
         const multisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
         if (url === chainsUrl) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -114,7 +114,7 @@ describe('Estimations Controller', () => {
     const lastTransaction = multisigTransactionBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -192,7 +192,7 @@ describe('Estimations Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       // Param ValidationPipe checksums address
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -247,7 +247,7 @@ describe('Estimations Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       // Param ValidationPipe checksums address
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -302,7 +302,7 @@ describe('Estimations Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       // Param ValidationPipe checksums address
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });

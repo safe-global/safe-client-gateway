@@ -44,8 +44,6 @@ import {
   removeOwnerEncoder,
   swapOwnerEncoder,
 } from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { TestEmailApiModule } from '#/modules/email/pushwoosh/__tests__/test.email-api.module';
-import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
@@ -101,10 +99,6 @@ describe('Alerts Controller', () => {
             testModule: AlertsApiConfigurationModule.register(
               alertsApiConfiguration,
             ),
-          },
-          {
-            originalModule: EmailModule,
-            testModule: TestEmailApiModule,
           },
         ],
       });

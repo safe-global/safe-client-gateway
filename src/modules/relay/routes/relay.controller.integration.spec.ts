@@ -66,6 +66,7 @@ import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-op
 import type { NoFeeCampaignConfiguration } from '#/modules/relay/domain/entities/relay.configuration';
 import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 import { rawify } from '#/validation/entities/raw.entity';
 
 const allSupportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
@@ -416,7 +417,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -468,7 +469,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -563,7 +564,7 @@ describe('Relay controller', () => {
                           data: rawify(chain),
                           status: 200,
                         });
-                      case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                      case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
                         // Official mastercopy
                         return Promise.resolve({
                           data: rawify(safe),
@@ -622,7 +623,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -704,7 +705,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -786,7 +787,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -1651,7 +1652,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -1698,7 +1699,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -1747,7 +1748,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -1797,7 +1798,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -1842,7 +1843,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -1885,7 +1886,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Unofficial mastercopy
                       return Promise.reject(new Error('Not found'));
                     default:
@@ -1950,7 +1951,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                    case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -2026,7 +2027,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Unofficial mastercopy
                       return Promise.reject(new Error('Not found'));
                     default:
@@ -2085,7 +2086,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Unofficial mastercopy
                       return Promise.reject(new Error('Not found'));
                     default:
@@ -2143,7 +2144,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       // Official mastercopy
                       return Promise.resolve({
                         data: rawify(safe),
@@ -2268,7 +2269,7 @@ describe('Relay controller', () => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: rawify(chain), status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                 // Official mastercopy
                 return Promise.resolve({ data: rawify(safe), status: 200 });
               default:
@@ -2305,7 +2306,7 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:
@@ -2532,7 +2533,7 @@ describe('Relay controller', () => {
                     data: rawify(chain),
                     status: 200,
                   });
-                case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                   // Official mastercopy
                   return Promise.resolve({
                     data: rawify(safe),
@@ -2613,7 +2614,7 @@ describe('Relay controller', () => {
                     data: rawify(chain),
                     status: 200,
                   });
-                case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                   // Official mastercopy
                   return Promise.resolve({
                     data: rawify(safe),
@@ -2749,8 +2750,8 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${nonChecksummedAddress}`:
-            case `${chain.transactionService}/api/v1/safes/${checksummedSafeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${nonChecksummedAddress}/`:
+            case `${chain.transactionService}/api/v1/safes/${checksummedSafeAddress}/`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:
@@ -2831,7 +2832,7 @@ describe('Relay controller', () => {
                 data: rawify(differentChain),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:
@@ -2883,7 +2884,7 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:
@@ -3009,6 +3010,23 @@ describe('Relay controller', () => {
           );
         },
       );
+
+      it('should reject an over-length chainId without calling the relay provider', async () => {
+        const overLengthChainId = faker.string.numeric({
+          length: CHAIN_ID_MAXLENGTH + 1,
+        });
+        const taskId = faker.string.numeric({ length: 73 });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${overLengthChainId}/relay/status/${taskId}`)
+          .expect(422);
+
+        expect(networkService.get).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: expect.stringContaining('/safe-transactions/'),
+          }),
+        );
+      });
     });
 
     describe('GET /v1/chains/:chainId/relay/:safeAddress', () => {
@@ -3071,7 +3089,7 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:
@@ -3143,7 +3161,7 @@ describe('Relay controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             // Official mastercopy
             return Promise.resolve({ data: rawify(safe), status: 200 });
           default:
@@ -3225,7 +3243,7 @@ describe('Relay controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             // Official mastercopy
             return Promise.resolve({ data: rawify(safe), status: 200 });
           default:
@@ -3264,7 +3282,7 @@ describe('Relay controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             // Official mastercopy
             return Promise.resolve({ data: rawify(safe), status: 200 });
           default:
@@ -3322,7 +3340,7 @@ describe('Relay controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
             // Official mastercopy
             return Promise.resolve({ data: rawify(safe), status: 200 });
           default:
@@ -3394,7 +3412,7 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
-            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
             default:
@@ -3514,7 +3532,7 @@ describe('Relay controller', () => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: rawify(chain), status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                 return Promise.resolve({ data: rawify(safe), status: 200 });
               default:
                 return Promise.reject(`No matching rule for url: ${url}`);
@@ -3577,7 +3595,7 @@ describe('Relay controller', () => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: rawify(chain), status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                 return Promise.resolve({ data: rawify(safe), status: 200 });
               default:
                 return Promise.reject(`No matching rule for url: ${url}`);
@@ -3627,7 +3645,7 @@ describe('Relay controller', () => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chainId}`:
                 return Promise.resolve({ data: rawify(chain), status: 200 });
-              case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                 return Promise.resolve({ data: rawify(safe), status: 200 });
               default:
                 return Promise.reject(`No matching rule for url: ${url}`);
@@ -3785,7 +3803,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       return Promise.resolve({
                         data: rawify(safe),
                         status: 200,
@@ -3885,7 +3903,7 @@ describe('Relay controller', () => {
                         data: rawify(chain),
                         status: 200,
                       });
-                    case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                    case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                       return Promise.resolve({
                         data: rawify(safe),
                         status: 200,
@@ -4008,7 +4026,7 @@ describe('Relay controller', () => {
                       data: rawify(chain),
                       status: 200,
                     });
-                  case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                  case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                     return Promise.resolve({
                       data: rawify(safe),
                       status: 200,
@@ -4100,7 +4118,7 @@ describe('Relay controller', () => {
                     data: rawify(chain),
                     status: 200,
                   });
-                case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+                case `${chain.transactionService}/api/v1/safes/${safeAddress}/`:
                   return Promise.resolve({
                     data: rawify(safe),
                     status: 200,

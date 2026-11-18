@@ -105,6 +105,42 @@ export class PolicyConfigurationRequestsService {
   }
 
   /**
+   * Deletes a stored request in any state. Only the stored configurations go;
+   * a root requested on-chain stays there until invalidated.
+   */
+  public async delete(args: {
+    spaceId: Space['id'];
+    safe: SafeRef;
+    authPayload: AuthPayload;
+    root: Hex;
+  }): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertMember(this.membersRepository, args.spaceId, userId);
+    await assertSafeInSpace(this.spaceSafesRepository, {
+      spaceId: args.spaceId,
+      chainId: args.safe.chainId,
+      address: args.safe.address,
+    });
+
+    const root: Hex = `0x${args.root.slice(2).toLowerCase()}`;
+    const stored = await this.configurationRequestsRepository.findRootsBySafe({
+      spaceId: args.spaceId,
+      safe: args.safe,
+    });
+    if (!stored.includes(root)) {
+      throw new HttpExceptionNoLog(
+        'No configuration request is stored for this root',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    await this.configurationRequestsRepository.delete({
+      spaceId: args.spaceId,
+      safe: args.safe,
+      root,
+    });
+  }
+
+  /**
    * The chain must have a policy engine, and each policy must be a known
    * contract or the zero address, which removes a policy.
    */

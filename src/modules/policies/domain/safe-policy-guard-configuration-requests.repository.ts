@@ -152,6 +152,26 @@ export class SafePolicyGuardConfigurationRequestsRepository
     });
   }
 
+  /** Deletes the request stored under {@link args.root}, matched like {@link create}. */
+  public async delete(args: {
+    spaceId: number;
+    safe: SafeRef;
+    root: Hex;
+  }): Promise<void> {
+    const repository = await this.db.getRepository(PolicyConfigurationRequest);
+    await repository.delete({
+      ...this.safeMatch({
+        spaceId: args.spaceId,
+        chainId: args.safe.chainId,
+        safeAddress: args.safe.address,
+        safeAddressIndex: this.spaceEncryptionService.safeAddressIndex(
+          args.safe.address,
+        ),
+      }),
+      root: args.root,
+    });
+  }
+
   /**
    * Matches the rows of one Safe in one Space. Encryption disabled: the
    * address is plaintext and the index NULL. Otherwise only the blind index

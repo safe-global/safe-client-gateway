@@ -95,7 +95,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -175,7 +175,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
@@ -338,7 +338,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
@@ -495,7 +495,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
@@ -610,7 +610,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
@@ -710,7 +710,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
@@ -816,7 +816,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -902,7 +902,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -995,7 +995,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
 
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
         const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
         networkService.get.mockImplementation(({ url }) => {
           if (url === getChainUrl) {
             return Promise.resolve({
@@ -1074,7 +1074,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
@@ -1160,7 +1160,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
