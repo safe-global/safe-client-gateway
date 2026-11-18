@@ -21,6 +21,7 @@ const multiMock = vi.fn();
 
 const redisClientTypeMock = {
   isReady: true,
+  options: {},
   multi: multiMock,
   hGet: vi.fn(),
   hSet: vi.fn(),
@@ -65,9 +66,6 @@ describe('RedisCacheService with a Key Prefix', () => {
       }
       if (key === 'expirationTimeInSeconds.deviatePercent') {
         return defaultExpirationDeviatePercent;
-      }
-      if (key === 'redis.disableOfflineQueue') {
-        return false;
       }
       throw Error(`Unexpected key: ${key}`);
     });

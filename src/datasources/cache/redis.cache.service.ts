@@ -21,7 +21,6 @@ export class RedisCacheService
   private readonly quitTimeoutInSeconds: number = 2;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultExpirationDeviatePercent: number;
-  private readonly isOfflineQueueDisabled: boolean;
 
   constructor(
     @Inject('RedisClient') private readonly client: RedisClientType,
@@ -38,9 +37,6 @@ export class RedisCacheService
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.deviatePercent',
       );
-    this.isOfflineQueueDisabled = this.configurationService.getOrThrow<boolean>(
-      'redis.disableOfflineQueue',
-    );
   }
 
   ping(): Promise<unknown> {
@@ -170,7 +166,7 @@ export class RedisCacheService
 
       transaction.expire(key, expirationTime, 'NX');
     }
-    const [incrRes] = await transaction.exec();
+    const [incrRes] = await transaction.get(key).exec();
     return Number(incrRes);
   }
 
@@ -198,7 +194,7 @@ export class RedisCacheService
    * pipelines regardless. Applies the same fail-fast to those batches.
    */
   private failFastWhenOffline(): void {
-    if (this.isOfflineQueueDisabled && !this.client.isReady) {
+    if (this.client.options.disableOfflineQueue && !this.client.isReady) {
       throw new ClientOfflineError();
     }
   }

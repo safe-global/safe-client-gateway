@@ -54,9 +54,6 @@ describe('RedisCacheService', () => {
       if (key === 'expirationTimeInSeconds.deviatePercent') {
         return defaultExpirationDeviatePercent;
       }
-      if (key === 'redis.disableOfflineQueue') {
-        return false;
-      }
       throw Error(`Unexpected key: ${key}`);
     });
 

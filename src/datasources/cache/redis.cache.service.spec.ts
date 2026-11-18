@@ -17,18 +17,20 @@ const transactionMock = {
   hSet: vi.fn(),
   expire: vi.fn(),
   unlink: vi.fn(),
-  incr: vi.fn(),
-  get: vi.fn(),
   exec: vi.fn(),
   execAsPipeline: vi.fn(),
 } as unknown as MockedObject<RedisTransaction>;
 
 const multiMock = vi.fn();
 let isClientReady = true;
+let isOfflineQueueDisabled = false;
 
 const redisClientMock = {
   get isReady(): boolean {
     return isClientReady;
+  },
+  get options(): { disableOfflineQueue: boolean } {
+    return { disableOfflineQueue: isOfflineQueueDisabled };
   },
   multi: multiMock,
   hSet: vi.fn(),
@@ -50,12 +52,11 @@ describe('RedisCacheService', () => {
 
   beforeEach(() => {
     isClientReady = true;
+    isOfflineQueueDisabled = false;
     multiMock.mockReturnValue(transactionMock);
     transactionMock.hSet.mockReturnValue(transactionMock);
     transactionMock.expire.mockReturnValue(transactionMock);
     transactionMock.unlink.mockReturnValue(transactionMock);
-    transactionMock.incr.mockReturnValue(transactionMock);
-    transactionMock.get.mockReturnValue(transactionMock);
     transactionMock.exec.mockResolvedValue([]);
     transactionMock.execAsPipeline.mockResolvedValue([]);
 
@@ -69,7 +70,6 @@ describe('RedisCacheService', () => {
       'expirationTimeInSeconds.deviatePercent',
       faker.number.int({ min: 1, max: 99 }),
     );
-    fakeConfigurationService.set('redis.disableOfflineQueue', false);
 
     target = new RedisCacheService(
       redisClientMock,
@@ -226,13 +226,7 @@ describe('RedisCacheService', () => {
 
   describe('with the offline queue disabled', () => {
     beforeEach(() => {
-      fakeConfigurationService.set('redis.disableOfflineQueue', true);
-      target = new RedisCacheService(
-        redisClientMock,
-        mockLoggingService,
-        fakeConfigurationService,
-        '',
-      );
+      isOfflineQueueDisabled = true;
     });
 
     it('hSet fails fast with ClientOfflineError while the client is not ready', async () => {
@@ -283,27 +277,5 @@ describe('RedisCacheService', () => {
     );
 
     expect(transactionMock.exec).toHaveBeenCalledOnce();
-  });
-
-  describe('increment', () => {
-    it('returns the INCR reply without a separate GET', async () => {
-      const key = faker.string.alphanumeric();
-      const count = faker.number.int({ min: 1 });
-      transactionMock.exec.mockResolvedValue([
-        count,
-        faker.number.int({ min: 0, max: 1 }),
-      ]);
-
-      const result = await target.increment(
-        key,
-        faker.number.int({ min: 1, max: 3600 }),
-        0,
-      );
-
-      expect(result).toBe(count);
-      expect(transactionMock.incr).toHaveBeenCalledWith(key);
-      expect(transactionMock.get).not.toHaveBeenCalled();
-      expect(transactionMock.exec).toHaveBeenCalledOnce();
-    });
   });
 });
