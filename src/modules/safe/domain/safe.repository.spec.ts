@@ -12,6 +12,7 @@ import {
 } from '#/domain/common/constants';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -1039,6 +1040,72 @@ describe('SafeRepository', () => {
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining(tx.safeTxHash),
       );
+    });
+
+    it.each([
+      HttpStatus.TOO_MANY_REQUESTS,
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      HttpStatus.SERVICE_UNAVAILABLE,
+    ])(
+      'should throw the queue %s when the queue call fails and the transaction service does not have the transaction',
+      async (status) => {
+        const safeTxHash = faker.string.hexadecimal({ length: 64 });
+        const queueError = new DataSourceError(faker.lorem.sentence(), status);
+        mockSafeQueueService.getMultisigTransaction.mockRejectedValue(
+          queueError,
+        );
+        mockTransactionApi.getMultisigTransaction.mockRejectedValue(
+          new DataSourceError(faker.lorem.sentence(), HttpStatus.NOT_FOUND),
+        );
+
+        await expect(
+          repository.getMultiSigTransaction({
+            chainId,
+            safeTransactionHash: safeTxHash,
+          }),
+        ).rejects.toBe(queueError);
+      },
+    );
+
+    it('should serve the transaction service result when the queue call is rate limited', async () => {
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      mockSafeQueueService.getMultisigTransaction.mockRejectedValue(
+        new DataSourceError(
+          faker.lorem.sentence(),
+          HttpStatus.TOO_MANY_REQUESTS,
+        ),
+      );
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.safeTxHash).toBe(tx.safeTxHash);
+    });
+
+    it('should keep the transaction service 404 when the queue also answers 404', async () => {
+      const safeTxHash = faker.string.hexadecimal({ length: 64 });
+      const notFoundError = new DataSourceError(
+        faker.lorem.sentence(),
+        HttpStatus.NOT_FOUND,
+      );
+      mockSafeQueueService.getMultisigTransaction.mockRejectedValue(
+        new DataSourceError(faker.lorem.sentence(), HttpStatus.NOT_FOUND),
+      );
+      mockTransactionApi.getMultisigTransaction.mockRejectedValue(
+        notFoundError,
+      );
+
+      await expect(
+        repository.getMultiSigTransaction({
+          chainId,
+          safeTransactionHash: safeTxHash,
+        }),
+      ).rejects.toBe(notFoundError);
     });
 
     it('should drop the override when the queue record reports a different chainId or safe', async () => {
