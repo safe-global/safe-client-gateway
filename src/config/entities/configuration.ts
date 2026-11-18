@@ -184,6 +184,10 @@ export default () => ({
         process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
         10,
       ),
+      afterTransactionTtlSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS ?? `${120}`,
+        10,
+      ),
     },
     filters: {
       dustThresholdUsd: Number.parseFloat(
@@ -198,6 +202,26 @@ export default () => ({
         ),
         windowSeconds: Number.parseInt(
           process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
+    clear: {
+      cooldownSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
+        10,
+      ),
+      recentClearSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_RECENT_SECONDS ?? `${30}`,
+        10,
+      ),
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
           10,
         ),
       },
@@ -299,13 +323,6 @@ export default () => ({
     },
   },
   email: {
-    pushwoosh: {
-      applicationCode: process.env.EMAIL_API_APPLICATION_CODE,
-      baseUri: process.env.EMAIL_API_BASE_URI || 'https://api.pushwoosh.com',
-      apiKey: process.env.EMAIL_API_KEY,
-      fromEmail: process.env.EMAIL_API_FROM_EMAIL,
-      fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
-    },
     // AWS SES email configuration. Enabled via FF_SES_EMAIL feature flag.
     // SES region is resolved from AWS_REGION by the SDK default credential chain.
     // AWS_REGION
@@ -454,6 +471,11 @@ export default () => ({
       process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
+    // Owner: One Balance Contract. /v2/safes reads the shared /positions
+    // snapshot. Remove it, with the Zerion /portfolio path, once it is on
+    // everywhere.
+    safesPortfolioSnapshot:
+      process.env.FF_SAFES_PORTFOLIO_SNAPSHOT?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',

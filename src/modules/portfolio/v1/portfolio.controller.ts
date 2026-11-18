@@ -9,16 +9,22 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiTooManyRequestsResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import type { GetPortfolioDto } from '#/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import { Portfolio } from '#/modules/portfolio/v1/entities/portfolio.entity';
 import { GetPortfolioDtoSchema } from '#/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
+import { PortfolioClearRateLimitGuard } from '#/modules/portfolio/v1/guards/portfolio-clear-rate-limit.guard';
 import { PortfolioRouteGuard } from '#/modules/portfolio/v1/guards/portfolio-route.guard';
 import { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
@@ -105,19 +111,33 @@ export class PortfolioController {
   @ApiOperation({
     summary: 'Clear portfolio cache',
     description:
-      'Clears all cached Zerion portfolio data (overview, portfolio, positions) for a specific address',
+      'Clears all cached Zerion portfolio data (overview, portfolio, positions) for a Safe. Repeat clears for the same Safe within a short cooldown are skipped.',
   })
   @ApiParam({
     name: 'address',
     type: 'string',
-    description: 'Wallet address (0x prefixed hex string)',
+    description: 'Safe address (0x prefixed hex string)',
   })
+  @ApiQuery({
+    name: 'chainId',
+    required: true,
+    type: String,
+    description: 'A chain on which the address is a Safe',
+    example: '1',
+  })
+  @ApiNoContentResponse({ description: 'Cleared, or skipped within cooldown' })
+  @ApiNotFoundResponse({ description: 'The address is not a Safe on chainId' })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid address or chainId' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit reached' })
+  @UseGuards(PortfolioClearRateLimitGuard)
   @Delete('/portfolio/:address')
   @HttpCode(204)
   public async clearPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
+    @Query('chainId', new ValidationPipe(ChainIdSchema))
+    chainId: string,
   ): Promise<void> {
-    await this.portfolioService.clearZerionCaches({ address });
+    await this.portfolioService.clearZerionCaches({ chainId, address });
   }
 }

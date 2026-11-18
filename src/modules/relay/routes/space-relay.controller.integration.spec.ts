@@ -301,7 +301,7 @@ describe('SpaceRelayController', () => {
             data: rawify(args.chain ?? chain),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/safes/${args.safe}`:
+        case `${chain.transactionService}/api/v1/safes/${args.safe}/`:
           return safe
             ? Promise.resolve({ data: rawify(safe), status: 200 })
             : Promise.reject(`No matching rule for url: ${url}`);
@@ -424,6 +424,22 @@ describe('SpaceRelayController', () => {
     await relay({ spaceId, accessToken, ...signerDeployment() }).expect(201);
 
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
+  });
+
+  it('should answer 503 for a malformed relay reply and give the unit back', async () => {
+    const { accessToken, spaceId } = await createSpaceForSigner();
+    const call = signerDeployment();
+    networkService.post.mockResolvedValue({
+      data: rawify({ taskId: faker.number.int() }),
+      status: 201,
+    });
+
+    await relay({ spaceId, accessToken, ...call }).expect(
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+
+    // The Rhinestone datasource rejects the reply as a DataSourceError.
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
   it('should answer 409 for a refunding transaction', async () => {

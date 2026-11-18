@@ -130,7 +130,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -289,7 +289,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -304,7 +304,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(depositContractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${depositTokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${depositTokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(depositTokenResponse),
                 status: 200,
@@ -412,7 +412,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               return Promise.reject({
                 status: 500,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -422,7 +422,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -487,7 +487,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -497,7 +497,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -563,7 +563,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -573,7 +573,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -637,7 +637,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -647,7 +647,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -712,7 +712,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -722,7 +722,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -797,7 +797,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -807,7 +807,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -882,7 +882,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -892,7 +892,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -981,7 +981,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1129,7 +1129,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1144,12 +1144,12 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(requestValidatorsExiContractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${requestValidatorsExitTokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${requestValidatorsExitTokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(requestValidatorsExitTokenResponse),
                 status: 200,
@@ -1247,7 +1247,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               return Promise.reject({
                 status: 500,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1257,7 +1257,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1331,7 +1331,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1341,7 +1341,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1417,7 +1417,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1427,7 +1427,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1501,7 +1501,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1511,7 +1511,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1599,7 +1599,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1609,7 +1609,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1694,7 +1694,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               return Promise.reject({
                 status: 500,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1704,7 +1704,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1795,7 +1795,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1942,7 +1942,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: stakes }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -1952,7 +1952,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -1962,7 +1962,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(batchWithdrawCLFeeContractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${batchWithdrawCLFeeTokenResponse.address}`:
+            case `${chain.transactionService}/api/v1/tokens/${batchWithdrawCLFeeTokenResponse.address}/`:
               return Promise.resolve({
                 data: rawify(batchWithdrawCLFeeTokenResponse),
                 status: 200,
@@ -2061,7 +2061,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               return Promise.reject({
                 status: 500,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -2071,7 +2071,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -2150,7 +2150,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -2160,7 +2160,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -2240,7 +2240,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -2250,7 +2250,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -2328,7 +2328,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify({ data: rewardsFee }),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,
@@ -2338,7 +2338,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
                 data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+            case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}/`:
               return Promise.resolve({
                 data: rawify(tokenResponse),
                 status: 200,
@@ -2418,7 +2418,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
               return Promise.reject({
                 status: 500,
               });
-            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
               return Promise.resolve({
                 data: rawify(safe),
                 status: 200,

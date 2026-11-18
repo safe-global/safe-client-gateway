@@ -7,17 +7,22 @@ import {
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { CollectiblesService } from '#/modules/collectibles/routes/collectibles.service';
 import type { Collectible } from '#/modules/collectibles/routes/entities/collectible.entity';
 import { CollectiblePage } from '#/modules/collectibles/routes/entities/collectible.page.entity';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('collectibles')
@@ -43,13 +48,15 @@ export class CollectiblesController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/collectibles')
   getCollectibles(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
     trusted: boolean,
     @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)

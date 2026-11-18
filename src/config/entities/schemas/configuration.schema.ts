@@ -150,6 +150,7 @@ export const RootConfigurationSchema = z
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
     FF_SAFENET: z.string().optional(),
     FF_GUARD_POLICIES: z.string().optional(),
+    FF_SAFES_PORTFOLIO_SNAPSHOT: z.string().optional(),
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
     SAFENET_RPC_URI: z.url().optional(),
@@ -217,6 +218,19 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
+    PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    PORTFOLIO_CLEAR_COOLDOWN_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RECENT_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
@@ -238,10 +252,6 @@ export const RootConfigurationSchema = z
       .int()
       .min(0)
       .optional(),
-    // TODO: Reassess EMAIL_ keys after email integration
-    EMAIL_API_APPLICATION_CODE: z.string(),
-    EMAIL_API_FROM_EMAIL: z.email(),
-    EMAIL_API_KEY: z.string(),
     ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
     ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT: z.iso.datetime().optional(),
     DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS: z.coerce

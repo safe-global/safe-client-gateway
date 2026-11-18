@@ -16,7 +16,6 @@ import alertsConfiguration from '#/modules/alerts/routes/configuration/alerts.co
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
-import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
 import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
 
 @Module({})
@@ -58,7 +57,6 @@ export const ALERTS_API_CONFIGURATION_MODULE =
     ALERTS_API_CONFIGURATION_MODULE,
     ALERTS_CONFIGURATION_MODULE,
     ChainsModule,
-    EmailModule,
     SafeRepositoryModule,
   ],
   controllers: [AlertsController],

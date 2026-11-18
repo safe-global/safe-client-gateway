@@ -99,11 +99,20 @@ export default (): ReturnType<typeof configuration> => ({
   portfolio: {
     cache: {
       ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      afterTransactionTtlSeconds: faker.number.int({ min: 60, max: 180 }),
     },
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
     },
     summaries: {
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
+    clear: {
+      cooldownSeconds: faker.number.int({ min: 10, max: 60 }),
+      recentClearSeconds: faker.number.int({ min: 10, max: 60 }),
       rateLimit: {
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
@@ -166,13 +175,6 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   email: {
-    pushwoosh: {
-      applicationCode: faker.string.alphanumeric(),
-      baseUri: faker.internet.url({ appendSlash: false }),
-      apiKey: faker.string.hexadecimal({ length: 32 }),
-      fromEmail: faker.internet.email(),
-      fromName: faker.person.fullName(),
-    },
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),
@@ -232,6 +234,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerion: false,
     zerionTestnets: false,
     zerionPositions: false,
+    safesPortfolioSnapshot: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,

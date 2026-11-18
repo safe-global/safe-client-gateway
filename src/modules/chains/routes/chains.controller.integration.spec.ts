@@ -448,7 +448,7 @@ describe('Chains Controller', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chainResponse.transactionService}/api/v1/about`,
+        `${chainResponse.transactionService}/api/v1/about/`,
       );
       expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
         undefined,
@@ -476,7 +476,7 @@ describe('Chains Controller', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chainResponse.transactionService}/api/v1/about`,
+        `${chainResponse.transactionService}/api/v1/about/`,
       );
       expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
         undefined,
@@ -508,7 +508,7 @@ describe('Chains Controller', () => {
 
     it('Failure getting the backbone data', async () => {
       const error = new NetworkResponseError(
-        new URL(`${chainResponse.transactionService}/api/v1/about`),
+        new URL(`${chainResponse.transactionService}/api/v1/about/`),
         {
           status: 502,
         } as Response,
@@ -532,7 +532,7 @@ describe('Chains Controller', () => {
         `${safeConfigUrl}/api/v1/chains/1`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chainResponse.transactionService}/api/v1/about`,
+        `${chainResponse.transactionService}/api/v1/about/`,
       );
       expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
         undefined,

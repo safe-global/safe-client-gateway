@@ -107,7 +107,7 @@ describe('KilnApi', () => {
       expect(actual).toBe(deployments);
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_deployments', cacheType),
+        cacheDir: new CacheDir(`${chainId}_staking_deployments`, cacheType),
         url: `${baseUrl}/v1/deployments`,
         networkRequest: {
           headers: {
@@ -140,7 +140,7 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_deployments', cacheType),
+        cacheDir: new CacheDir(`${chainId}_staking_deployments`, cacheType),
         url: `${baseUrl}/v1/deployments`,
         networkRequest: {
           headers: {
@@ -150,6 +150,46 @@ describe('KilnApi', () => {
         expireTimeSeconds: stakingExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
       });
+    });
+
+    it('should not share cached deployments between chains', async () => {
+      const [mainnetChainId, testnetChainId] = faker.helpers.uniqueArray(
+        () => faker.string.numeric({ length: { min: 1, max: 8 } }),
+        2,
+      );
+      dataSource.get.mockResolvedValue(
+        rawify({
+          status: 200,
+          data: [deploymentBuilder().build()],
+        }),
+      );
+
+      createTarget(mainnetChainId);
+      const mainnetCacheType = cacheType;
+      await target.getDeployments();
+      createTarget(testnetChainId);
+      const testnetCacheType = cacheType;
+      await target.getDeployments();
+
+      expect(dataSource.get).toHaveBeenCalledTimes(2);
+      expect(dataSource.get).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          cacheDir: new CacheDir(
+            `${mainnetChainId}_staking_deployments`,
+            mainnetCacheType,
+          ),
+        }),
+      );
+      expect(dataSource.get).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          cacheDir: new CacheDir(
+            `${testnetChainId}_staking_deployments`,
+            testnetCacheType,
+          ),
+        }),
+      );
     });
   });
 
@@ -249,7 +289,7 @@ describe('KilnApi', () => {
       expect(actual).toBe(networkStats);
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_network_stats', cacheType),
+        cacheDir: new CacheDir(`${chainId}_staking_network_stats`, cacheType),
         url: `${baseUrl}/v1/eth/network-stats`,
         networkRequest: {
           headers: {
@@ -282,7 +322,7 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_network_stats', cacheType),
+        cacheDir: new CacheDir(`${chainId}_staking_network_stats`, cacheType),
         url: `${baseUrl}/v1/eth/network-stats`,
         networkRequest: {
           headers: {
@@ -312,7 +352,10 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_dedicated_staking_stats', cacheType),
+        cacheDir: new CacheDir(
+          `${chainId}_staking_dedicated_staking_stats`,
+          cacheType,
+        ),
         url: `${baseUrl}/v1/eth/kiln-stats`,
         networkRequest: {
           headers: {
@@ -344,7 +387,10 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_dedicated_staking_stats', cacheType),
+        cacheDir: new CacheDir(
+          `${chainId}_staking_dedicated_staking_stats`,
+          cacheType,
+        ),
         url: getDedicatedStakingStats,
         networkRequest: {
           headers: {
@@ -377,7 +423,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `staking_pooled_staking_stats_${pooledStakingStats.address}`,
+          `${chainId}_staking_pooled_staking_stats_${pooledStakingStats.address}`,
           cacheType,
         ),
         url: `${baseUrl}/v1/eth/onchain/v2/network-stats`,
@@ -418,7 +464,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `staking_pooled_staking_stats_${pooledStakingStats.address}`,
+          `${chainId}_staking_pooled_staking_stats_${pooledStakingStats.address}`,
           cacheType,
         ),
         url: `${baseUrl}/v1/eth/onchain/v2/network-stats`,

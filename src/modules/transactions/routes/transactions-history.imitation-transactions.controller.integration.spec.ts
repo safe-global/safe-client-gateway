@@ -316,10 +316,10 @@ describe('Transactions History Controller - Imitation Transactions', () => {
       ) as EthereumTransaction;
 
       getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
-      getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
-      getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+      getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+      getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}/`;
+      getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}/`;
+      getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}/`;
     });
 
     describe('Tolerant value', () => {
@@ -2753,7 +2753,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/tokens/${imitationWithDifferentDecimalsToken.address}`
+          `${chain.transactionService}/api/v1/tokens/${imitationWithDifferentDecimalsToken.address}/`
         ) {
           return Promise.resolve({
             data: rawify(imitationWithDifferentDecimalsToken),
@@ -3032,9 +3032,9 @@ describe('Transactions History Controller - Imitation Transactions', () => {
       imitationAddress = getImitationAddress(multisigTransfer.to);
 
       getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
-      getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
+      getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+      getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}/`;
+      getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}/`;
     });
 
     describe('Below limit', () => {

@@ -154,7 +154,7 @@ describe('SpaceTransactionsController', () => {
         }
         const deployedSafe = deployed.find(
           (safe) =>
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`,
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}/`,
         );
         if (deployedSafe) {
           return Promise.resolve({ data: rawify(deployedSafe), status: 200 });

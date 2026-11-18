@@ -62,7 +62,7 @@ describe('Tokens controller', () => {
   });
 
   const tokenUrl = (chain: Chain, address: string): string =>
-    `${chain.transactionService}/api/v1/tokens/${address}`;
+    `${chain.transactionService}/api/v1/tokens/${address}/`;
 
   /** Chain config resolves; each known token resolves; each listed address in `notFound` 404s. */
   const mockUpstream = (

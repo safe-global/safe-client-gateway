@@ -74,9 +74,9 @@ describe('List outgoing transfers by Safe - Transactions Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`;
       const getTransfersUrl = `${args.chain.transactionService}/api/v1/safes/${args.safe.address}/transfers/`;
-      const getSafeUrl = `${args.chain.transactionService}/api/v1/safes/${args.safe.address}`;
+      const getSafeUrl = `${args.chain.transactionService}/api/v1/safes/${args.safe.address}/`;
       const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
-      const getTokenUrl = `${args.chain.transactionService}/api/v1/tokens/${args.token.address}`;
+      const getTokenUrl = `${args.chain.transactionService}/api/v1/tokens/${args.token.address}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(args.chain), status: 200 });
       }
@@ -401,7 +401,7 @@ describe('List outgoing transfers by Safe - Transactions Controller', () => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
-      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}`) {
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}/`) {
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.reject(
@@ -422,7 +422,7 @@ describe('List outgoing transfers by Safe - Transactions Controller', () => {
   it('should return 404 when the Safe is not found', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -454,7 +454,7 @@ describe('List outgoing transfers by Safe - Transactions Controller', () => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
-      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}`) {
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}/`) {
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.resolve({

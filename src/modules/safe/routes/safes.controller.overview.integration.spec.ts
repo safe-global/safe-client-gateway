@@ -128,7 +128,7 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -194,7 +194,7 @@ describe('Safes Controller Overview', () => {
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
+        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
@@ -295,7 +295,7 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -361,7 +361,7 @@ describe('Safes Controller Overview', () => {
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
+        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
@@ -489,13 +489,13 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
             return Promise.resolve({ data: rawify(chain2), status: 200 });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo1), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo3), status: 200 });
           }
           case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
@@ -713,13 +713,13 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
             return Promise.resolve({ data: rawify(chain2), status: 200 });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo1), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo3), status: 200 });
           }
           case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
@@ -890,7 +890,7 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -955,7 +955,7 @@ describe('Safes Controller Overview', () => {
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
+        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
@@ -1040,7 +1040,7 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
@@ -1104,7 +1104,7 @@ describe('Safes Controller Overview', () => {
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
+        `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
@@ -1241,13 +1241,13 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
             return Promise.resolve({ data: rawify(chain2), status: 200 });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo1), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo3), status: 200 });
           }
           case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
@@ -1428,10 +1428,10 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
             return Promise.resolve({ data: rawify(chain2), status: 200 });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/`: {
             const error = new NetworkResponseError(
               new URL(
-                `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`,
+                `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/`,
               ),
               {
                 status: 500,
@@ -1439,10 +1439,10 @@ describe('Safes Controller Overview', () => {
             );
             return Promise.reject(error);
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo3), status: 200 });
           }
           case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/balances/`: {
@@ -1629,13 +1629,13 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain2.chainId}`: {
             return Promise.resolve({ data: rawify(chain2), status: 200 });
           }
-          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}`: {
+          case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/`: {
             return Promise.resolve({ data: rawify('invalid'), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo2.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo2), status: 200 });
           }
-          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}`: {
+          case `${chain2.transactionService}/api/v1/safes/${safeInfo3.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo3), status: 200 });
           }
           case `${chain1.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
@@ -1776,7 +1776,7 @@ describe('Safes Controller Overview', () => {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
-          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+          case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/`: {
             return Promise.resolve({ data: rawify(safeInfo), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`: {
