@@ -26,6 +26,7 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 | `cgw-database` | [database-and-migrations.md](database-and-migrations.md) | Migrations, `*.entity.db.ts`, indexes, SQL |
 | `cgw-config` | [configuration-and-flags.md](configuration-and-flags.md) | Env vars, feature flags, config keys |
 | `cgw-testing` | [testing.md](testing.md) | Any test file; builders, mocks, the Fastify test harness |
+| `cgw-risk-tiers` | [risk-tiers.md](risk-tiers.md) | Starting any task or review; "can an agent approve/merge this", "does this need a human" |
 | `cgw-review` | [reviewing.md](reviewing.md) | Reviewing a diff; self-check before commit or PR |
 | `cgw-remarks` | [remarks.md](remarks.md) | Reviewing a diff; "what will reviewers flag" |
 | `cgw-commits-and-prs` | [commits-and-prs.md](commits-and-prs.md) | Commit messages, PR titles and bodies, splitting a PR |
@@ -86,7 +87,7 @@ Adding one back is a reasonable thing to do — but the bar is that it must do s
 
 ## Trigger validation
 
-A skill's `description` is the only thing the auto-load decision sees, so it is the part that needs testing — and it is testable: give a fresh session a synthetic prompt phrased the way a developer would actually phrase it, and check which skill it reaches for. Doing this to the first draft of these thirteen found five real defects, each of which is worth knowing about when writing the next one:
+A skill's `description` is the only thing the auto-load decision sees, so it is the part that needs testing — and it is testable: give a fresh session a synthetic prompt phrased the way a developer would actually phrase it, and check which skill it reaches for. Doing this to the first draft of the original thirteen found five real defects, each of which is worth knowing about when writing the next one:
 
 - **Two skills sharing a trigger phrase is a coin flip, not a fallback.** `cgw-review` and `cgw-remarks` both opened with "use when reviewing a diff", so neither won. The fix was to state the relationship in the descriptions themselves — one is the entry point, the other is the catalog it consults.
 - **A description must claim symptoms, not just concepts.** "Why is my provider constructed twice?" matched nothing in `cgw-nestjs-patterns`, whose triggers were all primitive names; the `useExisting`-vs-`useClass` rule that answers it was one keyword away from being unreachable.

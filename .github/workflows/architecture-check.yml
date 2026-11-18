@@ -118,6 +118,12 @@ jobs:
                so a reader can reach the standard being applied in one click.
                The comment MUST:
                - start with the heading `## Architecture check`;
+               - then the risk-tier line exactly as reviewing.md's
+                 "Reporting format" defines it, with the tier you computed
+                 from the changed files using docs/agents/risk-tiers.md (the
+                 tier-map block plus its escalation rules) — never the tier
+                 the PR description claims. A stated tier less critical than
+                 yours is a finding;
                - then one line naming the applicable guides (or "none"), each
                  name a Markdown link to
                  `https://github.com/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/docs/agents/<file>`;
