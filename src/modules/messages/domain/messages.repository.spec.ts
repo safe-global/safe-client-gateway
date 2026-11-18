@@ -15,6 +15,7 @@ import { MessagesRepository } from '#/modules/messages/domain/messages.repositor
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { createMockSafeQueueService } from '#/modules/safe-queue/__tests__/safe-queue-service.mock';
+import type { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { safeQueueMessageBuilder as buildSafeQueueMessage } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
 import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
@@ -57,6 +58,11 @@ const mockMessageVerifier = {
   verifyUpdate: vi.fn(),
 } as MockedObject<MessageVerifierHelper>;
 
+const mockSafeQueueChangesRepository = {
+  getChangedAt: vi.fn(),
+  setChangedAt: vi.fn(),
+} as MockedObject<ISafeQueueChangesRepository>;
+
 describe('MessagesRepository (queue service enabled)', () => {
   let safeQueueService: MockedObject<ISafeQueueService>;
   let target: MessagesRepository;
@@ -82,7 +88,12 @@ describe('MessagesRepository (queue service enabled)', () => {
       mockConfigurationService,
       mockLoggingService,
       mockMessageVerifier,
+      mockSafeQueueChangesRepository,
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('getMessagesBySafe cross-chain filtering', () => {
@@ -338,6 +349,7 @@ describe('MessagesRepository (queue service enabled)', () => {
       mockConfigurationService,
       mockLoggingService,
       mockMessageVerifier,
+      mockSafeQueueChangesRepository,
     );
   }
 
@@ -419,6 +431,33 @@ describe('MessagesRepository (queue service enabled)', () => {
     });
   });
 
+  describe('createMessage changed at', () => {
+    it('records when the messages changed once their cache is cleared', async () => {
+      const now = faker.date.recent();
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now);
+      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
+      safeQueueService.postMessage.mockResolvedValue(
+        rawify({ id: faker.string.uuid() }),
+      );
+      const args = createMessageArgs();
+
+      await target.createMessage(args);
+
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'messages',
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        changedAt: now,
+      });
+      expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+    });
+  });
+
   describe('updateMessageSignature write routing', () => {
     it('forwards to the queue service when enabled', async () => {
       const chainId = faker.number.int({ min: 1, max: 1000 });
@@ -486,14 +525,51 @@ describe('MessagesRepository (queue service enabled)', () => {
     });
   });
 
-  describe('clearMessagesBySafe / clearMessagesByHash', () => {
+  describe('updateMessageSignature changed at', () => {
+    it('records when the messages of the Safe changed once their cache is cleared', async () => {
+      const now = faker.date.recent();
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now);
+      const chainId = faker.number.int({ min: 1, max: 1000 });
+      const message = safeQueueMessageBuilder(chainId);
+      safeQueueService.getMessageByHash.mockResolvedValue(rawify(message));
+      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
+      safeQueueService.postMessageSignature.mockResolvedValue(
+        rawify({ id: faker.string.uuid() }),
+      );
+
+      await target.updateMessageSignature({
+        chainId: String(chainId),
+        messageHash: message.messageHash,
+        signature: faker.string.hexadecimal({ length: 130 }) as Hex,
+      });
+
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'messages',
+        chainId: String(chainId),
+        safeAddress: message.safe,
+        changedAt: now,
+      });
+      expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+    });
+  });
+
+  describe('clearing the messages caches', () => {
     it('clears both the tx-service and queue caches, independent of the flag', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const messageHash = faker.string.hexadecimal({ length: 64 }) as Hash;
 
-      await target.clearMessagesBySafe({ chainId, safeAddress });
-      await target.clearMessagesByHash({ chainId, messageHash });
+      await buildTargetWithQueueDisabled().clearMessagesAndRecordChange({
+        chainId,
+        safeAddress,
+        messageHash,
+        changedAt: faker.date.recent(),
+      });
 
       expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
         chainId,
@@ -521,7 +597,11 @@ describe('MessagesRepository (queue service enabled)', () => {
       );
 
       await expect(
-        target.clearMessagesBySafe({ chainId, safeAddress }),
+        target.clearMessagesAndRecordChange({
+          chainId,
+          safeAddress,
+          changedAt: faker.date.recent(),
+        }),
       ).resolves.toBeUndefined();
 
       expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
@@ -532,5 +612,100 @@ describe('MessagesRepository (queue service enabled)', () => {
         expect.stringContaining('Failed to clear queue messages cache'),
       );
     });
+  });
+
+  describe('clearMessagesAndRecordChange', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const messageHash = faker.string.hexadecimal({ length: 64 }) as Hash;
+
+    it('records when the messages changed once the messages of the Safe are cleared', async () => {
+      const changedAt = faker.date.recent();
+
+      await target.clearMessagesAndRecordChange({
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+
+      expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+      });
+      expect(safeQueueService.clearMessagesByHash).not.toHaveBeenCalled();
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'messages',
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+      expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+    });
+
+    it('also clears the message when its hash is given', async () => {
+      await target.clearMessagesAndRecordChange({
+        chainId,
+        safeAddress,
+        messageHash,
+        changedAt: faker.date.recent(),
+      });
+
+      expect(safeQueueService.clearMessagesByHash).toHaveBeenCalledWith({
+        chainId,
+        messageHash,
+      });
+      expect(safeQueueService.clearMessagesByHash).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+    });
+
+    it.each([
+      [
+        'the queue messages of the Safe',
+        (): void => {
+          safeQueueService.clearMessagesBySafe.mockRejectedValueOnce(
+            new Error(faker.lorem.sentence()),
+          );
+        },
+      ],
+      [
+        'the tx-service messages of the Safe',
+        (): void => {
+          mockTransactionApi.clearMessagesBySafe.mockRejectedValueOnce(
+            new Error(faker.lorem.sentence()),
+          );
+        },
+      ],
+      [
+        'the queue message',
+        (): void => {
+          safeQueueService.clearMessagesByHash.mockRejectedValueOnce(
+            new Error(faker.lorem.sentence()),
+          );
+        },
+      ],
+    ])(
+      'does not record the change when clearing %s fails',
+      async (_, failClear) => {
+        failClear();
+
+        await expect(
+          target.clearMessagesAndRecordChange({
+            chainId,
+            safeAddress,
+            messageHash,
+            changedAt: faker.date.recent(),
+          }),
+        ).resolves.toBeUndefined();
+
+        expect(
+          mockSafeQueueChangesRepository.setChangedAt,
+        ).not.toHaveBeenCalled();
+      },
+    );
   });
 });

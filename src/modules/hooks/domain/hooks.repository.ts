@@ -10,6 +10,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { PublishedMessageSchema } from '#/modules/hooks/domain/entities/schemas/published-at.schema';
 import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
 import type { IHooksRepository } from '#/modules/hooks/domain/hooks.repository.interface';
 import type { Event } from '#/modules/hooks/routes/entities/event.entity';
@@ -50,7 +51,7 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
         try {
           const event = this.parseEvent(msg.content.toString());
           if (event) {
-            await this.onEvent(event);
+            await this.onEvent(event, this.getPublishedAt(msg));
           }
         } catch (err) {
           this.loggingService.error(err);
@@ -75,6 +76,21 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     return result.data;
   }
 
+  /**
+   * When the event was published, or now when the message carries no usable
+   * AMQP `timestamp`. Never later than now: a publish time ahead of this clock
+   * would hold back every later change until the stored time expires.
+   */
+  private getPublishedAt(msg: ConsumeMessage): Date {
+    const now = new Date();
+    const result = PublishedMessageSchema.safeParse(msg);
+    if (!result.success) {
+      return now;
+    }
+    const publishedAt = result.data.properties.timestamp;
+    return publishedAt < now ? publishedAt : now;
+  }
+
   private logInvalidEvent(content: unknown, reason: string): void {
     const { type, chainId } = InvalidEventContextSchema.parse(content);
     this.loggingService.error({
@@ -85,13 +101,16 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     });
   }
 
-  async onEvent(event: Event): Promise<unknown> {
+  async onEvent(
+    event: Event,
+    publishedAt: Date = new Date(),
+  ): Promise<unknown> {
     const isSupportedChainId = await this.eventCacheHelper.isSupportedChainMemo(
       event.chainId,
     );
     if (isSupportedChainId || event.type === ConfigEventType.CHAIN_UPDATE) {
       return Promise.allSettled([
-        this.eventCacheHelper.onEventClearCache(event),
+        this.eventCacheHelper.onEventClearCache(event, publishedAt),
         this.pushNotificationService.enqueueEvent(event),
         this.markCounterfactualSafeAsDeployed(event),
       ]).finally(() => {

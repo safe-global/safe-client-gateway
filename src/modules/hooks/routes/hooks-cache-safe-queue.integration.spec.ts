@@ -37,7 +37,7 @@ import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type
 import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
 import { rawify } from '#/validation/entities/raw.entity';
 
-function consumeMessageOf(event: object): ConsumeMessage {
+function consumeMessageOf(event: object, timestamp?: number): ConsumeMessage {
   return {
     content: Buffer.from(JSON.stringify(event)),
     fields: {
@@ -57,7 +57,7 @@ function consumeMessageOf(event: object): ConsumeMessage {
       replyTo: undefined,
       expiration: undefined,
       messageId: undefined,
-      timestamp: undefined,
+      timestamp,
       type: undefined,
       userId: undefined,
       appId: undefined,
@@ -204,6 +204,29 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
       },
     );
 
+    it('records when the queue of the Safe changed at the time the event was published', async () => {
+      const chainId = faker.string.numeric();
+      const event = pendingTransactionEventBuilder()
+        .with('chainId', chainId)
+        .build();
+      const publishedAtSeconds = Math.floor(
+        faker.date.recent().getTime() / 1_000,
+      );
+      mockChain(chainId);
+
+      await consume(consumeMessageOf(event, publishedAtSeconds));
+
+      await expect(
+        fakeCacheService.hGet(
+          CacheRouter.getSafeQueueChangedAtCacheDir({
+            change: 'transaction_queue',
+            chainId,
+            safeAddress: event.address,
+          }),
+        ),
+      ).resolves.toBe(new Date(publishedAtSeconds * 1_000).toISOString());
+    });
+
     it('leaves the queue-service caches of other Safes and transactions untouched', async () => {
       const chainId = faker.string.numeric();
       const event = pendingTransactionEventBuilder()
@@ -264,6 +287,29 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
       await consume(consumeMessageOf(event));
 
       await expectCleared(cacheDirs);
+    });
+
+    it('records when the messages of the Safe changed at the time the event was published', async () => {
+      const chainId = faker.string.numeric();
+      const event = messageCreatedEventBuilder()
+        .with('chainId', chainId)
+        .build();
+      const publishedAtSeconds = Math.floor(
+        faker.date.recent().getTime() / 1_000,
+      );
+      mockChain(chainId);
+
+      await consume(consumeMessageOf(event, publishedAtSeconds));
+
+      await expect(
+        fakeCacheService.hGet(
+          CacheRouter.getSafeQueueChangedAtCacheDir({
+            change: 'messages',
+            chainId,
+            safeAddress: event.address,
+          }),
+        ),
+      ).resolves.toBe(new Date(publishedAtSeconds * 1_000).toISOString());
     });
 
     it('MESSAGE_CONFIRMATION clears the queue-service and tx-service message and messages of the Safe', async () => {

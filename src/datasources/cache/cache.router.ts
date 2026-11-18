@@ -5,6 +5,7 @@ import type { SubscriptionStatusFilter } from '#/datasources/billing-api/entitie
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import type { SafeQueueChangeKey } from '#/modules/safe-queue/domain/entities/safe-queue-change.entity';
 import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
 import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
 
@@ -37,6 +38,7 @@ export class CacheRouter {
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
+  private static readonly SAFE_QUEUE_CHANGED_AT_KEY = 'safe_queue_changed_at';
   private static readonly SAFE_QUEUE_DELEGATES_KEY = 'safe_queue_delegates';
   private static readonly SAFE_QUEUE_MESSAGE_KEY = 'safe_queue_message';
   private static readonly SAFE_QUEUE_MESSAGES_KEY = 'safe_queue_messages';
@@ -453,6 +455,13 @@ export class CacheRouter {
     safeAddress: Address;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
+  }
+
+  static getSafeQueueChangedAtCacheDir(args: SafeQueueChangeKey): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_QUEUE_CHANGED_AT_KEY}_${args.change}_${args.safeAddress}`,
+      '',
+    );
   }
 
   static getSafeQueuedTransactionsCacheDir(args: {

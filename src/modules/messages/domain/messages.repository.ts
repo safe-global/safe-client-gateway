@@ -17,6 +17,7 @@ import { TypedData } from '#/modules/messages/domain/entities/typed-data.entity'
 import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
 import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import {
   SafeQueueMessagePageSchema,
   SafeQueueMessageSchema,
@@ -41,6 +42,8 @@ export class MessagesRepository implements IMessagesRepository {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     private readonly messageVerifier: MessageVerifierHelper,
+    @Inject(ISafeQueueChangesRepository)
+    private readonly safeQueueChangesRepository: ISafeQueueChangesRepository,
   ) {
     this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
       'features.safeQueueService',
@@ -172,9 +175,10 @@ export class MessagesRepository implements IMessagesRepository {
     } else {
       result = await this.safeQueueService.postMessage(args);
     }
-    await this.clearMessagesBySafe({
+    await this.clearMessagesAndRecordChange({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
+      changedAt: new Date(),
     });
     return result;
   }
@@ -209,28 +213,58 @@ export class MessagesRepository implements IMessagesRepository {
     } else {
       result = await this.safeQueueService.postMessageSignature(args);
     }
-    await this.clearMessagesByHash({
-      chainId: args.chainId,
-      messageHash: args.messageHash,
-    });
-    await this.clearMessagesBySafe({
+    await this.clearMessagesAndRecordChange({
       chainId: args.chainId,
       safeAddress: message.safe,
+      messageHash: args.messageHash,
+      changedAt: new Date(),
     });
     return result;
   }
 
-  async clearMessagesBySafe(args: {
+  async clearMessagesAndRecordChange(args: {
     chainId: string;
     safeAddress: Address;
+    messageHash?: string;
+    changedAt: Date;
   }): Promise<void> {
+    const cleared = await Promise.all([
+      this.clearMessagesBySafe({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
+      ...(args.messageHash
+        ? [
+            this.clearMessagesByHash({
+              chainId: args.chainId,
+              messageHash: args.messageHash,
+            }),
+          ]
+        : []),
+    ]);
+    // Only once every layer is cleared, so a client following the new
+    // `messagesTag` never reads stale messages
+    if (cleared.every(Boolean)) {
+      await this.safeQueueChangesRepository.setChangedAt({
+        change: 'messages',
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        changedAt: args.changedAt,
+      });
+    }
+  }
+
+  private async clearMessagesBySafe(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<boolean> {
     // Cleared on the tx service too, even when the queue FF is on: the two
     // caches are independent layers, and toggling the flag doesn't clear
     // whatever was cached under the other one.
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await clearBothCacheLayers(
+    return clearBothCacheLayers(
       this.loggingService,
       transactionService.clearMessagesBySafe(args),
       this.safeQueueService.clearMessagesBySafe(args),
@@ -238,14 +272,14 @@ export class MessagesRepository implements IMessagesRepository {
     );
   }
 
-  async clearMessagesByHash(args: {
+  private async clearMessagesByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<void> {
+  }): Promise<boolean> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await clearBothCacheLayers(
+    return clearBothCacheLayers(
       this.loggingService,
       transactionService.clearMessagesByHash(args),
       this.safeQueueService.clearMessagesByHash(args),

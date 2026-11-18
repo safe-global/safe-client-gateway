@@ -34,6 +34,7 @@ import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.build
 import type { SafeV2 } from '#/modules/safe/domain/entities/safe.entity';
 import { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { createMockSafeQueueService } from '#/modules/safe-queue/__tests__/safe-queue-service.mock';
+import type { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import {
   safeQueueConfirmationBuilder,
   safeQueueMultisigTransactionBuilder,
@@ -94,6 +95,11 @@ const mockSpaceSafesRepository = {
   findSpaceIdsBySafe: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
+const mockSafeQueueChangesRepository = {
+  getChangedAt: vi.fn(),
+  setChangedAt: vi.fn(),
+} as MockedObject<ISafeQueueChangesRepository>;
+
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
@@ -122,6 +128,7 @@ describe('SafeRepository', () => {
       mockConfigurationService,
       mockSafeQueueService,
       mockSpaceSafesRepository,
+      mockSafeQueueChangesRepository,
     );
   }
 
@@ -129,6 +136,10 @@ describe('SafeRepository', () => {
     vi.resetAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     repository = createRepository({ safeQueueEnabled: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('getSafesByOwnerV2', () => {
@@ -1573,6 +1584,90 @@ describe('SafeRepository', () => {
       expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
     });
 
+    it('should record when the queue changed once its caches are cleared', async () => {
+      const now = faker.date.recent();
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now);
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockSafeQueueService.deleteTransaction.mockResolvedValue(undefined);
+
+      await repository.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'transaction_queue',
+        chainId,
+        safeAddress: tx.safe,
+        changedAt: now,
+      });
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).toHaveBeenCalledBefore(mockSafeQueueChangesRepository.setChangedAt);
+    });
+
+    it('should not record when the queue changed when clearing its caches fails', async () => {
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockSafeQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockSafeQueueService.clearAllTransactions.mockRejectedValue(
+        new Error(faker.lorem.sentence()),
+      );
+
+      await repository.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should record when the queue changed when only clearing the Space queues fails', async () => {
+      const repo = createRepository({
+        safeQueueEnabled: true,
+        usersEnabled: true,
+      });
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockSafeQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockSpaceSafesRepository.findSpaceIdsBySafe.mockRejectedValue(
+        new Error(faker.lorem.sentence()),
+      );
+
+      await repo.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          change: 'transaction_queue',
+          chainId,
+          safeAddress: tx.safe,
+        }),
+      );
+    });
+
     it('should resolve and warn with chainId, safeTxHash and errors when clearing the caches fails', async () => {
       const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       const signature = faker.string.hexadecimal({ length: 16 });
@@ -2341,5 +2436,67 @@ describe('SafeRepository', () => {
       expect(actual.results[0].safeTxHash).toBe(transaction.safeTxHash);
       expect(mockSafeQueueService.getTransactionQueue).not.toHaveBeenCalled();
     });
+  });
+
+  describe('clearQueueAndRecordChange', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safeTxHash = faker.string.hexadecimal({ length: 64 });
+
+    it('should clear the queue and the transaction, then record when the queue changed', async () => {
+      const changedAt = faker.date.recent();
+
+      await repository.clearQueueAndRecordChange({
+        chainId,
+        safeAddress,
+        safeTxHash,
+        changedAt,
+      });
+
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+      });
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).toHaveBeenCalledWith({ chainId, safeTxHash });
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'transaction_queue',
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).toHaveBeenCalledBefore(mockSafeQueueChangesRepository.setChangedAt);
+    });
+
+    it.each([
+      ['the queue', mockSafeQueueService.clearAllTransactions],
+      ['the transaction', mockSafeQueueService.clearMultisigTransaction],
+    ])(
+      'should reject without recording when clearing %s fails',
+      async (_, clear) => {
+        clear.mockRejectedValue(new Error(faker.lorem.sentence()));
+
+        await expect(
+          repository.clearQueueAndRecordChange({
+            chainId,
+            safeAddress,
+            safeTxHash,
+            changedAt: faker.date.recent(),
+          }),
+        ).rejects.toThrow(/^Failed to clear multisig transaction/);
+
+        expect(
+          mockSafeQueueChangesRepository.setChangedAt,
+        ).not.toHaveBeenCalled();
+      },
+    );
   });
 });

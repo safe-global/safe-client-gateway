@@ -82,7 +82,7 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 **Why:** `clearMocks: true` already resets every `vi.fn()`'s call history between tests for the whole run; a spec-level reset on top of it is redundant at best, and since one spec file can't opt the rest of the suite out of the global setting, it never actually fills a gap the config leaves open.
 
-**Canonical example:** `vitest.config.ts` sets `clearMocks: true` in each of its four project configs. `src/modules/portfolio/v1/portfolio.controller.spec.ts` casts `{ getPortfolio: vi.fn(), clearZerionCaches: vi.fn() }` directly `as MockedObject<PortfolioApiService>`; `src/modules/hooks/domain/hooks.repository.spec.ts`'s `mockMessagesRepository` double-casts `{ clearMessages: vi.fn() } as unknown as MockedObject<MessagesRepository>`, since that literal covers only one method of the interface.
+**Canonical example:** `vitest.config.ts` sets `clearMocks: true` in each of its four project configs. `src/modules/portfolio/v1/portfolio.controller.spec.ts` casts `{ getPortfolio: vi.fn(), clearZerionCaches: vi.fn() }` directly `as MockedObject<PortfolioApiService>`; `src/modules/hooks/domain/hooks.repository.spec.ts`'s `mockMessagesRepository` double-casts `{ clearMessagesAndRecordChange: vi.fn() } as unknown as MockedObject<MessagesRepository>`, since that literal covers only one method of the interface.
 
 ### App bootstrapping in tests
 

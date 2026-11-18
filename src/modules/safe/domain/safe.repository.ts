@@ -50,6 +50,7 @@ import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.he
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
 import { getQueueFallbackError } from '#/modules/safe/domain/helpers/queue-fallback-error.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
   SafeQueueMultisigTransactionPageSchema,
@@ -82,6 +83,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly safeQueueService: ISafeQueueService,
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafesRepository: ISpaceSafesRepository,
+    @Inject(ISafeQueueChangesRepository)
+    private readonly safeQueueChangesRepository: ISafeQueueChangesRepository,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
@@ -629,7 +632,7 @@ export class SafeRepository implements ISafeRepository {
     }
   }
 
-  async clearMultisigTransaction(args: {
+  private async clearMultisigTransaction(args: {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<void> {
@@ -779,13 +782,11 @@ export class SafeRepository implements ISafeRepository {
     safeTxHash: string;
   }): Promise<void> {
     const results = await Promise.allSettled([
-      this.clearMultisigTransaction({
-        chainId: args.chainId,
-        safeTransactionHash: args.safeTxHash,
-      }),
-      this.clearMultisigTransactions({
+      this.clearQueueAndRecordChange({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
+        safeTxHash: args.safeTxHash,
+        changedAt: new Date(),
       }),
       this.clearSpaceTransactionQueues({
         chainId: args.chainId,
@@ -800,6 +801,30 @@ export class SafeRepository implements ISafeRepository {
         `Failed to clear the caches of a queued transaction. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, errors=${errors}`,
       );
     }
+  }
+
+  async clearQueueAndRecordChange(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: string;
+    changedAt: Date;
+  }): Promise<void> {
+    await Promise.all([
+      this.clearMultisigTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
+      this.clearMultisigTransaction({
+        chainId: args.chainId,
+        safeTransactionHash: args.safeTxHash,
+      }),
+    ]);
+    await this.safeQueueChangesRepository.setChangedAt({
+      change: 'transaction_queue',
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      changedAt: args.changedAt,
+    });
   }
 
   async clearMultisigTransactions(args: {
