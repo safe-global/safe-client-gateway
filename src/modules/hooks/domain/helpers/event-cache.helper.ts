@@ -32,7 +32,6 @@ import { IMessagesRepository } from '#/modules/messages/domain/messages.reposito
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
-import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '#/modules/staking/domain/staking.repository.interface';
 import { ITransactionsRepository } from '#/modules/transactions/domain/transactions.repository.interface';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
@@ -77,8 +76,6 @@ export class EventCacheHelper {
     private readonly cacheService: ICacheService,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
-    @Inject(ISafeQueueChangesRepository)
-    private readonly safeQueueChangesRepository: ISafeQueueChangesRepository,
   ) {
     this.isSupportedChainMemo = memoize(
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
@@ -238,7 +235,7 @@ export class EventCacheHelper {
     // queued transactions and the pending transaction
     // the queue of every Space holding the Safe
     return [
-      this.clearQueueAndRecordChange({
+      this.safeRepository.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
         safeTxHash: event.safeTxHash,
@@ -259,7 +256,7 @@ export class EventCacheHelper {
     // queued transactions and the pending transaction
     // the queue of every Space holding the Safe
     return [
-      this.clearQueueAndRecordChange({
+      this.safeRepository.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
         safeTxHash: event.safeTxHash,
@@ -345,7 +342,7 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.clearQueueAndRecordChange({
+      this.safeRepository.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
         safeTxHash: event.safeTxHash,
@@ -372,7 +369,7 @@ export class EventCacheHelper {
     // and always-correct). See WA-2032 and getApprovedNestedTransactions.
     for (const child of this.getApprovedNestedTransactions(event)) {
       promises.push(
-        this.clearQueueAndRecordChange({
+        this.safeRepository.clearQueueAndRecordChange({
           chainId: event.chainId,
           safeAddress: child.safeAddress,
           safeTxHash: child.safeTxHash,
@@ -466,7 +463,7 @@ export class EventCacheHelper {
     // - queued transactions and the pending transaction
     // - the queue of every Space holding the Safe
     return [
-      this.clearQueueAndRecordChange({
+      this.safeRepository.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
         safeTxHash: event.safeTxHash,
@@ -474,36 +471,6 @@ export class EventCacheHelper {
       }),
       this.safeRepository.clearSpaceTransactionQueues(event),
     ];
-  }
-
-  /**
-   * Clears the Safe's queue and the queued transaction, then records when the
-   * queue changed. Only these clears gate the record: `txQueuedTag` follows
-   * this queue, not the Space queues or the other caches an event clears.
-   */
-  private clearQueueAndRecordChange(args: {
-    chainId: string;
-    safeAddress: Address;
-    safeTxHash: string;
-    changedAt: Date;
-  }): Promise<void> {
-    return Promise.all([
-      this.safeRepository.clearMultisigTransactions({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      }),
-      this.safeRepository.clearMultisigTransaction({
-        chainId: args.chainId,
-        safeTransactionHash: args.safeTxHash,
-      }),
-    ]).then(() =>
-      this.safeQueueChangesRepository.setChangedAt({
-        change: 'transaction_queue',
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        changedAt: args.changedAt,
-      }),
-    );
   }
 
   private onTransactionEventIncomingEther(

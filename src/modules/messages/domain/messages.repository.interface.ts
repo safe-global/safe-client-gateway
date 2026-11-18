@@ -49,16 +49,4 @@ export interface IMessagesRepository {
     messageHash?: string;
     changedAt: Date;
   }): Promise<void>;
-
-  /** Resolves to whether every cache layer was cleared; failures are logged. */
-  clearMessagesBySafe(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<boolean>;
-
-  /** Resolves to whether every cache layer was cleared; failures are logged. */
-  clearMessagesByHash(args: {
-    chainId: string;
-    messageHash: string;
-  }): Promise<boolean>;
 }

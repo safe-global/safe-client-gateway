@@ -781,21 +781,19 @@ export class SafeRepository implements ISafeRepository {
     safeAddress: Address;
     safeTxHash: string;
   }): Promise<void> {
-    const [transaction, queue, spaceQueues] = await Promise.allSettled([
-      this.clearMultisigTransaction({
-        chainId: args.chainId,
-        safeTransactionHash: args.safeTxHash,
-      }),
-      this.clearMultisigTransactions({
+    const results = await Promise.allSettled([
+      this.clearQueueAndRecordChange({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
+        safeTxHash: args.safeTxHash,
+        changedAt: new Date(),
       }),
       this.clearSpaceTransactionQueues({
         chainId: args.chainId,
         address: args.safeAddress,
       }),
     ]);
-    const errors = [transaction, queue, spaceQueues]
+    const errors = results
       .filter((r) => r.status === 'rejected')
       .map((r) => r.reason);
     if (errors.length > 0) {
@@ -803,16 +801,30 @@ export class SafeRepository implements ISafeRepository {
         `Failed to clear the caches of a queued transaction. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, errors=${errors}`,
       );
     }
-    // Only once the Safe's own caches are cleared, so a client following the
-    // new `txQueuedTag` never reads the stale queue
-    if (transaction.status === 'fulfilled' && queue.status === 'fulfilled') {
-      await this.safeQueueChangesRepository.setChangedAt({
-        change: 'transaction_queue',
+  }
+
+  async clearQueueAndRecordChange(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: string;
+    changedAt: Date;
+  }): Promise<void> {
+    await Promise.all([
+      this.clearMultisigTransactions({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
-        changedAt: new Date(),
-      });
-    }
+      }),
+      this.clearMultisigTransaction({
+        chainId: args.chainId,
+        safeTransactionHash: args.safeTxHash,
+      }),
+    ]);
+    await this.safeQueueChangesRepository.setChangedAt({
+      change: 'transaction_queue',
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      changedAt: args.changedAt,
+    });
   }
 
   async clearMultisigTransactions(args: {

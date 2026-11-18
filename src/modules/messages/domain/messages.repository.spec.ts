@@ -558,18 +558,18 @@ describe('MessagesRepository (queue service enabled)', () => {
     });
   });
 
-  describe('clearMessagesBySafe / clearMessagesByHash', () => {
+  describe('clearing the messages caches', () => {
     it('clears both the tx-service and queue caches, independent of the flag', async () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const messageHash = faker.string.hexadecimal({ length: 64 }) as Hash;
 
-      await expect(
-        target.clearMessagesBySafe({ chainId, safeAddress }),
-      ).resolves.toBe(true);
-      await expect(
-        target.clearMessagesByHash({ chainId, messageHash }),
-      ).resolves.toBe(true);
+      await buildTargetWithQueueDisabled().clearMessagesAndRecordChange({
+        chainId,
+        safeAddress,
+        messageHash,
+        changedAt: faker.date.recent(),
+      });
 
       expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
         chainId,
@@ -597,8 +597,12 @@ describe('MessagesRepository (queue service enabled)', () => {
       );
 
       await expect(
-        target.clearMessagesBySafe({ chainId, safeAddress }),
-      ).resolves.toBe(false);
+        target.clearMessagesAndRecordChange({
+          chainId,
+          safeAddress,
+          changedAt: faker.date.recent(),
+        }),
+      ).resolves.toBeUndefined();
 
       expect(mockTransactionApi.clearMessagesBySafe).toHaveBeenCalledWith({
         chainId,

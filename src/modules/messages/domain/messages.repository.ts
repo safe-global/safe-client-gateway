@@ -254,7 +254,7 @@ export class MessagesRepository implements IMessagesRepository {
     }
   }
 
-  async clearMessagesBySafe(args: {
+  private async clearMessagesBySafe(args: {
     chainId: string;
     safeAddress: Address;
   }): Promise<boolean> {
@@ -272,7 +272,7 @@ export class MessagesRepository implements IMessagesRepository {
     );
   }
 
-  async clearMessagesByHash(args: {
+  private async clearMessagesByHash(args: {
     chainId: string;
     messageHash: string;
   }): Promise<boolean> {

@@ -9,4 +9,5 @@ export const PublishedAtSchema = z
   .number()
   .int()
   .positive()
-  .transform((seconds) => new Date(seconds * 1000));
+  .transform((seconds) => new Date(seconds * 1000))
+  .pipe(z.date());

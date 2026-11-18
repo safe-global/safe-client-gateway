@@ -171,6 +171,19 @@ export interface ISafeRepository {
     safeTransactionHash: string;
   }): Promise<void>;
 
+  /**
+   * Clears the Safe's queue and the queued transaction, then records when the
+   * Safe's queue changed, which `txQueuedTag` is served from. Rejects without
+   * recording when either clear fails, so the tag never moves ahead of a stale
+   * queue.
+   */
+  clearQueueAndRecordChange(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: string;
+    changedAt: Date;
+  }): Promise<void>;
+
   clearMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;

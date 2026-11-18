@@ -2437,4 +2437,66 @@ describe('SafeRepository', () => {
       expect(mockSafeQueueService.getTransactionQueue).not.toHaveBeenCalled();
     });
   });
+
+  describe('clearQueueAndRecordChange', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safeTxHash = faker.string.hexadecimal({ length: 64 });
+
+    it('should clear the queue and the transaction, then record when the queue changed', async () => {
+      const changedAt = faker.date.recent();
+
+      await repository.clearQueueAndRecordChange({
+        chainId,
+        safeAddress,
+        safeTxHash,
+        changedAt,
+      });
+
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+      });
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).toHaveBeenCalledWith({ chainId, safeTxHash });
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'transaction_queue',
+        chainId,
+        safeAddress,
+        changedAt,
+      });
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledBefore(
+        mockSafeQueueChangesRepository.setChangedAt,
+      );
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).toHaveBeenCalledBefore(mockSafeQueueChangesRepository.setChangedAt);
+    });
+
+    it.each([
+      ['the queue', mockSafeQueueService.clearAllTransactions],
+      ['the transaction', mockSafeQueueService.clearMultisigTransaction],
+    ])(
+      'should reject without recording when clearing %s fails',
+      async (_, clear) => {
+        clear.mockRejectedValue(new Error(faker.lorem.sentence()));
+
+        await expect(
+          repository.clearQueueAndRecordChange({
+            chainId,
+            safeAddress,
+            safeTxHash,
+            changedAt: faker.date.recent(),
+          }),
+        ).rejects.toThrow(/^Failed to clear multisig transaction/);
+
+        expect(
+          mockSafeQueueChangesRepository.setChangedAt,
+        ).not.toHaveBeenCalled();
+      },
+    );
+  });
 });
