@@ -1336,7 +1336,7 @@ describe('PoliciesService', () => {
       expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledTimes(
         PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
       );
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Truncated a Safe transaction queue at the page cap',
           chainId: SEPOLIA,

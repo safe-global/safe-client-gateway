@@ -27,7 +27,12 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 
 describe('PolicyConfigurationRequestsService', () => {
   const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
-    { create: vi.fn(), findRootsBySafe: vi.fn(), findBySafes: vi.fn() };
+    {
+      create: vi.fn(),
+      findRootsBySafe: vi.fn(),
+      findBySafes: vi.fn(),
+      delete: vi.fn(),
+    };
   const membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> = {
     findOne: vi.fn(),
   };
@@ -299,6 +304,61 @@ describe('PolicyConfigurationRequestsService', () => {
           message: 'Could not read the configuration roots of a Safe',
         }),
       );
+    });
+  });
+
+  describe('delete', () => {
+    const root = configurationRoot([policyConfigurationBuilder().build()]);
+
+    beforeEach(() => {
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([root]);
+      configurationRequestsRepository.delete.mockResolvedValue();
+    });
+
+    it('should delete a stored root, matching it lower-cased', async () => {
+      const upperCased: Hex = `0x${root.slice(2).toUpperCase()}`;
+
+      await expect(
+        target.delete({ ...request, root: upperCased }),
+      ).resolves.toBeUndefined();
+      expect(configurationRequestsRepository.delete).toHaveBeenCalledWith({
+        spaceId,
+        safe,
+        root,
+      });
+    });
+
+    it('should reject a root that is not stored', async () => {
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([]);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'No configuration request is stored for this root',
+          HttpStatus.NOT_FOUND,
+        ),
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should reject a caller who is not a member of the space', async () => {
+      membersRepository.findOne.mockResolvedValue(null);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        'User is not a member of this workspace',
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should reject a Safe that is not in the space', async () => {
+      spaceSafesRepository.existsInSpace.mockResolvedValue(false);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Safe is not in this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
     });
   });
 });
