@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ClientOfflineError } from 'redis';
+import { ClientOfflineError, ErrorReply, MultiErrorReply } from 'redis';
 import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
@@ -145,6 +145,24 @@ describe('RedisCacheService', () => {
       });
       expect(redisClientMock.unlink).toHaveBeenCalledWith(cacheDir.key);
     });
+
+    it('rethrows the failed command error rather than the MultiErrorReply wrapper', async () => {
+      const commandError = new ErrorReply(faker.lorem.sentence());
+      transactionMock.exec.mockRejectedValue(
+        new MultiErrorReply([commandError], [0]),
+      );
+
+      await expect(
+        target.hSet(
+          new CacheDir(
+            faker.string.alphanumeric(),
+            faker.string.alphanumeric(),
+          ),
+          fakeJson(),
+          faker.number.int({ min: 1, max: 3600 }),
+        ),
+      ).rejects.toBe(commandError);
+    });
   });
 
   describe('deleteByKey', () => {
@@ -268,24 +286,26 @@ describe('RedisCacheService', () => {
     });
   });
 
-  it('queues the batch while the client is not ready when the offline queue is enabled', async () => {
-    isClientReady = false;
+  describe('with the offline queue enabled', () => {
+    it('queues the batch while the client is not ready', async () => {
+      isClientReady = false;
 
-    await target.hSet(
-      new CacheDir(faker.string.alphanumeric(), faker.string.alphanumeric()),
-      fakeJson(),
-      faker.number.int({ min: 1, max: 3600 }),
-    );
+      await target.hSet(
+        new CacheDir(faker.string.alphanumeric(), faker.string.alphanumeric()),
+        fakeJson(),
+        faker.number.int({ min: 1, max: 3600 }),
+      );
 
-    expect(transactionMock.exec).toHaveBeenCalledOnce();
-  });
+      expect(transactionMock.exec).toHaveBeenCalledOnce();
+    });
 
-  it('queues the deleteByKey batch while the client is not ready when the offline queue is enabled', async () => {
-    isClientReady = false;
+    it('queues the deleteByKey batch while the client is not ready', async () => {
+      isClientReady = false;
 
-    await target.deleteByKey(faker.string.alphanumeric());
+      await target.deleteByKey(faker.string.alphanumeric());
 
-    expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
+      expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
+    });
   });
 
   describe('with a key prefix', () => {

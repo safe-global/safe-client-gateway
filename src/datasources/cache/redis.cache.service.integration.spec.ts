@@ -192,6 +192,25 @@ describe('RedisCacheService', () => {
     expect(secondResult).toBe(0);
   });
 
+  it('Setting a field rethrows the Redis error and unlinks the key when the write is refused', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    // A string where the hash should be makes HSET fail with WRONGTYPE.
+    await redisClient.set(cacheDir.key, faker.string.alphanumeric());
+
+    await expect(
+      redisCacheService.hSet(
+        cacheDir,
+        fakeJson(),
+        faker.number.int({ min: 1 }),
+      ),
+    ).rejects.toThrow('WRONGTYPE');
+
+    expect(await redisClient.exists(cacheDir.key)).toBe(0);
+  });
+
   it('Deleting key still unlinks it and rethrows when the invalidation marker write is refused', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),

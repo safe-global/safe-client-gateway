@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
-import { ClientOfflineError } from 'redis';
+import { ClientOfflineError, MultiErrorReply } from 'redis';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import type { RedisClientType } from '#/datasources/cache/cache.module';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -89,7 +89,11 @@ export class RedisCacheService
         event: `Error setting/expiring ${key}:${cacheDir.field}`,
       });
       await this.client.unlink(key);
-      throw error;
+      // EXEC wraps a failed command in MultiErrorReply; rethrow the Redis
+      // error itself, as the separate commands did.
+      throw error instanceof MultiErrorReply
+        ? (error.errors().next().value ?? error)
+        : error;
     }
   }
 
