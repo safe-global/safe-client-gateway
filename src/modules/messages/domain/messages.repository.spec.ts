@@ -364,7 +364,7 @@ describe('MessagesRepository', () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       safeQueueService.clearMessagesBySafe.mockRejectedValueOnce(
-        new Error('queue unavailable'),
+        new Error(faker.lorem.sentence()),
       );
 
       await expect(
@@ -380,7 +380,7 @@ describe('MessagesRepository', () => {
       const chainId = faker.string.numeric();
       const messageHash = faker.string.hexadecimal({ length: 64 }) as Hash;
       safeQueueService.clearMessagesByHash.mockRejectedValueOnce(
-        new Error('queue unavailable'),
+        new Error(faker.lorem.sentence()),
       );
 
       await expect(

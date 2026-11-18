@@ -689,7 +689,6 @@ export class TransactionApi implements ITransactionApi {
     to?: Address;
     value?: string;
     nonce?: string;
-    nonceGte?: number;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>> {
@@ -717,7 +716,6 @@ export class TransactionApi implements ITransactionApi {
             to: args.to,
             value: args.value,
             nonce: args.nonce,
-            nonce__gte: args.nonceGte,
             limit: args.limit,
             offset: args.offset,
           },

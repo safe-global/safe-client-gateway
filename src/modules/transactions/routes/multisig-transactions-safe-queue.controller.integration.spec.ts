@@ -241,48 +241,51 @@ describe('Multisig transactions - Safe queue service', () => {
       );
     });
 
-    it('requests only executed transactions from the TX service when executed=false', async () => {
-      const chain = chainBuilder().build();
-      const { safe, signers } = buildSafeWithSigners();
-      const transactions = await buildExecutedTransactions({
-        chain,
-        safe,
-        signers,
-      });
-      mockUpstreams({ chain, safe, transactions });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions`,
-        )
-        .query({ executed: false })
-        .expect(200)
-        .expect(({ body }) => {
-          expect(body).toMatchObject({
-            results: transactions.map((transaction) =>
-              expect.objectContaining({
-                type: 'TRANSACTION',
-                transaction: expect.objectContaining({
-                  id: `multisig_${safe.address}_${transaction.safeTxHash}`,
-                  txStatus: 'SUCCESS',
-                }),
-              }),
-            ),
-          });
+    it.each(['false', 'not-a-boolean'])(
+      'requests only executed transactions from the TX service when executed=%s',
+      async (executed) => {
+        const chain = chainBuilder().build();
+        const { safe, signers } = buildSafeWithSigners();
+        const transactions = await buildExecutedTransactions({
+          chain,
+          safe,
+          signers,
         });
+        mockUpstreams({ chain, safe, transactions });
 
-      expect(networkService.get).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: getMultisigTransactionsUrl(chain, safe),
-          networkRequest: expect.objectContaining({
-            params: expect.objectContaining({
-              safe: safe.address,
-              executed: true,
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions`,
+          )
+          .query({ executed })
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body).toMatchObject({
+              results: transactions.map((transaction) =>
+                expect.objectContaining({
+                  type: 'TRANSACTION',
+                  transaction: expect.objectContaining({
+                    id: `multisig_${safe.address}_${transaction.safeTxHash}`,
+                    txStatus: 'SUCCESS',
+                  }),
+                }),
+              ),
+            });
+          });
+
+        expect(networkService.get).toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: getMultisigTransactionsUrl(chain, safe),
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({
+                safe: safe.address,
+                executed: true,
+              }),
             }),
           }),
-        }),
-      );
-    });
+        );
+      },
+    );
 
     it('returns the executed transactions from the TX service when executed=true', async () => {
       const chain = chainBuilder().build();

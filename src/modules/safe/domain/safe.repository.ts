@@ -768,7 +768,6 @@ export class SafeRepository implements ISafeRepository {
     to?: Address;
     value?: string;
     nonce?: string;
-    nonceGte?: number;
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {

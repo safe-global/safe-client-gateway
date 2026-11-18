@@ -1593,7 +1593,7 @@ describe('TransactionApi', () => {
       const getMultisigTransactionsUrl = `${baseUrl}/api/v2/safes/${multisigTransaction.safe}/multisig-transactions/`;
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
-        `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${multisigTransaction.nonce}_${limit}_${offset}`,
+        `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${limit}_${offset}`,
       );
       mockDataSource.get.mockResolvedValueOnce(
         rawify(multisigTransactionsPage),
@@ -1609,7 +1609,6 @@ describe('TransactionApi', () => {
         to: multisigTransaction.to,
         value: multisigTransaction.value,
         nonce: multisigTransaction.nonce.toString(),
-        nonceGte: multisigTransaction.nonce,
         limit,
         offset,
       });
@@ -1635,7 +1634,6 @@ describe('TransactionApi', () => {
             to: multisigTransaction.to,
             value: multisigTransaction.value,
             nonce: multisigTransaction.nonce.toString(),
-            nonce__gte: multisigTransaction.nonce,
             limit,
             offset,
           },
@@ -1661,7 +1659,7 @@ describe('TransactionApi', () => {
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
-        `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${multisigTransaction.nonce}_${limit}_${offset}`,
+        `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${limit}_${offset}`,
       );
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1684,7 +1682,6 @@ describe('TransactionApi', () => {
           to: multisigTransaction.to,
           value: multisigTransaction.value,
           nonce: multisigTransaction.nonce.toString(),
-          nonceGte: multisigTransaction.nonce,
           limit,
           offset,
         }),
@@ -1710,7 +1707,6 @@ describe('TransactionApi', () => {
             to: multisigTransaction.to,
             value: multisigTransaction.value,
             nonce: multisigTransaction.nonce.toString(),
-            nonce__gte: multisigTransaction.nonce,
             limit,
             offset,
           },

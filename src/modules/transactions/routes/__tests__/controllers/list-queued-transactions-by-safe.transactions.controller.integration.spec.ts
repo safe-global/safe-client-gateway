@@ -122,85 +122,91 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
       .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
-  it('should serve the queue for the deprecated trusted query without forwarding it', async () => {
-    const chain = chainBuilder().build();
-    const signer = privateKeyToAccount(generatePrivateKey());
-    const safe = safeBuilder()
-      .with('nonce', 1)
-      .with('owners', [signer.address])
-      .build();
-    const transaction = await multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .with('isExecuted', false)
-      .with('nonce', 1)
-      .buildWithConfirmations({
-        safe,
-        chainId: chain.chainId,
-        signers: [signer],
+  it.each(['false', 'not-a-boolean'])(
+    'should serve the queue for the deprecated trusted=%s query without forwarding it',
+    async (trusted) => {
+      const chain = chainBuilder().build();
+      const signer = privateKeyToAccount(generatePrivateKey());
+      const nonce = faker.number.int({ min: 1, max: 1000 });
+      const safe = safeBuilder()
+        .with('nonce', nonce)
+        .with('owners', [signer.address])
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .buildWithConfirmations({
+          safe,
+          chainId: chain.chainId,
+          signers: [signer],
+        });
+      const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+        if (
+          url === `${chain.transactionService}/api/v1/safes/${safe.address}/`
+        ) {
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        }
+        if (url === getQueueUrl) {
+          return Promise.resolve({
+            data: rawify(
+              pageBuilder()
+                .with('count', 1)
+                .with('next', null)
+                .with('previous', null)
+                .with('results', [
+                  safeQueueMultisigTransactionFrom(
+                    multisigToJson(transaction) as MultisigTransaction,
+                    chain.chainId,
+                  ).build(),
+                ])
+                .build(),
+            ),
+            status: 200,
+          });
+        }
+        if (url === `${safeConfigUrl}/api/v1/safe-apps/`) {
+          return Promise.resolve({ data: rawify([]), status: 200 });
+        }
+        if (url.includes(`${safeDecoderUrl}/api/v1/contracts/`)) {
+          return Promise.resolve({
+            data: rawify(pageBuilder().with('results', []).build()),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
       });
-    const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
-    networkService.get.mockImplementation(({ url }) => {
-      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-        return Promise.resolve({ data: rawify(chain), status: 200 });
-      }
-      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}/`) {
-        return Promise.resolve({ data: rawify(safe), status: 200 });
-      }
-      if (url === getQueueUrl) {
-        return Promise.resolve({
-          data: rawify(
-            pageBuilder()
-              .with('count', 1)
-              .with('next', null)
-              .with('previous', null)
-              .with('results', [
-                safeQueueMultisigTransactionFrom(
-                  multisigToJson(transaction) as MultisigTransaction,
-                  chain.chainId,
-                ).build(),
-              ])
-              .build(),
-          ),
-          status: 200,
-        });
-      }
-      if (url === `${safeConfigUrl}/api/v1/safe-apps/`) {
-        return Promise.resolve({ data: rawify([]), status: 200 });
-      }
-      if (url.includes(`${safeDecoderUrl}/api/v1/contracts/`)) {
-        return Promise.resolve({
-          data: rawify(pageBuilder().with('results', []).build()),
-          status: 200,
-        });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
 
-    await request(app.getHttpServer())
-      .get(
-        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued?trusted=false`,
-      )
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.results).toContainEqual(
-          expect.objectContaining({
-            type: 'TRANSACTION',
-            transaction: expect.objectContaining({
-              id: `multisig_${safe.address}_${transaction.safeTxHash}`,
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued?trusted=${trusted}`,
+        )
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.results).toContainEqual(
+            expect.objectContaining({
+              type: 'TRANSACTION',
+              transaction: expect.objectContaining({
+                id: `multisig_${safe.address}_${transaction.safeTxHash}`,
+              }),
             }),
-          }),
-        );
-      });
+          );
+        });
 
-    expect(networkService.get).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: getQueueUrl,
-        networkRequest: expect.objectContaining({
-          params: expect.not.objectContaining({ trusted: expect.anything() }),
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: getQueueUrl,
+          networkRequest: expect.objectContaining({
+            params: expect.not.objectContaining({ trusted: expect.anything() }),
+          }),
         }),
-      }),
-    );
-  });
+      );
+    },
+  );
 
   it('should get a transactions queue with labels and conflict headers', async () => {
     const chainResponse = chainBuilder().build();
