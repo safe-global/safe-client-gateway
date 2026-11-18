@@ -10,15 +10,16 @@
  * the repository's dependencies.
  *
  * Usage: node scripts/risk-tier.ts --map <risk-tiers.md> --files <files.ndjson>
- *          --reviews <reviews.ndjson> --commit-authors <logins.txt>
+ *          --reviews <reviews.ndjson> --commit-authors <ids.txt> --maintainers <ids.txt>
  *   --files           one JSON object per line, shaped like the GitHub "list
  *                     pull request files" API entries:
  *                     { filename, previous_filename?, additions, deletions }
  *   --reviews         one JSON object per line, in submission order:
- *                     { login, type, association, state }
- *   --commit-authors  one GitHub login per line: everyone who authored a commit
+ *                     { id, login, type, state }
+ *   --commit-authors  one numeric user ID per line, including co-authors
+ *   --maintainers     one authorized human maintainer ID per line
  *   PR_BODY           (env) the pull request description
- *   PR_AUTHOR         (env) the login that opened the pull request
+ *   PR_AUTHOR_ID      (env) the numeric ID of the person who opened the PR
  *   GITHUB_OUTPUT / GITHUB_STEP_SUMMARY (env, optional) written when set
  *
  * Reports through outputs, the job summary and a `::notice` annotation only:
@@ -53,7 +54,7 @@ export type TierVerdict = {
 export type Review = {
   login: string;
   isBot: boolean;
-  association: string;
+  id: string;
   state: string;
 };
 
@@ -84,10 +85,6 @@ export const REQUIRED_HUMAN_APPROVALS: Record<Tier, number> = {
   4: 0,
 };
 
-// Associations GitHub reports for people with a standing relationship to the
-// repository. Code-owner review in branch protection narrows this to the
-// maintainers team; this check only guarantees the count.
-const MAINTAINER_ASSOCIATIONS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
 // Review states that change a reviewer's standing. COMMENTED and PENDING do
 // not: a comment after an approval leaves the approval in place.
 const DECISIVE_REVIEW_STATES = new Set([
@@ -134,7 +131,7 @@ export function globToRegExp(glob: string): RegExp {
       source += char.replace(/[.+^${}()|[\]\\]/g, '\\$&');
     }
   }
-  return new RegExp(`^${source}$`);
+  return new RegExp(`^${source}$`, 's');
 }
 
 /** Reads the `tier-map` block out of the risk-tiers guide. */
@@ -251,7 +248,7 @@ export function parseChangedFiles(ndjson: string): Array<ChangedFile> {
         !('filename' in entry) ||
         typeof entry.filename !== 'string'
       ) {
-        throw new Error(`Malformed changed-file entry: ${line}`);
+        throw new Error('Malformed changed-file entry');
       }
       const previous =
         'previous_filename' in entry &&
@@ -285,58 +282,54 @@ export function parseReviews(ndjson: string): Array<Review> {
         entry === null ||
         !('login' in entry) ||
         typeof entry.login !== 'string' ||
+        !('id' in entry) ||
+        typeof entry.id !== 'string' ||
+        !/^[1-9]\d*$/.test(entry.id) ||
         !('state' in entry) ||
         typeof entry.state !== 'string'
       ) {
-        throw new Error(`Malformed review entry: ${line}`);
+        throw new Error('Malformed review entry');
       }
-      const type =
-        'type' in entry && typeof entry.type === 'string' ? entry.type : '';
-      const association =
-        'association' in entry && typeof entry.association === 'string'
-          ? entry.association
-          : '';
       return {
         login: entry.login,
-        isBot: type === 'Bot' || entry.login.endsWith('[bot]'),
-        association,
+        id: entry.id,
+        isBot:
+          !('type' in entry) ||
+          entry.type !== 'User' ||
+          entry.login.endsWith('[bot]'),
         state: entry.state,
       };
     });
 }
 
-/** One GitHub login per line; blank lines ignored. */
-export function parseLogins(text: string): Array<string> {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
+/** REST and GraphQL both provide stable numeric GitHub user IDs. */
+export function parseUserIds(text: string): Array<string> {
+  const ids = text.split(/\s+/).filter(Boolean);
+  if (ids.some((id) => !/^[1-9]\d*$/.test(id))) {
+    throw new Error('Expected numeric GitHub user IDs');
+  }
+  return ids;
 }
 
-/**
- * The humans whose latest decisive review is an approval. Bots, people without
- * a standing association to the repository, and anyone in `excluded` (the PR
- * author and every commit author: whoever wrote or directed the change cannot
- * approve it) are not counted. Logins compare case-insensitively, as on GitHub.
- */
 export function humanApprovers(
   reviews: ReadonlyArray<Review>,
   excluded: ReadonlyArray<string>,
+  maintainers: ReadonlyArray<string>,
 ): Array<string> {
-  const excludedLogins = new Set(excluded.map((login) => login.toLowerCase()));
+  const eligible = new Set(maintainers);
+  for (const id of excluded) {
+    eligible.delete(id);
+  }
   const latest = new Map<string, Review>();
   for (const review of reviews) {
     if (DECISIVE_REVIEW_STATES.has(review.state)) {
-      latest.set(review.login.toLowerCase(), review);
+      latest.set(review.id, review);
     }
   }
   return [...latest.entries()]
     .filter(
-      ([login, review]) =>
-        review.state === 'APPROVED' &&
-        !review.isBot &&
-        MAINTAINER_ASSOCIATIONS.has(review.association) &&
-        !excludedLogins.has(login),
+      ([id, review]) =>
+        review.state === 'APPROVED' && !review.isBot && eligible.has(id),
     )
     .map(([, review]) => review.login);
 }
@@ -386,7 +379,7 @@ export function renderSummary(
       lines.push(
         `<details><summary>Tier ${tier} paths (${files.length})</summary>`,
         '',
-        ...files.map((f) => `- \`${f}\``),
+        ...files.map((f) => `- \`${encodeURI(f)}\``),
         '',
         '</details>',
         '',
@@ -418,14 +411,15 @@ function main(): void {
     humanApprovers(
       parseReviews(fs.readFileSync(argValue('--reviews'), 'utf8')),
       [
-        process.env.PR_AUTHOR ?? '',
-        ...parseLogins(fs.readFileSync(argValue('--commit-authors'), 'utf8')),
-      ].filter((login) => login !== ''),
+        ...parseUserIds(process.env.PR_AUTHOR_ID ?? ''),
+        ...parseUserIds(fs.readFileSync(argValue('--commit-authors'), 'utf8')),
+      ],
+      parseUserIds(fs.readFileSync(argValue('--maintainers'), 'utf8')),
     ),
   );
   const summary = renderSummary(assessment, verdict, approvals);
 
-  process.stdout.write(`${summary}\n`);
+  // Only fixed-format annotations go to the runner's workflow-command stream.
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary}\n`);
   }

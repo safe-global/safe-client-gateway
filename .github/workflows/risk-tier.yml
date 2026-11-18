@@ -1,37 +1,11 @@
 # SPDX-License-Identifier: FSL-1.1-MIT
-# =============================================================================
-# Risk tier: computes a PR's tier from its changed paths and reports it
-# =============================================================================
-# Applies docs/agents/risk-tiers.md: the most critical tier of any path the PR
-# touches (a rename counts its old path too), raised one tier for a large
-# Tier 3/4 change. The job fails when the PR description has no
-# `**Risk tier:** <n>` line or states a less critical tier than computed.
-# Content-based escalations (guards, secrets, migrations, …) stay with the
-# reviewer: this check computes a floor, not the final word.
-#
-# A second check, "Risk tier approvals", fails until the PR has the human
-# approvals its tier needs (Tier 1: two, Tier 2: one, Tier 3/4: none). It
-# counts each reviewer's latest decisive review, and ignores bots, the PR
-# author, commit authors, and reviewers with no OWNER/MEMBER/COLLABORATOR
-# association. It re-runs on every review event, so it turns green as soon as
-# the last needed approval lands.
-#
-# The tier map and the script are read from the PR's BASE commit, so a PR
-# cannot lower its own tier by editing them. Only while the base has no copy
-# yet (the PR that introduces this check) does it fall back to the PR's own.
-# The PR head is never checked out beyond those two files.
-#
-# The workflow needs no write permission: it only reads the PR's files,
-# reviews and commits, and reports through the job summary, annotations and
-# job names, never a label or a comment.
-#
-# Neither check gates on its own. To block merges, mark "Compute risk tier"
-# and "Risk tier approvals" as required in branch protection (see
-# risk-tiers.md, Enforcement status).
-# -----------------------------------------------------------------------------
+# The protected ruleset workflow calls this evaluator at its own revision.
+# Ordinary PR and review runs refresh the status checks on edits and dismissals.
+# See docs/agents/risk-tiers.md for the bootstrap and native review rules.
 name: Risk tier
 
 on:
+  workflow_call:
   pull_request:
     types: [opened, synchronize, reopened, edited, ready_for_review]
   # Re-count approvals whenever a review is submitted, edited or dismissed.
@@ -49,9 +23,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    concurrency:
-      group: risk-tier-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     outputs:
       tier: ${{ steps.tier.outputs.tier }}
       allows: ${{ steps.tier.outputs.allows }}
@@ -70,64 +41,42 @@ jobs:
             .nvmrc
             docs/agents/risk-tiers.md
             scripts/risk-tier.ts
+            scripts/risk-tier-inputs.sh
 
-      - name: Choose where the tier map and script come from
-        id: source
+      - name: Require the trusted policy on the base
         run: |
-          if [ -f base/scripts/risk-tier.ts ] && [ -f base/docs/agents/risk-tiers.md ]; then
-            echo "dir=base" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice title=Risk tier::The base commit has no risk-tier check yet; using this PR's own copy (bootstrap)."
-            echo "dir=head" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Check out the tier map and script from the PR (bootstrap only)
-        if: steps.source.outputs.dir == 'head'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: head
-          persist-credentials: false
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            .nvmrc
-            docs/agents/risk-tiers.md
-            scripts/risk-tier.ts
+          for file in docs/agents/risk-tiers.md scripts/risk-tier.ts scripts/risk-tier-inputs.sh; do
+            if [ ! -f "base/$file" ]; then
+              echo "::error::Missing base policy. Two independent maintainers must review the bootstrap."
+              exit 1
+            fi
+          done
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: ${{ steps.source.outputs.dir }}/.nvmrc
+          node-version-file: base/.nvmrc
+          package-manager-cache: false
 
-      - name: List changed files, reviews and commit authors
+      - name: Read current PR evidence
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-        run: |
-          gh api --paginate "repos/$REPO/pulls/$PR/files" \
-            --jq '.[] | {filename, previous_filename, additions, deletions} | tojson' \
-            > "$RUNNER_TEMP/changed-files.ndjson"
-          gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
-            --jq '.[] | select(.user != null) | {login: .user.login, type: .user.type, association: .author_association, state} | tojson' \
-            > "$RUNNER_TEMP/reviews.ndjson"
-          gh api --paginate "repos/$REPO/pulls/$PR/commits" \
-            --jq '.[] | .author.login // empty' \
-            > "$RUNNER_TEMP/commit-authors.txt"
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash base/scripts/risk-tier-inputs.sh
 
       - name: Compute and check the tier
         id: tier
-        env:
-          # Passed through the environment, never interpolated into the
-          # script: the description is untrusted input.
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          DIR: ${{ steps.source.outputs.dir }}
         run: |
-          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$DIR/scripts/risk-tier.ts" \
-            --map "$DIR/docs/agents/risk-tiers.md" \
+          PR_BODY="$(jq -r '.body // ""' "$RUNNER_TEMP/pr.json")"
+          PR_AUTHOR_ID="$(jq -er '.user.id' "$RUNNER_TEMP/pr.json")"
+          export PR_BODY PR_AUTHOR_ID
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON base/scripts/risk-tier.ts \
+            --map base/docs/agents/risk-tiers.md \
             --files "$RUNNER_TEMP/changed-files.ndjson" \
             --reviews "$RUNNER_TEMP/reviews.ndjson" \
-            --commit-authors "$RUNNER_TEMP/commit-authors.txt"
+            --commit-authors "$RUNNER_TEMP/commit-authors.txt" \
+            --maintainers "$RUNNER_TEMP/maintainers.txt"
 
   # Shows the tier in the PR's checks list through this job's name, e.g.
   # "Tier 1 — two human maintainer approvals required". A job name may use
@@ -151,12 +100,11 @@ jobs:
         run: echo "Risk tier $TIER — $ALLOWS (docs/agents/risk-tiers.md)"
 
   # The approval gate. Its name is stable, so it can be a required check. It
-  # stays red until the tier's human approvals are in; a new push resets it
-  # only if branch protection dismisses stale approvals.
+  # counts approvals for the current PR head.
   approvals:
     name: Risk tier approvals
     needs: compute
-    if: always() && needs.compute.outputs.tier != ''
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions: {}
@@ -166,8 +114,13 @@ jobs:
           TIER: ${{ needs.compute.outputs.tier }}
           REQUIRED: ${{ needs.compute.outputs.approvals_required }}
           COUNT: ${{ needs.compute.outputs.approvals_count }}
+          COMPUTE: ${{ needs.compute.result }}
           OK: ${{ needs.compute.outputs.approvals_ok }}
         run: |
+          if [ "$COMPUTE" != "success" ]; then
+            echo "::error::Risk tier evidence is missing or invalid."
+            exit 1
+          fi
           if [ "$OK" = "true" ]; then
             echo "Tier $TIER: $COUNT of $REQUIRED required human approvals."
           else

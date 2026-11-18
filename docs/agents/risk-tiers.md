@@ -96,6 +96,7 @@ tier1:
   - src/modules/spaces/domain/space-assert.utils.ts
   - src/datasources/jwt/**
   - src/datasources/kms/**
+  - scripts/generate-token.ts
   - scripts/backfill-field-encryption.ts
   - scripts/generate-field-encryption-index-key.ts
   # Process-wide wiring: configuration, the global Nest layer, the HTTP edge
@@ -105,11 +106,14 @@ tier1:
   - src/middleware/**
   # Build, deploy and supply chain
   - .github/workflows/**
+  - .github/rulesets/risk-tier.json
   - .github/CODEOWNERS
   - Dockerfile
+  - scripts/generate-abis.js
   # Agent guardrails, and the check that enforces them
   - docs/agents/risk-tiers.md
   - scripts/risk-tier.ts
+  - scripts/risk-tier-inputs.sh
   - scripts/risk-tier.spec.ts
   - AGENTS.md
   - CLAUDE.md
@@ -117,6 +121,7 @@ tier1:
 
 tier2:
   # Workspaces, money and entitlements
+  - src/modules/surveys/**
   - src/modules/spaces/**
   - src/modules/billing/**
   - src/modules/entitlements/**
@@ -198,7 +203,6 @@ tier4:
   - src/modules/about/**
   - src/modules/health/**
   - src/modules/root/**
-  - src/modules/surveys/**
   - README.md
   - CONTRIBUTING.md
   - TESTING.md
@@ -221,6 +225,7 @@ tier4:
 | `delegate`, `recovery`, `policies`, `owners` | Who is allowed to propose, recover or govern a Safe, and the guard configuration enforced on-chain. |
 | Guards, `src/routes/common/auth`, `space-assert.utils.ts`, `jwt`, `kms`, field-encryption scripts | Authorization primitives that every other module trusts. |
 | `src/config`, `main.ts`, `src/app.*`, `middleware` | The global guard, interceptor, filter and validation layer, plus every secret's declaration. One change here affects every route at once. |
+| `generate-token.ts`, `generate-abis.js` | Issues billing webhook credentials and generates contract interfaces during production builds, respectively. |
 | `.github/workflows`, `CODEOWNERS`, `Dockerfile` | What gets built, deployed, and who must approve it. |
 | `risk-tiers.md`, root `AGENTS.md`/`CLAUDE.md`, `.claude/settings.json` | The rules that bind agents. If an agent can edit them unreviewed, it can lower its own bar. |
 
@@ -228,6 +233,7 @@ tier4:
 
 | Paths | Why |
 |---|---|
+| `surveys` | Reads and writes survey responses scoped to a Workspace. Changes to admin checks escalate to Tier 1. |
 | `spaces`, `billing`, `entitlements` | Workspace authorization and paid features. Most mistakes here leak data across tenants or cost money, but none of them signs anything. |
 | `hooks`, `notifications`, `email` | Inbound webhooks that drive cache invalidation across modules, and outbound messages users act on. |
 | `chains`, `safe`, `safe-queue`, `counterfactual-safes`, `estimations`, `blockchain`, `backbone`, `queues`, `indexing`, `contracts` | Safe state, nonces, chain configuration and upstream URLs that the Tier 1 modules build on. |
@@ -238,7 +244,7 @@ tier4:
 
 **Tier 3.** These modules serve read-only display data: balances, portfolio, positions, tokens, collectibles, Zerion, CSV export, Safe Apps, targeted messaging, alerts, community. A defect shows something wrong, a user or monitoring notices, and a fix-forward repairs it. Shared test harnesses, scripts, local-dev and editor configuration, and Spec Kit specs are here too.
 
-**Tier 4.** These are informational endpoints (`about`, `health`, `root`, `surveys`) and non-normative docs. A defect here has no user, fund or data impact. A `docs/` file that defines rules for agents is not Tier 4: `docs/agents/**` is matched first, as Tier 2.
+**Tier 4.** These are informational endpoints (`about`, `health`, `root`) and non-normative docs. A defect here has no user, fund or data impact. A `docs/` file that defines rules for agents is not Tier 4: `docs/agents/**` is matched first, as Tier 2.
 
 ## What this means for an implementer
 
@@ -262,32 +268,16 @@ tier4:
 - **Agents learn the rules on their own.**
   - The `cgw-risk-tiers` skill loads this guide whenever a task or review starts.
   - [reviewing.md](reviewing.md) requires the tier at the top of every review. The review hook that runs before each commit applies it, and so does the `Architecture Check` workflow (`@claude arch-review`).
-- **CI computes the tier.** The `Risk tier` workflow (`.github/workflows/risk-tier.yml`, script `scripts/risk-tier.ts`) runs on every PR:
-  - It parses the `tier-map` block above and computes the tier from the changed paths. A rename counts its old path too, and the size row of rule 3 applies.
-  - Its `Compute risk tier` check **fails** when the PR description has no `**Risk tier:** <n>` line, or states a less critical tier than the one computed.
-  - It reads the map and the script from the PR's **base** commit, so a PR can't lower its own tier by editing them.
-  - It shows the tier in three places: a check named `Tier <n> — <what it allows>` in the PR's checks list, an annotation, and the job summary, which lists every path by tier.
-- **CI counts the human approvals.** The `Risk tier approvals` check **fails** until the PR has the human approvals the tier table requires: two at Tier 1, one at Tier 2, none at Tiers 3 and 4.
-  - It re-runs on every review submitted, edited or dismissed, so it turns green as soon as the last needed approval lands.
-  - It counts each reviewer's latest approve or request-changes decision. A later comment doesn't cancel an approval, but a dismissal or a request for changes does.
-  - An approval counts only from a human (not a bot account) whose GitHub association with the repository is `OWNER`, `MEMBER` or `COLLABORATOR`.
-  - The PR's author and everyone who authored one of its commits are excluded, because whoever wrote the change can't approve it.
-  - The tier it uses is the stricter of the computed tier and the one the description states.
-- **No write permission anywhere.** The workflow only reads the PR's files, reviews and commits. It never labels, comments, or changes the PR.
-- **The repository keeps the map honest.** `scripts/risk-tier.spec.ts` runs in `yarn test`. It fails when a module under `src/modules/` has no explicit tier, so a new module can't silently default, and when a pattern no longer matches any file.
+- **CI computes the tier.** The classifier reads the base revision's policy and accounts for both paths of a rename. The check fails on a missing or understated declaration. The tier and approvals appear in the job summary. Reviewers apply content-based escalations and record the higher tier in the PR description.
+- **CI checks independent approvals.** Only an approval on the current head from a human on the protected maintainer roster counts. A later changes-requested decision or dismissal revokes it. The PR opener and all identified commit authors and co-authors are excluded. The person directing an agent must also recuse themselves.
+- **Incomplete evidence blocks the check.** CI verifies the base and head, the total number of unique changed files and commits, and all author identities. A truncated file list, an unlinked author or a change of revision requires human investigation. Split an oversized PR or correct the author attribution before retrying.
+- **The map is tested.** Unit tests check module coverage, stale patterns and security-sensitive paths.
 
-**What the checks do not do:**
+### Activating the merge rules
 
-- They don't compute the content-based escalations of rule 3 (guards, signatures, secrets, migrations, new dependencies, signing-flow display data). The reviewer applies those. If those raise the tier, the reviewer states it, and the description must then carry the higher tier, which the approvals check follows.
-- They don't check that an approver is in the maintainers team specifically. A workflow token can't read team membership. Code-owner review (below) makes that guarantee.
-- They don't know who *directed* an agent. That person is excluded only if they authored a commit or opened the PR, so they must not approve otherwise; this stays a rule for people.
-- They don't block a merge on their own. Until the settings below are configured, a red check is a warning that can be ignored.
+1. Two independent human maintainers review the bootstrap PR. Until the classifier and input reader exist on protected `main`, the check fails closed.
+2. An organization administrator creates the multi-select custom property `risk-tier-maintainers` with **organization actors only** allowed to set its values. On this repository, select the numeric GitHub account IDs of the human members of the CODEOWNERS maintainers team. Update membership and the roster together, including removals. The workflow reads this property with the repository token. An empty roster yields zero eligible approvals.
+3. After bootstrap, import the [organization branch ruleset](../../.github/rulesets/risk-tier.json). It selects `.github/workflows/risk-tier-required.yml` by repository, file and protected ref. This base-side workflow calls the evaluator at its own revision. It also requires the two Actions status checks for review and description updates and requires two members of the maintainers team for changes to workflow definitions. Apply it alongside existing branch protections. A named status check alone cannot establish which workflow produced it.
+4. On a Tier 1 or 2 PR, regular review events refresh the named checks. GitHub runs the separate ruleset workflow on open, synchronization and reopen. After the approvals arrive or the description changes, rerun **all jobs** of the ruleset run if its previous result was red. It reads current PR evidence again. A new commit requires fresh approvals. When a maintainer leaves the roster, rerun the checks on open PRs before merging.
 
-**Still needed, as repository settings rather than code (admin only):**
-
-1. **Make both checks required.** In branch protection for `main`, add `Compute risk tier` and `Risk tier approvals` as required status checks. Don't require the `Tier <n> — …` check: its name changes with the tier.
-2. **Require code-owner review.** Own Tier 1 and Tier 2 paths in `CODEOWNERS` by a human-only maintainers team, and turn on "Require review from Code Owners". Then the approvals the check counts must include a maintainer.
-3. **Dismiss stale approvals on new commits.** Without this, an approval given before a later push still counts toward the tier's total.
-4. **Restrict agent approvals.** If a review bot gets approve rights, it approves only PRs whose `Compute risk tier` result is Tier 3 or 4. The approvals check already ignores bot approvals at every tier.
-
-Items 1 to 3 are what agents can't get around, so this guide should not be considered fully enforced until they are in place.
+Until the organization activates the ruleset and configures the roster, use the human approval policy above. [GitHub ruleset workflow triggers](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#supported-event-triggers)

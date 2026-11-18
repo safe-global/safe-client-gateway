@@ -67,14 +67,9 @@ The review agent reads untrusted PR content, so its prompt carries the same inje
 
 `.github/workflows/risk-tier.yml` runs on every pull request. It is the CI half of [risk-tiers.md](risk-tiers.md), and that guide's "Enforcement status" section is where its behaviour is documented. Unlike the review hook and `Architecture Check`, it is not an LLM: `scripts/risk-tier.ts` computes the tier deterministically from the guide's `tier-map` block.
 
-It reports through two required-check candidates: `Compute risk tier`, which fails on a missing or understated tier line, and `Risk tier approvals`, which fails until the tier's human approvals are in. It re-runs on review events for the second.
+The organization ruleset selects the workflow from protected `main`. The runner checks out the classifier, input reader and map from the PR base. It reads PR files, reviews, authors and the organization-managed roster through read-only APIs. The dependency-free classifier emits a fixed-format annotation and writes escaped paths to the job summary. The first installation needs independent human review because the trusted base has no classifier yet.
 
-Four constraints shape it, and any edit must keep them:
-
-- **No dependency install.** The script imports only Node built-ins and runs as TypeScript through Node's type stripping, so the job needs only the `.nvmrc` Node version. Adding an import from `node_modules` or the `#/` alias breaks the job, not the tests.
-- **Read from the base commit.** The map and the script come from the PR's base. The workflow uses the PR's own copy only while the base has none, which is the bootstrap case of the PR that introduced them.
-- **Untrusted input stays in the environment.** The PR description reaches the script as `PR_BODY`, never interpolated into a `run:` line.
-- **Keep the script's command-line interface backward compatible for one PR.** The workflow file runs from the PR, but the script comes from the base commit. A PR that renames or adds a required flag breaks its own run, because the base script doesn't know the new flag yet. Add new flags as optional first, or change the workflow and the script in separate PRs.
+`Compute risk tier` validates the declared tier and evidence. `Risk tier approvals` checks the required maintainer count. For activation and when to rerun the protected workflow, see [Enforcement status](risk-tiers.md#enforcement-status).
 
 Its tests (`scripts/risk-tier.spec.ts`) also guard the map itself: an unclassified module, or a pattern that has gone stale, fails `yarn test`.
 

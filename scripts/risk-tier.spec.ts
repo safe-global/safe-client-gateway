@@ -13,10 +13,10 @@ import {
   judgeApprovals,
   matchTier,
   parseChangedFiles,
-  parseLogins,
   parseReviews,
   parseStatedTier,
   parseTierMap,
+  parseUserIds,
   REQUIRED_HUMAN_APPROVALS,
   type Review,
   renderSummary,
@@ -40,7 +40,7 @@ function reviewBuilder(): IBuilder<Review> {
   return new Builder<Review>()
     .with('login', faker.internet.username())
     .with('isBot', false)
-    .with('association', 'MEMBER')
+    .with('id', String(faker.number.int({ min: 1 })))
     .with('state', 'APPROVED');
 }
 
@@ -348,138 +348,73 @@ describe('risk-tier', () => {
     });
   });
 
-  describe('parseReviews', () => {
-    it('reads GitHub review entries and flags bots', () => {
-      const human = faker.internet.username();
-      const bot = `${faker.internet.username()}[bot]`;
-      const ndjson = [
-        JSON.stringify({
-          login: human,
-          type: 'User',
-          association: 'MEMBER',
-          state: 'APPROVED',
-        }),
-        '',
-        JSON.stringify({
-          login: bot,
-          type: 'User',
-          association: 'NONE',
-          state: 'APPROVED',
-        }),
-      ].join('\n');
+  it('classifies filenames with line breaks and renders them on one Markdown line', () => {
+    const filename = 'private/name\nwith`format<chars>.ts';
+    const assessment = assessTier({ 1: ['private/**'], 2: [], 3: [], 4: [] }, [
+      changedFileBuilder().with('filename', filename).build(),
+    ]);
+    expect(assessment.computedTier).toBe(1);
+    const summary = renderSummary(
+      assessment,
+      judge(1, 1),
+      judgeApprovals(1, []),
+    );
+    expect(summary).toContain('- `private/name%0Awith%60format%3Cchars%3E.ts`');
+  });
 
-      expect(parseReviews(ndjson)).toEqual([
-        {
-          login: human,
-          isBot: false,
-          association: 'MEMBER',
-          state: 'APPROVED',
-        },
-        { login: bot, isBot: true, association: 'NONE', state: 'APPROVED' },
+  describe('review evidence', () => {
+    it('requires an ID and a human account type', () => {
+      const review = reviewBuilder().build();
+      const input = { ...review, type: 'User' };
+      expect(parseReviews(JSON.stringify(input))).toEqual([review]);
+      for (const type of ['Bot', undefined]) {
+        expect(parseReviews(JSON.stringify({ ...input, type }))[0].isBot).toBe(
+          true,
+        );
+      }
+      expect(
+        parseReviews(
+          JSON.stringify({ ...input, login: `${review.login}[bot]` }),
+        )[0].isBot,
+      ).toBe(true);
+      expect(() =>
+        parseReviews(JSON.stringify({ ...input, id: undefined })),
+      ).toThrow('Malformed review');
+    });
+
+    it('parses only numeric account IDs', () => {
+      expect(parseUserIds('12\n  34\n')).toEqual(['12', '34']);
+      expect(parseUserIds('')).toEqual([]);
+      expect(() => parseUserIds('12 someone')).toThrow(
+        'numeric GitHub user IDs',
+      );
+    });
+
+    it('counts only the current approval of an eligible maintainer', () => {
+      const reviewer = reviewBuilder().build();
+      const other = reviewBuilder().build();
+      const members = [reviewer.id];
+      expect(humanApprovers([reviewer, other], [], members)).toEqual([
+        reviewer.login,
       ]);
-    });
-
-    it('flags an account of type Bot', () => {
-      const [review] = parseReviews(
-        JSON.stringify({
-          login: faker.internet.username(),
-          type: 'Bot',
-          association: 'MEMBER',
-          state: 'APPROVED',
-        }),
-      );
-
-      expect(review.isBot).toBe(true);
-    });
-
-    it('throws on an entry without a login or state', () => {
-      expect(() => parseReviews(JSON.stringify({ state: 'APPROVED' }))).toThrow(
-        'Malformed review entry',
-      );
-    });
-  });
-
-  describe('parseLogins', () => {
-    it('reads one login per line, ignoring blanks and whitespace', () => {
-      const [a, b] = [faker.internet.username(), faker.internet.username()];
-
-      expect(parseLogins(`${a}\n\n  ${b}  \n`)).toEqual([a, b]);
-    });
-  });
-
-  describe('humanApprovers', () => {
-    it('counts each human approver once', () => {
-      const login = faker.internet.username();
-      const reviews = [
-        reviewBuilder().with('login', login).build(),
-        reviewBuilder().with('login', login).build(),
-      ];
-
-      expect(humanApprovers(reviews, [])).toEqual([login]);
-    });
-
-    it("uses each reviewer's latest decisive review", () => {
-      const withdrawn = faker.internet.username();
-      const renewed = faker.internet.username();
-      const reviews = [
-        reviewBuilder().with('login', withdrawn).build(),
-        reviewBuilder()
-          .with('login', withdrawn)
-          .with('state', 'CHANGES_REQUESTED')
-          .build(),
-        reviewBuilder()
-          .with('login', renewed)
-          .with('state', 'DISMISSED')
-          .build(),
-        reviewBuilder().with('login', renewed).build(),
-      ];
-
-      expect(humanApprovers(reviews, [])).toEqual([renewed]);
-    });
-
-    it('keeps an approval that a later comment follows', () => {
-      const login = faker.internet.username();
-      const reviews = [
-        reviewBuilder().with('login', login).build(),
-        reviewBuilder().with('login', login).with('state', 'COMMENTED').build(),
-      ];
-
-      expect(humanApprovers(reviews, [])).toEqual([login]);
-    });
-
-    it('drops an approval that was later dismissed', () => {
-      const login = faker.internet.username();
-      const reviews = [
-        reviewBuilder().with('login', login).build(),
-        reviewBuilder().with('login', login).with('state', 'DISMISSED').build(),
-      ];
-
-      expect(humanApprovers(reviews, [])).toEqual([]);
-    });
-
-    it('ignores bots and reviewers with no standing association', () => {
-      const reviews = [
-        reviewBuilder().with('isBot', true).build(),
-        reviewBuilder().with('association', 'CONTRIBUTOR').build(),
-        reviewBuilder().with('association', 'NONE').build(),
-      ];
-
-      expect(humanApprovers(reviews, [])).toEqual([]);
-    });
-
-    it('counts OWNER, MEMBER and COLLABORATOR approvals', () => {
-      const reviews = ['OWNER', 'MEMBER', 'COLLABORATOR'].map((association) =>
-        reviewBuilder().with('association', association).build(),
-      );
-
-      expect(humanApprovers(reviews, [])).toHaveLength(3);
-    });
-
-    it('ignores the excluded logins, case-insensitively', () => {
-      const author = faker.internet.username();
-      const reviews = [reviewBuilder().with('login', author).build()];
-
-      expect(humanApprovers(reviews, [author.toUpperCase()])).toEqual([]);
+      expect(humanApprovers([reviewer], [], [])).toEqual([]);
+      expect(humanApprovers([reviewer], [reviewer.id], members)).toEqual([]);
+      expect(
+        humanApprovers([{ ...reviewer, isBot: true }], [], members),
+      ).toEqual([]);
+      const renamed = { ...reviewer, login: faker.internet.username() };
+      expect(
+        humanApprovers(
+          [reviewer, renamed, { ...renamed, state: 'COMMENTED' }],
+          [],
+          members,
+        ),
+      ).toEqual([renamed.login]);
+      for (const state of ['DISMISSED', 'CHANGES_REQUESTED']) {
+        expect(
+          humanApprovers([reviewer, { ...renamed, state }], [], members),
+        ).toEqual([]);
+      }
     });
   });
 
@@ -538,8 +473,18 @@ describe('risk-tier', () => {
     it('keeps the guide, this check and its workflow at Tier 1', () => {
       expect(tierOfPath(map, 'docs/agents/risk-tiers.md')).toBe(1);
       expect(tierOfPath(map, 'scripts/risk-tier.ts')).toBe(1);
+      expect(tierOfPath(map, 'scripts/risk-tier-inputs.sh')).toBe(1);
+      expect(tierOfPath(map, 'scripts/generate-abis.js')).toBe(1);
+      expect(tierOfPath(map, 'scripts/generate-token.ts')).toBe(1);
+      expect(
+        tierOfPath(map, 'src/modules/surveys/domain/surveys.repository.ts'),
+      ).toBe(2);
       expect(tierOfPath(map, 'scripts/risk-tier.spec.ts')).toBe(1);
       expect(tierOfPath(map, '.github/workflows/risk-tier.yml')).toBe(1);
+      expect(tierOfPath(map, '.github/workflows/risk-tier-required.yml')).toBe(
+        1,
+      );
+      expect(tierOfPath(map, '.github/rulesets/risk-tier.json')).toBe(1);
     });
   });
 });
