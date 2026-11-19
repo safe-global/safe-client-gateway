@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
@@ -258,6 +262,53 @@ describe('AuthService', () => {
         usersRepositoryMock.findOrCreateByWalletAddress,
       ).not.toHaveBeenCalled();
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException when expirationTime has passed', async () => {
+      const siweMessage = siweMessageBuilder()
+        .with(
+          'expirationTime',
+          new Date(
+            now.getTime() - faker.number.int({ min: 1_000, max: 30_000 }),
+          ),
+        )
+        .build();
+
+      siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+
+      await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
+        new UnauthorizedException('Message has expired'),
+      );
+
+      expect(
+        usersRepositoryMock.findOrCreateByWalletAddress,
+      ).not.toHaveBeenCalled();
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should use the current date for nbf when notBefore is in the future', async () => {
+      const siweMessage = siweMessageBuilder()
+        .with(
+          'notBefore',
+          new Date(
+            now.getTime() + faker.number.int({ min: 1_000, max: 30_000 }),
+          ),
+        )
+        .with('expirationTime', new Date(now.getTime() + 30 * 60 * 1_000))
+        .with('issuedAt', now)
+        .build();
+
+      siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+      authRepositoryMock.signToken.mockReturnValue('token');
+
+      await target.authenticateWithSiwe(siweArgs);
+
+      expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          nbf: now,
+        }),
+      );
     });
 
     it('should propagate errors from findOrCreateByWalletAddress', async () => {

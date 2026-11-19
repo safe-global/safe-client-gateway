@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { JwtPayloadWithClaims } from '#/datasources/jwt/jwt-claims.entity';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
 import { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
 import {
@@ -64,11 +70,16 @@ export class AuthService {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
       await this.siweRepository.getValidatedSiweMessage(args);
 
+    const now = new Date();
     const maxExpirationTime = getMaxExpirationTime(
       this.maxValidityPeriodInSeconds,
     );
 
     if (expirationTime) {
+      // The SiWE check tolerates clock skew, but a token with a past exp is unusable
+      if (toSecondsTimestamp(expirationTime) <= toSecondsTimestamp(now)) {
+        throw new UnauthorizedException('Message has expired');
+      }
       assertExpirationTime(
         expirationTime,
         maxExpirationTime,
@@ -86,8 +97,9 @@ export class AuthService {
         signer_address: address,
       },
       {
+        // A notBefore within the tolerated clock skew counts as started
         ...(notBefore && {
-          nbf: new Date(notBefore),
+          nbf: notBefore > now ? now : new Date(notBefore),
         }),
         exp: expirationTime
           ? new Date(expirationTime)

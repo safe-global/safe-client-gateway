@@ -37,6 +37,7 @@ describe('AuthController', () => {
   let usersRepository: MockedObject<IUsersRepository>;
 
   let maxValidityPeriodInMs: number;
+  let clockSkewInMs: number;
 
   async function initApp(config: typeof configuration): Promise<void> {
     await app?.close();
@@ -60,6 +61,8 @@ describe('AuthController', () => {
 
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
+    clockSkewInMs =
+      configService.getOrThrow<number>('auth.clockSkewSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -434,6 +437,83 @@ describe('AuthController', () => {
         });
       // Nonce remains as SiWe message is expired, not the nonce
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should not verify a signer if the message expired within the clock-skew tolerance', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const expirationTime = new Date(Date.now() - clockSkewInMs + 1);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect(({ headers, body }) => {
+          expect(headers['set-cookie']).toBeUndefined();
+
+          expect(body).toStrictEqual({
+            error: 'Unauthorized',
+            message: 'Message has expired',
+            statusCode: 401,
+          });
+        });
+      // Nonce deleted
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
+    });
+
+    it('should issue an access token that is active immediately if notBefore is within the clock-skew tolerance', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const notBefore = new Date(Date.now() + clockSkewInMs);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('notBefore', notBefore)
+          .with('expirationTime', undefined)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(200)
+        .expect(({ headers }) => {
+          const setCookie = headers['set-cookie'];
+          expect(setCookie).toHaveLength(1);
+
+          const accessToken = setCookie[0].match(/access_token=([^;]*)/)?.[1];
+          expect(accessToken).toBeDefined();
+          expect(() => jwtService.verify(accessToken!)).not.toThrow();
+        });
     });
 
     it('should get the max expirationTime if not specified on the SiWE message', async () => {
