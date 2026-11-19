@@ -17,16 +17,10 @@ import { rpcUriBuilder } from '#/modules/chains/domain/entities/__tests__/rpc-ur
 import { themeBuilder } from '#/modules/chains/domain/entities/__tests__/theme.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 
-/**
- * A chain ID as the Config Service returns it: a positive integer without
- * leading zeros. The range is wide so two chains built in one test do not
- * share an ID by chance.
- */
 export function chainIdBuilder(): string {
   return faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }).toString();
 }
 
-/** A chain ID guaranteed to differ from {@link chainId}. */
 export function otherChainIdBuilder(chainId: string): string {
   let otherChainId = chainIdBuilder();
   while (otherChainId === chainId) {
