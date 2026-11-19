@@ -93,6 +93,33 @@ describe('CacheRouter', () => {
     });
   });
 
+  describe('contract analysis cache keys', () => {
+    const chainId = faker.string.numeric();
+    const contracts = [{ address, isDelegateCall: false }];
+
+    it('should include the Safe address in the key', () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const otherSafeAddress = getAddress(faker.finance.ethereumAddress());
+
+      const dir = CacheRouter.getContractAnalysisCacheDir({
+        chainId,
+        safeAddress,
+        contracts,
+      });
+      const otherDir = CacheRouter.getContractAnalysisCacheDir({
+        chainId,
+        safeAddress: otherSafeAddress,
+        contracts,
+      });
+
+      expect(dir.key).toBe(`${chainId}_contract_analysis_${safeAddress}`);
+      expect(otherDir.key).toBe(
+        `${chainId}_contract_analysis_${otherSafeAddress}`,
+      );
+      expect(otherDir.field).toBe(dir.field);
+    });
+  });
+
   describe('deadlock analysis cache keys', () => {
     const chainId = '1';
     const safeAddress = getAddress(faker.finance.ethereumAddress());

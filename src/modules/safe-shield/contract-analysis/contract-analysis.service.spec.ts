@@ -117,6 +117,7 @@ describe('ContractAnalysisService', () => {
       // Verify that no caching occurs
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
+        safeAddress,
         contracts: [],
       });
       const cacheContent = await fakeCacheService.hGet(cacheDir);
@@ -146,6 +147,7 @@ describe('ContractAnalysisService', () => {
       };
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
+        safeAddress,
         contracts,
       });
 
@@ -185,6 +187,7 @@ describe('ContractAnalysisService', () => {
 
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
+        safeAddress,
         contracts,
       });
 
@@ -240,6 +243,7 @@ describe('ContractAnalysisService', () => {
 
       const cacheDir = CacheRouter.getContractAnalysisCacheDir({
         chainId,
+        safeAddress,
         contracts,
       });
 
@@ -349,6 +353,58 @@ describe('ContractAnalysisService', () => {
         field: cacheDir.field,
       });
     });
+
+    it.each([
+      { first: 'the Safe that used the contract' },
+      { first: 'the Safe that never used the contract' },
+    ])(
+      'should analyze interactions per Safe when $first asks first',
+      async ({ first }) => {
+        const knownSafe = getAddress(faker.finance.ethereumAddress());
+        const unknownSafe = getAddress(faker.finance.ethereumAddress());
+        const contractAddress = getAddress(faker.finance.ethereumAddress());
+        mockExtractContracts.mockImplementation(() => [
+          { address: contractAddress, isDelegateCall: false },
+        ]);
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(
+            pageBuilder()
+              .with('results', [contractBuilder().build()])
+              .with('count', 1)
+              .build(),
+          ),
+        );
+        mockTransactionApi.getMultisigTransactions.mockImplementation((args) =>
+          Promise.resolve(
+            rawify(
+              pageBuilder()
+                .with('results', [])
+                .with('count', args.safeAddress === knownSafe ? 1 : 0)
+                .build(),
+            ),
+          ),
+        );
+        const safes =
+          first === 'the Safe that used the contract'
+            ? [knownSafe, unknownSafe]
+            : [unknownSafe, knownSafe];
+
+        const results = new Map<string, ContractAnalysisResponse>();
+        for (const safe of safes) {
+          results.set(
+            safe,
+            await service.analyze({ chainId, safeAddress: safe, transactions }),
+          );
+        }
+
+        expect(
+          results.get(knownSafe)?.[contractAddress].CONTRACT_INTERACTION,
+        ).toEqual([expect.objectContaining({ type: 'KNOWN_CONTRACT' })]);
+        expect(
+          results.get(unknownSafe)?.[contractAddress].CONTRACT_INTERACTION,
+        ).toBeUndefined();
+      },
+    );
 
     it('should throw error if any of the downstream contract analysis fails', async () => {
       const contracts: Array<ExtractedContract> = [

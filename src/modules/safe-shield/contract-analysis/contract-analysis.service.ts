@@ -101,6 +101,7 @@ export class ContractAnalysisService {
     }
     const cacheDir = CacheRouter.getContractAnalysisCacheDir({
       chainId: args.chainId,
+      safeAddress: args.safeAddress,
       contracts,
     });
 
