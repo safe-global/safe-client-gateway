@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import type { Hex } from 'viem';
+import { type Hex, isAddressEqual, zeroAddress } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
@@ -12,6 +12,10 @@ import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import {
+  getPolicyTypeOfContract,
+  getSafePolicyGuardDeployments,
+} from '#/modules/policies/domain/policy-deployments.constants';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
@@ -82,6 +86,10 @@ export class PolicyConfigurationRequestsService {
       );
     }
 
+    this.assertKnownPolicies({
+      chainId: args.safe.chainId,
+      configurations: args.payload.configurations,
+    });
     await this.assertBelowCap({ ...args, root });
 
     await this.configurationRequestsRepository.create({
@@ -94,6 +102,70 @@ export class PolicyConfigurationRequestsService {
     });
 
     return { root };
+  }
+
+  /**
+   * Deletes a stored request in any state. Only the stored configurations go;
+   * a root requested on-chain stays there until invalidated.
+   */
+  public async delete(args: {
+    spaceId: Space['id'];
+    safe: SafeRef;
+    authPayload: AuthPayload;
+    root: Hex;
+  }): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertMember(this.membersRepository, args.spaceId, userId);
+    await assertSafeInSpace(this.spaceSafesRepository, {
+      spaceId: args.spaceId,
+      chainId: args.safe.chainId,
+      address: args.safe.address,
+    });
+
+    const root: Hex = `0x${args.root.slice(2).toLowerCase()}`;
+    const stored = await this.configurationRequestsRepository.findRootsBySafe({
+      spaceId: args.spaceId,
+      safe: args.safe,
+    });
+    if (!stored.includes(root)) {
+      throw new HttpExceptionNoLog(
+        'No configuration request is stored for this root',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    await this.configurationRequestsRepository.delete({
+      spaceId: args.spaceId,
+      safe: args.safe,
+      root,
+    });
+  }
+
+  /**
+   * The chain must have a policy engine, and each policy must be a known
+   * contract or the zero address, which removes a policy.
+   */
+  private assertKnownPolicies(args: {
+    chainId: string;
+    configurations: CreatePolicyConfigurationRequestPayload['configurations'];
+  }): void {
+    if (getSafePolicyGuardDeployments(args.chainId).length === 0) {
+      throw new HttpExceptionNoLog(
+        `Policies are not supported on chain ${args.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const unknownPolicy = args.configurations.find(
+      ({ policy }) =>
+        !isAddressEqual(policy, zeroAddress) &&
+        getPolicyTypeOfContract(args.chainId, policy) === null,
+    );
+    if (unknownPolicy) {
+      throw new HttpExceptionNoLog(
+        `Unknown policy contract ${unknownPolicy.policy} on chain ${args.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
   }
 
   /**

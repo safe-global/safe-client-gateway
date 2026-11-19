@@ -8,10 +8,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
-import {
-  type Relay,
-  RelaySchema,
-} from '#/modules/relay/domain/entities/relay.entity';
+import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '#/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayTxDeniedError } from '#/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '#/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
@@ -20,6 +17,7 @@ import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interfa
 import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
 import { SafeTransaction } from '#/modules/transactions/domain/entities/safe-transaction.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
@@ -93,7 +91,7 @@ export class RelayFeeRelayer implements IRelayer {
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
     simulationEnabled?: boolean;
-  }): Promise<Relay> {
+  }): Promise<Raw<Relay>> {
     const {
       version,
       chainId,
@@ -153,14 +151,12 @@ export class RelayFeeRelayer implements IRelayer {
       this.denyUnrecognisedTxType({ to, chainId, safeTxHash: args.safeTxHash });
     }
 
-    return this.relayApi
-      .relay({
-        chainId,
-        to,
-        data,
-        safeTxHash,
-      })
-      .then(RelaySchema.parse);
+    return this.relayApi.relay({
+      chainId,
+      to,
+      data,
+      safeTxHash,
+    });
   }
 
   private async validateExecTransaction(args: {

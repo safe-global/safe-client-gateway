@@ -44,7 +44,7 @@ const POLICY_CONTRACTS: ReadonlyArray<{ type: PolicyType; address: Address }> =
   ].map(({ type, address }) => ({ type, address: getAddress(address) }));
 
 /** The chains the policy indexer tracks `SafePolicyGuard` on. */
-const POLICY_ENGINE_CHAIN_IDS: ReadonlySet<string> = new Set([
+export const POLICY_ENGINE_CHAIN_IDS: ReadonlySet<string> = new Set([
   '1',
   '137',
   '11155111',
@@ -53,6 +53,13 @@ const POLICY_ENGINE_CHAIN_IDS: ReadonlySet<string> = new Set([
 /** The `SafePolicyGuard` deployments on the chain; none off the policy-engine chains. */
 export function getSafePolicyGuardDeployments(chainId: string): Array<Address> {
   return POLICY_ENGINE_CHAIN_IDS.has(chainId) ? [...SAFE_POLICY_GUARDS] : [];
+}
+
+/** The policy contracts CGW knows on the chain; none off the policy-engine chains. */
+export function getPolicyContracts(chainId: string): Array<Address> {
+  return POLICY_ENGINE_CHAIN_IDS.has(chainId)
+    ? POLICY_CONTRACTS.map(({ address }) => address)
+    : [];
 }
 
 /**

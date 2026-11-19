@@ -3,7 +3,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { DataSourceError } from '#/domain/errors/data-source.error';
-import { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
   LoggingService,
@@ -18,6 +17,7 @@ import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-op
 import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
 import { GasPaymentOptionUnavailableError } from '#/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
+import { RelayRepository } from '#/modules/relay/domain/relay.repository';
 import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
@@ -40,7 +40,7 @@ const SPONSORED_TRANSACTIONS = 'sponsored_transactions';
 export class WorkspaceRelayer {
   public constructor(
     private readonly limitAddressesMapper: LimitAddressesMapper,
-    @Inject(IRelayApi) private readonly relayApi: IRelayApi,
+    private readonly relayRepository: RelayRepository,
     @Inject(IEntitlementEnforcement)
     private readonly entitlementEnforcement: IEntitlementEnforcement,
     @Inject(ISpaceSafesRepository)
@@ -133,7 +133,7 @@ export class WorkspaceRelayer {
     });
 
     try {
-      return await this.relayApi.relay({
+      return await this.relayRepository.relayWithoutLimits({
         chainId: args.chainId,
         to: args.to,
         data: args.data,

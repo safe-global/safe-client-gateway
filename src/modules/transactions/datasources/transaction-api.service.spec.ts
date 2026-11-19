@@ -195,7 +195,7 @@ describe('TransactionApi', () => {
   describe('getBackbone', () => {
     it('should return the backbone retrieved', async () => {
       const data = backboneBuilder().build();
-      const getBackboneUrl = `${baseUrl}/api/v1/about`;
+      const getBackboneUrl = `${baseUrl}/api/v1/about/`;
       const cacheDir = new CacheDir(`${chainId}_backbone`, '');
       mockDataSource.get.mockResolvedValueOnce(rawify(data));
 
@@ -216,7 +216,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const getBackboneUrl = `${baseUrl}/api/v1/about`;
+      const getBackboneUrl = `${baseUrl}/api/v1/about/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -350,7 +350,7 @@ describe('TransactionApi', () => {
   describe('getSafe', () => {
     it('should return retrieved safe', async () => {
       const safe = safeBuilder().build();
-      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}/`;
       const cacheDir = new CacheDir(`${chainId}_safe_${safe.address}`, '');
       mockDataSource.get.mockResolvedValueOnce(rawify(safe));
 
@@ -377,7 +377,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safe = safeBuilder().build();
-      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -411,7 +411,7 @@ describe('TransactionApi', () => {
 
     it('should forward a banned-Safe error even when the payload carries nonFieldErrors', async () => {
       const safe = safeBuilder().build();
-      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}/`;
       const expected = new DataSourceError(
         UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
@@ -431,7 +431,7 @@ describe('TransactionApi', () => {
 
     it('should forward a banned-Safe error with a dedicated message', async () => {
       const safe = safeBuilder().build();
-      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}/`;
       const expected = new DataSourceError(
         UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
@@ -483,7 +483,7 @@ describe('TransactionApi', () => {
       expect(cacheService.hGet).toHaveBeenCalledWith(cacheDir);
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+        url: `${baseUrl}/api/v1/safes/${safe.address}/`,
       });
       expect(cacheService.hSet).toHaveBeenCalledTimes(1);
       expect(cacheService.hSet).toHaveBeenCalledWith(
@@ -534,7 +534,7 @@ describe('TransactionApi', () => {
       expect(cacheService.hGet).toHaveBeenCalledWith(cacheDir);
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+        url: `${baseUrl}/api/v1/safes/${safe.address}/`,
       });
       expect(cacheService.hSet).toHaveBeenCalledTimes(1);
       expect(cacheService.hSet).toHaveBeenCalledWith(
@@ -550,7 +550,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safe = safeBuilder().build();
-      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['serverError'],
       });
@@ -576,7 +576,7 @@ describe('TransactionApi', () => {
       expect(cacheService.hGet).toHaveBeenCalledWith(cacheDir);
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+        url: `${baseUrl}/api/v1/safes/${safe.address}/`,
       });
       expect(cacheService.hSet).not.toHaveBeenCalled();
     });
@@ -760,7 +760,7 @@ describe('TransactionApi', () => {
     it('should delete delegate', async () => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
-      const deleteDelegateUrl = `${baseUrl}/api/v1/delegates/${delegate.delegate}`;
+      const deleteDelegateUrl = `${baseUrl}/api/v1/delegates/${delegate.delegate}/`;
       networkService.delete.mockResolvedValueOnce({
         status: 200,
         data: rawify({}),
@@ -790,7 +790,7 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
-      const deleteDelegateUrl = `${baseUrl}/api/v1/delegates/${delegate.delegate}`;
+      const deleteDelegateUrl = `${baseUrl}/api/v1/delegates/${delegate.delegate}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -829,7 +829,7 @@ describe('TransactionApi', () => {
     it('should delete Safe delegate', async () => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
-      const deleteSafeDelegateUrl = `${baseUrl}/api/v1/safes/${delegate.safe}/delegates/${delegate.delegate}`;
+      const deleteSafeDelegateUrl = `${baseUrl}/api/v1/safes/${delegate.safe}/delegates/${delegate.delegate}/`;
       networkService.delete.mockResolvedValueOnce({
         status: 200,
         data: rawify({}),
@@ -859,7 +859,7 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
-      const deleteSafeDelegateUrl = `${baseUrl}/api/v1/safes/${delegate.safe}/delegates/${delegate.delegate}`;
+      const deleteSafeDelegateUrl = `${baseUrl}/api/v1/safes/${delegate.safe}/delegates/${delegate.delegate}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -897,7 +897,7 @@ describe('TransactionApi', () => {
   describe('getTransfer', () => {
     it('should return the transfer retrieved', async () => {
       const transfer = erc20TransferBuilder().build();
-      const getTransferUrl = `${baseUrl}/api/v1/transfer/${transfer.transferId}`;
+      const getTransferUrl = `${baseUrl}/api/v1/transfer/${transfer.transferId}/`;
       const cacheDir = new CacheDir(
         `${chainId}_transfer_${transfer.transferId}`,
         '',
@@ -927,7 +927,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const transferId = faker.string.hexadecimal();
-      const getTransferUrl = `${baseUrl}/api/v1/transfer/${transferId}`;
+      const getTransferUrl = `${baseUrl}/api/v1/transfer/${transferId}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -1461,7 +1461,7 @@ describe('TransactionApi', () => {
     it('should return the module transaction retrieved', async () => {
       const moduleTransactionId = faker.string.hexadecimal();
       const moduleTransaction = moduleTransactionBuilder().build();
-      const getModuleTransactionUrl = `${baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
+      const getModuleTransactionUrl = `${baseUrl}/api/v1/module-transaction/${moduleTransactionId}/`;
       const cacheDir = new CacheDir(
         `${chainId}_module_transaction_${moduleTransactionId}`,
         '',
@@ -1491,7 +1491,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const moduleTransactionId = faker.string.hexadecimal();
-      const getModuleTransactionUrl = `${baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
+      const getModuleTransactionUrl = `${baseUrl}/api/v1/module-transaction/${moduleTransactionId}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -1878,7 +1878,7 @@ describe('TransactionApi', () => {
     it('should delete a transaction', async () => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
-      const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}`;
+      const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}/`;
       networkService.delete.mockResolvedValueOnce({
         status: 200,
         data: rawify({}),
@@ -1905,7 +1905,7 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
-      const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}`;
+      const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -2154,7 +2154,7 @@ describe('TransactionApi', () => {
   describe('getToken', () => {
     it('should return the token retrieved', async () => {
       const token = tokenBuilder().build();
-      const getTokenUrl = `${baseUrl}/api/v1/tokens/${token.address}`;
+      const getTokenUrl = `${baseUrl}/api/v1/tokens/${token.address}/`;
       const cacheDir = new CacheDir(`${chainId}_token_${token.address}`, '');
       mockDataSource.get.mockResolvedValueOnce(rawify(token));
 
@@ -2181,7 +2181,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const token = tokenBuilder().build();
-      const getTokenUrl = `${baseUrl}/api/v1/tokens/${token.address}`;
+      const getTokenUrl = `${baseUrl}/api/v1/tokens/${token.address}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
@@ -2792,9 +2792,10 @@ describe('TransactionApi', () => {
         data: proposeTransactionDto,
       });
 
-      // nestedTransaction is queue-service-only: the tx-service datasource maps
-      // fields explicitly and never forwards it.
-      const { safeTxHash, nestedTransaction, ...rest } = proposeTransactionDto;
+      // nestedTransaction and the declared attribution are queue-service-only:
+      // the tx-service datasource maps fields explicitly and never forwards them.
+      const { safeTxHash, nestedTransaction, declared, ...rest } =
+        proposeTransactionDto;
       expect(networkService.post).toHaveBeenCalledTimes(1);
       expect(networkService.post).toHaveBeenCalledWith({
         url: postMultisigTransactionUrl,
@@ -2834,9 +2835,10 @@ describe('TransactionApi', () => {
         }),
       ).rejects.toThrow(expected);
 
-      // nestedTransaction is queue-service-only: the tx-service datasource maps
-      // fields explicitly and never forwards it.
-      const { safeTxHash, nestedTransaction, ...rest } = proposeTransactionDto;
+      // nestedTransaction and the declared attribution are queue-service-only:
+      // the tx-service datasource maps fields explicitly and never forwards them.
+      const { safeTxHash, nestedTransaction, declared, ...rest } =
+        proposeTransactionDto;
       expect(networkService.post).toHaveBeenCalledTimes(1);
       expect(networkService.post).toHaveBeenCalledWith({
         url: postMultisigTransactionUrl,

@@ -76,7 +76,7 @@ describe('Portfolio Controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`:
             return Promise.resolve({ data: rawify(args.chain), status: 200 });
-          case `${args.chain.transactionService}/api/v1/safes/${args.address}`:
+          case `${args.chain.transactionService}/api/v1/safes/${args.address}/`:
             return Promise.resolve({
               data: rawify(safeBuilder().with('address', args.address).build()),
               status: 200,

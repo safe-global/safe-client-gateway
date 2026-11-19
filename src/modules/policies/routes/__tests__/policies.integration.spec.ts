@@ -38,6 +38,7 @@ import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/dom
 import {
   applyConfigurationEncoder,
   configureImmediatelyEncoder,
+  requestConfigurationEncoder,
   setModuleGuardEncoder,
 } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
@@ -57,7 +58,11 @@ import {
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
-import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
+import {
+  getPolicyContracts,
+  getSafePolicyGuardDeployments,
+} from '#/modules/policies/domain/policy-deployments.constants';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
@@ -74,6 +79,9 @@ const SEPOLIA_CHAIN_ID = '11155111';
 const DAY_IN_MINUTES = 1440;
 const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
+const KNOWN_POLICY = faker.helpers.arrayElement(
+  getPolicyContracts(SEPOLIA_CHAIN_ID),
+);
 
 function randomSepoliaMultiSendAddress(): Address {
   return faker.helpers.arrayElement(
@@ -201,12 +209,12 @@ describe('Space Policies Controller', () => {
       if (url.startsWith(`${safeConfigUrl}/api/v2/chains`)) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
-      if (url === `${txServiceUrl}/api/v1/safes/${safeAddress}`) {
+      if (url === `${txServiceUrl}/api/v1/safes/${safeAddress}/`) {
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (
         url ===
-        `${polygonChain.transactionService}/api/v1/safes/${polygonSafeAddress}`
+        `${polygonChain.transactionService}/api/v1/safes/${polygonSafeAddress}/`
       ) {
         return Promise.resolve({ data: rawify(polygonSafe), status: 200 });
       }
@@ -239,14 +247,14 @@ describe('Space Policies Controller', () => {
         });
       }
       const token = tokens.find(
-        (item) => url === `${txServiceUrl}/api/v1/tokens/${item.address}`,
+        (item) => url === `${txServiceUrl}/api/v1/tokens/${item.address}/`,
       );
       if (token) {
         return Promise.resolve({ data: rawify(token), status: 200 });
       }
       if (
         tokenNotFoundAddresses.some(
-          (address) => url === `${txServiceUrl}/api/v1/tokens/${address}`,
+          (address) => url === `${txServiceUrl}/api/v1/tokens/${address}/`,
         )
       ) {
         return Promise.reject(
@@ -272,12 +280,12 @@ describe('Space Policies Controller', () => {
   }
 
   /** A store payload whose root is the hash of its configurations. */
-  function payload(): {
+  function payload(policy: Address = KNOWN_POLICY): {
     root: `0x${string}`;
     configurations: Array<PolicyConfiguration>;
   } {
     const configurations: [PolicyConfiguration] = [
-      policyConfigurationBuilder().build(),
+      policyConfigurationBuilder().with('policy', policy).build(),
     ];
     return { root: configurationRoot(configurations), configurations };
   }
@@ -1292,6 +1300,51 @@ describe('Space Policies Controller', () => {
         .expect(422);
     });
 
+    it('should store the removal of a policy', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const body = payload(zeroAddress);
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ root: body.root });
+    });
+
+    it('should reject an unknown policy contract without storing it', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const create = vi.spyOn(
+        app.get<ISafePolicyGuardConfigurationRequestsRepository>(
+          ISafePolicyGuardConfigurationRequestsRepository,
+        ),
+        'create',
+      );
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(payload(policy))
+        .expect(422)
+        .expect(({ body }) =>
+          expect(body.message).toBe(
+            `Unknown policy contract ${policy} on chain ${SEPOLIA_CHAIN_ID}`,
+          ),
+        );
+      expect(create).not.toHaveBeenCalled();
+    });
+
     it('should reject an empty configuration list', async () => {
       mockUpstream();
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -1644,6 +1697,144 @@ describe('Space Policies Controller', () => {
         ]),
       );
       expect(statuses).toHaveLength(2);
+    });
+  });
+
+  describe('DELETE /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests/:root', () => {
+    /** Stores a request for `safeAddress` and returns its root. */
+    async function storeRequest(args: {
+      accessToken: string;
+      spaceId: string;
+      body?: ReturnType<typeof payload>;
+    }): Promise<`0x${string}`> {
+      const body = args.body ?? payload();
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${args.spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${args.accessToken}`])
+        .send(body)
+        .expect(201);
+      return body.root;
+    }
+
+    /** The roots the pending API reports as `draft`. */
+    async function draftRoots(args: {
+      accessToken: string;
+      spaceId: string;
+    }): Promise<Array<unknown>> {
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${args.spaceId}/policies/pending`)
+        .query({ types: Object.values(PolicyType).join(',') })
+        .set('Cookie', [`access_token=${args.accessToken}`])
+        .expect(200);
+      return (body as Array<Record<string, unknown>>)
+        .filter((item) => item.status === 'draft')
+        .map((item) => item.root);
+    }
+
+    it('should delete a stored request, then report it as gone', async () => {
+      mockUpstream();
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const root = await storeRequest({ accessToken, spaceId });
+      const url = `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/0x${root.slice(2).toUpperCase()}`;
+      await expect(draftRoots({ accessToken, spaceId })).resolves.toEqual([
+        root,
+      ]);
+
+      await request(app.getHttpServer())
+        .delete(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+      await expect(draftRoots({ accessToken, spaceId })).resolves.toEqual([]);
+      await request(app.getHttpServer())
+        .delete(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+    });
+
+    it('should delete a queued root, which stays pending without configurations', async () => {
+      const body = payload();
+      mockUpstream({
+        queuedTransactions: [
+          multisigTransactionBuilder()
+            .with('to', getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID)[0])
+            .with('operation', Operation.CALL)
+            .with(
+              'data',
+              requestConfigurationEncoder()
+                .with('configureRoot', body.root)
+                .encode(),
+            )
+            .build(),
+        ],
+      });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const root = await storeRequest({ accessToken, spaceId, body });
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/${root}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+      const { body: pending } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: Object.values(PolicyType).join(',') })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+      expect(pending).toEqual([
+        expect.objectContaining({
+          root,
+          status: 'configuration-in-signing',
+          configurations: null,
+        }),
+      ]);
+    });
+
+    it('should return 422 for a root that is not 32 bytes', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/0x1234`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('should return 403 for a safe that is not in the space', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: false,
+      });
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/${payload().root}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+    });
+
+    it('should return 403 without authentication', async () => {
+      mockUpstream();
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/${payload().root}`,
+        )
+        .expect(403);
     });
   });
 });

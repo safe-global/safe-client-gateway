@@ -6,6 +6,10 @@ import type {
   NestedTransactionDto as DomainNestedTransactionDto,
   ProposeTransactionDto as DomainProposeTransactionDto,
 } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import {
+  DECLARED_ATTRIBUTION_DESCRIPTION,
+  DeclaredAttributionDto,
+} from '#/routes/common/entities/declared-attribution.dto.entity';
 
 export class NestedTransactionDto implements DomainNestedTransactionDto {
   @ApiPropertyOptional({ type: String, nullable: true })
@@ -76,4 +80,10 @@ export class ProposeTransactionDto implements DomainProposeTransactionDto {
       'A child transaction for a second Safe, authorised by the parent transaction being an `approveHash` call committing to its hash. Unknown keys are rejected.',
   })
   nestedTransaction!: NestedTransactionDto | null;
+  @ApiPropertyOptional({
+    type: DeclaredAttributionDto,
+    nullable: true,
+    description: DECLARED_ATTRIBUTION_DESCRIPTION,
+  })
+  declared!: DeclaredAttributionDto | null;
 }

@@ -48,6 +48,7 @@ import {
 } from '#/modules/safe/domain/entities/transfer.entity';
 import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { getQueueFallbackError } from '#/modules/safe/domain/helpers/queue-fallback-error.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
@@ -232,9 +233,10 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.postConfirmation(args);
     }
 
-    await this.clearMultisigTransaction({
+    await this.clearQueuedTransactionCaches({
       chainId: args.chainId,
-      safeTransactionHash: args.safeTxHash,
+      safeAddress: transaction.safe,
+      safeTxHash: args.safeTxHash,
     });
   }
 
@@ -699,7 +701,9 @@ export class SafeRepository implements ISafeRepository {
       this.loggingService.warn(
         `Failed to fetch transaction from queue service. chainId=${args.chainId}, safeTxHash=${args.safeTransactionHash}, error=${error}`,
       );
-      return this.fetchTxServiceMultisig(args);
+      return this.fetchTxServiceMultisig(args).catch((txServiceError) => {
+        throw getQueueFallbackError({ queueError: error, txServiceError });
+      });
     }
 
     if (queue.txHash !== null) {
@@ -756,29 +760,46 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.deleteTransaction(args);
     }
 
-    // Ensure transaction is removed from cache in case event is not received.
-    // Reuse the repository-level clears: they invalidate both the tx-service
-    // and queue cache layers and settle every layer before failing.
-    // Each reused method settles all its cache layers before rejecting, so a
-    // failure here cannot have skipped clearing the other layers.
-    Promise.all([
+    await this.clearQueuedTransactionCaches({
+      chainId: args.chainId,
+      safeAddress: safe,
+      safeTxHash: args.safeTxHash,
+    });
+  }
+
+  /**
+   * Clears what a write to a queued transaction makes stale (the transaction,
+   * the Safe's queue and the queue of every Space holding the Safe) instead of
+   * waiting for the webhook event, which may never arrive. The write already
+   * succeeded, so a failure is logged rather than thrown.
+   */
+  private async clearQueuedTransactionCaches(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: string;
+  }): Promise<void> {
+    const results = await Promise.allSettled([
       this.clearMultisigTransaction({
         chainId: args.chainId,
         safeTransactionHash: args.safeTxHash,
       }),
       this.clearMultisigTransactions({
         chainId: args.chainId,
-        safeAddress: safe,
+        safeAddress: args.safeAddress,
       }),
       this.clearSpaceTransactionQueues({
         chainId: args.chainId,
-        address: safe,
+        address: args.safeAddress,
       }),
-    ]).catch((error) => {
+    ]);
+    const errors = results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => r.reason);
+    if (errors.length > 0) {
       this.loggingService.warn(
-        `Failed to immediately clear deleted transaction from cache. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, error=${error}`,
+        `Failed to clear the caches of a queued transaction. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, errors=${errors}`,
       );
-    });
+    }
   }
 
   async clearMultisigTransactions(args: {
@@ -1089,27 +1110,37 @@ export class SafeRepository implements ISafeRepository {
         : txServiceProposal,
     });
 
-    if (this.safeQueueEnabled) {
-      return await this.safeQueueService.proposeTransaction({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        proposeTransactionDto: args.proposeTransactionDto,
-      });
-    }
     // The tx service has no notion of nested transactions: forwarding would
     // store the parent without its child, and the queue service's
     // conflict-on-either-hash means that parent could never gain the child
     // later. Reject rather than silently dropping the child.
-    if (args.proposeTransactionDto.nestedTransaction) {
+    if (
+      !this.safeQueueEnabled &&
+      args.proposeTransactionDto.nestedTransaction
+    ) {
       throw new HttpExceptionNoLog(
         'Nested transactions are not supported',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
-    return transactionService.postMultisigTransaction({
-      address: args.safeAddress,
-      data: args.proposeTransactionDto,
+    const proposal = this.safeQueueEnabled
+      ? await this.safeQueueService.proposeTransaction({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          proposeTransactionDto: args.proposeTransactionDto,
+        })
+      : await transactionService.postMultisigTransaction({
+          address: args.safeAddress,
+          data: args.proposeTransactionDto,
+        });
+
+    await this.clearQueuedTransactionCaches({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      safeTxHash,
     });
+
+    return proposal;
   }
 
   async getNonces(args: {

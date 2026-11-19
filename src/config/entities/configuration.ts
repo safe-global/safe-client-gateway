@@ -211,6 +211,10 @@ export default () => ({
         process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
         10,
       ),
+      recentClearSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_RECENT_SECONDS ?? `${30}`,
+        10,
+      ),
       rateLimit: {
         max: Number.parseInt(
           process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,
@@ -319,13 +323,6 @@ export default () => ({
     },
   },
   email: {
-    pushwoosh: {
-      applicationCode: process.env.EMAIL_API_APPLICATION_CODE,
-      baseUri: process.env.EMAIL_API_BASE_URI || 'https://api.pushwoosh.com',
-      apiKey: process.env.EMAIL_API_KEY,
-      fromEmail: process.env.EMAIL_API_FROM_EMAIL,
-      fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
-    },
     // AWS SES email configuration. Enabled via FF_SES_EMAIL feature flag.
     // SES region is resolved from AWS_REGION by the SDK default credential chain.
     // AWS_REGION

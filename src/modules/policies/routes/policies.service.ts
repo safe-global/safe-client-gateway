@@ -584,7 +584,7 @@ export class PoliciesService {
     }
 
     if (next) {
-      this.loggingService.warn({
+      this.loggingService.debug({
         message: 'Truncated a Safe transaction queue at the page cap',
         chainId: safe.chainId,
         safeAddress: safe.address,

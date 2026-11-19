@@ -9,6 +9,10 @@ import type { Address } from 'viem';
 import type { z } from 'zod';
 import type { CreateMessageDtoSchema } from '#/modules/messages/routes/entities/schemas/create-message.dto.schema';
 import { TypedData } from '#/modules/messages/routes/entities/typed-data.entity';
+import {
+  DECLARED_ATTRIBUTION_DESCRIPTION,
+  DeclaredAttributionDto,
+} from '#/routes/common/entities/declared-attribution.dto.entity';
 
 @ApiExtraModels(TypedData)
 export class CreateMessageDto
@@ -25,4 +29,10 @@ export class CreateMessageDto
   signature!: Address;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin!: string | null;
+  @ApiPropertyOptional({
+    type: DeclaredAttributionDto,
+    nullable: true,
+    description: DECLARED_ATTRIBUTION_DESCRIPTION,
+  })
+  declared!: DeclaredAttributionDto | null;
 }

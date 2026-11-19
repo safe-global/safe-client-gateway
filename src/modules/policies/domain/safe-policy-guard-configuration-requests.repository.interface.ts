@@ -30,4 +30,7 @@ export interface ISafePolicyGuardConfigurationRequestsRepository {
     spaceId: number;
     safes: ReadonlyArray<SafeRef>;
   }): Promise<Array<SafePolicyGuardConfiguration>>;
+
+  /** Deletes the request stored under {@link args.root} for a Safe in a Space. */
+  delete(args: { spaceId: number; safe: SafeRef; root: Hex }): Promise<void>;
 }

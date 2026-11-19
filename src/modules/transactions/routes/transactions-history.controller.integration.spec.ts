@@ -201,7 +201,7 @@ describe('Transactions History Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/`;
       const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/creation/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -248,7 +248,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safe.address}/`;
       const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${safe.address}/creation/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -319,7 +319,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -377,7 +377,7 @@ describe('Transactions History Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -431,7 +431,7 @@ describe('Transactions History Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -499,7 +499,7 @@ describe('Transactions History Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -598,8 +598,8 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -810,8 +810,8 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -874,7 +874,7 @@ describe('Transactions History Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/`;
       const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/`;
       const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/creation/`;
       if (url === getChainUrl) {
@@ -956,7 +956,7 @@ describe('Transactions History Controller', () => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v2/safes/${getAddress(safeAddress)}/all-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -1033,7 +1033,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1100,7 +1100,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1111,9 +1111,9 @@ describe('Transactions History Controller', () => {
           });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}/`:
           return Promise.resolve({ data: rawify(trustedToken), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}/`:
           return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1195,7 +1195,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1206,7 +1206,7 @@ describe('Transactions History Controller', () => {
           });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}/`:
           return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1299,7 +1299,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1310,9 +1310,9 @@ describe('Transactions History Controller', () => {
           });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}/`:
           return Promise.resolve({ data: rawify(trustedToken), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}/`:
           return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1390,7 +1390,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1401,9 +1401,9 @@ describe('Transactions History Controller', () => {
           });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}/`:
           return Promise.resolve({ data: rawify(trustedToken), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}/`:
           return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1474,7 +1474,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1485,7 +1485,7 @@ describe('Transactions History Controller', () => {
           });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}/`:
           return Promise.resolve({ data: rawify(trustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1549,7 +1549,7 @@ describe('Transactions History Controller', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       switch (url) {
         case getChainUrl:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1560,9 +1560,9 @@ describe('Transactions History Controller', () => {
           });
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${trustedErc721.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${trustedErc721.address}/`:
           return Promise.resolve({ data: rawify(trustedErc721), status: 200 });
-        case `${chain.transactionService}/api/v1/tokens/${notTrustedErc721.address}`:
+        case `${chain.transactionService}/api/v1/tokens/${notTrustedErc721.address}/`:
           return Promise.resolve({
             data: rawify(notTrustedErc721),
             status: 200,

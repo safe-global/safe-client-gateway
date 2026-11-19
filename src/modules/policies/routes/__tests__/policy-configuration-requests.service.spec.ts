@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
-import { getAddress, type Hex } from 'viem';
+import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
@@ -13,6 +13,10 @@ import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import {
+  getPolicyContracts,
+  POLICY_ENGINE_CHAIN_IDS,
+} from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
@@ -25,9 +29,23 @@ import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
+const POLICY_ENGINE_CHAIN_ID = faker.helpers.arrayElement([
+  ...POLICY_ENGINE_CHAIN_IDS,
+]);
+const KNOWN_POLICY = faker.helpers.arrayElement(
+  getPolicyContracts(POLICY_ENGINE_CHAIN_ID),
+);
+/** Gnosis Chain, which has no policy engine. */
+const NON_POLICY_ENGINE_CHAIN_ID = '100';
+
 describe('PolicyConfigurationRequestsService', () => {
   const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
-    { create: vi.fn(), findRootsBySafe: vi.fn(), findBySafes: vi.fn() };
+    {
+      create: vi.fn(),
+      findRootsBySafe: vi.fn(),
+      findBySafes: vi.fn(),
+      delete: vi.fn(),
+    };
   const membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> = {
     findOne: vi.fn(),
   };
@@ -59,7 +77,7 @@ describe('PolicyConfigurationRequestsService', () => {
   const spaceId = faker.number.int({ min: 1, max: 100 });
   const userId = faker.number.int({ min: 1, max: 100 });
   const safe = {
-    chainId: faker.string.numeric(),
+    chainId: POLICY_ENGINE_CHAIN_ID,
     address: getAddress(faker.finance.ethereumAddress()),
   };
   const request = {
@@ -71,12 +89,12 @@ describe('PolicyConfigurationRequestsService', () => {
   };
 
   /** A payload whose root is the hash of its configurations. */
-  function validPayload(): {
+  function validPayload(policy: Address = KNOWN_POLICY): {
     root: Hex;
     configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>];
   } {
     const configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>] =
-      [policyConfigurationBuilder().build()];
+      [policyConfigurationBuilder().with('policy', policy).build()];
     return { root: configurationRoot(configurations), configurations };
   }
 
@@ -123,6 +141,89 @@ describe('PolicyConfigurationRequestsService', () => {
     ).rejects.toThrow(
       new HttpExceptionNoLog(
         'The configurations do not hash to the given root',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should store the removal of a policy', async () => {
+    const payload = validPayload(zeroAddress);
+
+    await expect(target.create({ ...request, payload })).resolves.toStrictEqual(
+      { root: payload.root },
+    );
+    expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ configurations: payload.configurations }),
+    );
+  });
+
+  it('should reject the removal of a policy on a chain without a policy engine', async () => {
+    const chainId = NON_POLICY_ENGINE_CHAIN_ID;
+
+    await expect(
+      target.create({
+        ...request,
+        safe: { ...safe, chainId },
+        payload: validPayload(zeroAddress),
+      }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Policies are not supported on chain ${chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject an unknown policy contract without logging', async () => {
+    const policy = getAddress(faker.finance.ethereumAddress());
+
+    await expect(
+      target.create({ ...request, payload: validPayload(policy) }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Unknown policy contract ${policy} on chain ${safe.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject an unknown policy contract after a known one', async () => {
+    const policy = getAddress(faker.finance.ethereumAddress());
+    const configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>] =
+      [
+        policyConfigurationBuilder().with('policy', KNOWN_POLICY).build(),
+        policyConfigurationBuilder().with('policy', policy).build(),
+      ];
+
+    await expect(
+      target.create({
+        ...request,
+        payload: { root: configurationRoot(configurations), configurations },
+      }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Unknown policy contract ${policy} on chain ${safe.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject a known policy contract on a chain without a policy engine', async () => {
+    const chainId = NON_POLICY_ENGINE_CHAIN_ID;
+
+    await expect(
+      target.create({
+        ...request,
+        safe: { ...safe, chainId },
+        payload: validPayload(),
+      }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Policies are not supported on chain ${chainId}`,
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
     );
@@ -299,6 +400,61 @@ describe('PolicyConfigurationRequestsService', () => {
           message: 'Could not read the configuration roots of a Safe',
         }),
       );
+    });
+  });
+
+  describe('delete', () => {
+    const root = configurationRoot([policyConfigurationBuilder().build()]);
+
+    beforeEach(() => {
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([root]);
+      configurationRequestsRepository.delete.mockResolvedValue();
+    });
+
+    it('should delete a stored root, matching it lower-cased', async () => {
+      const upperCased: Hex = `0x${root.slice(2).toUpperCase()}`;
+
+      await expect(
+        target.delete({ ...request, root: upperCased }),
+      ).resolves.toBeUndefined();
+      expect(configurationRequestsRepository.delete).toHaveBeenCalledWith({
+        spaceId,
+        safe,
+        root,
+      });
+    });
+
+    it('should reject a root that is not stored', async () => {
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([]);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'No configuration request is stored for this root',
+          HttpStatus.NOT_FOUND,
+        ),
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should reject a caller who is not a member of the space', async () => {
+      membersRepository.findOne.mockResolvedValue(null);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        'User is not a member of this workspace',
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should reject a Safe that is not in the space', async () => {
+      spaceSafesRepository.existsInSpace.mockResolvedValue(false);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Safe is not in this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
     });
   });
 });

@@ -27,8 +27,6 @@ import {
   mockAuth0Jwks,
   signAuth0Jwt,
 } from '#/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
-import { TestEmailApiModule } from '#/modules/email/pushwoosh/__tests__/test.email-api.module';
-import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
 import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
 import { UsersRepositoryModule } from '#/modules/users/domain/users-repository.module';
 import { UsersModule } from '#/modules/users/users.module';
@@ -84,10 +82,6 @@ describe('OidcAuthController', () => {
     const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
-        {
-          originalModule: EmailModule,
-          testModule: TestEmailApiModule,
-        },
         // Both modules are overridden with the same TestUsersModule: it mocks
         // IUsersRepository, which UsersRepositoryModule exports (consumed by
         // OidcAuthService) and which UsersModule re-exports.

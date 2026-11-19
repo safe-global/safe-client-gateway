@@ -84,7 +84,7 @@ describe('Preview transaction - Transactions Controller', () => {
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -156,7 +156,7 @@ describe('Preview transaction - Transactions Controller', () => {
     const dataDecodedResponse = dataDecodedBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -224,7 +224,7 @@ describe('Preview transaction - Transactions Controller', () => {
     const chainResponse = chainBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
@@ -304,7 +304,7 @@ describe('Preview transaction - Transactions Controller', () => {
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
       const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });

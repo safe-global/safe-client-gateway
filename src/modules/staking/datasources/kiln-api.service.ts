@@ -61,7 +61,10 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDeployments(): Promise<Raw<Array<Deployment>>> {
     const url = `${this.baseUrl}/v1/deployments`;
-    const cacheDir = CacheRouter.getStakingDeploymentsCacheDir(this.cacheType);
+    const cacheDir = CacheRouter.getStakingDeploymentsCacheDir({
+      cacheType: this.cacheType,
+      chainId: this.chainId,
+    });
     return await this.get<{
       data: Array<Deployment>;
     }>({
@@ -108,7 +111,10 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getNetworkStats(): Promise<Raw<NetworkStats>> {
     const url = `${this.baseUrl}/v1/eth/network-stats`;
-    const cacheDir = CacheRouter.getStakingNetworkStatsCacheDir(this.cacheType);
+    const cacheDir = CacheRouter.getStakingNetworkStatsCacheDir({
+      cacheType: this.cacheType,
+      chainId: this.chainId,
+    });
     return await this.get<{ data: NetworkStats }>({
       cacheDir,
       url,
@@ -126,9 +132,10 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDedicatedStakingStats(): Promise<Raw<DedicatedStakingStats>> {
     const url = `${this.baseUrl}/v1/eth/kiln-stats`;
-    const cacheDir = CacheRouter.getStakingDedicatedStakingStatsCacheDir(
-      this.cacheType,
-    );
+    const cacheDir = CacheRouter.getStakingDedicatedStakingStatsCacheDir({
+      cacheType: this.cacheType,
+      chainId: this.chainId,
+    });
     return await this.get<{
       data: DedicatedStakingStats;
     }>({
@@ -150,6 +157,7 @@ export class KilnApi implements IStakingApi {
     const url = `${this.baseUrl}/v1/eth/onchain/v2/network-stats`;
     const cacheDir = CacheRouter.getStakingPooledStakingStatsCacheDir({
       cacheType: this.cacheType,
+      chainId: this.chainId,
       pool,
     });
     return await this.get<{

@@ -16,4 +16,6 @@ export interface IPortfolioService {
   }): Promise<Portfolio>;
 
   clearZerionCaches(args: { address: Address }): Promise<void>;
+
+  getClearedAt(args: { address: Address }): Promise<number | null>;
 }
