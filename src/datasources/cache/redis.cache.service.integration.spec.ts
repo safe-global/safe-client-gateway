@@ -32,8 +32,11 @@ describe('RedisCacheService', () => {
   const keyPrefix = '';
   let redisClient: RedisClientType;
 
+  // Not 0: `flushDb` would wipe other specs' keys.
+  const redisDatabase = 15;
+
   beforeAll(async () => {
-    redisClient = await redisClientFactory();
+    redisClient = await redisClientFactory({ database: redisDatabase });
   });
 
   afterAll(async () => {
@@ -376,7 +379,7 @@ describe('RedisCacheService', () => {
     // Connection is closed, this is expected to throw an error
     await expect(redisCacheService.ping()).rejects.toThrow();
     // Connection is reopened after this test execution
-    redisClient = await redisClientFactory();
+    redisClient = await redisClientFactory({ database: redisDatabase });
   });
 
   it('creates a missing key and increments its value', async () => {
