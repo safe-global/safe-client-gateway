@@ -430,10 +430,10 @@ describe('Transactions Controller - Safe Queue Service', () => {
         signatureType: faker.helpers.arrayElement(NON_ETH_SIGN_SIGNATURE_TYPES),
       });
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
       const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
       const gasToken = tokenBuilder().build();
-      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}/`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const proposeUrl = `${queueBaseUri}/api/v1/multisig-transactions`;
       const queuePage = pageBuilder().with('results', [transaction]).build();

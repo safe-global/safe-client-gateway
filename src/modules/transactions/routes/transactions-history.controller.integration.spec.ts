@@ -1683,11 +1683,11 @@ describe('Transactions History Controller', () => {
           status: 200,
         });
       }
-      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}`) {
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}/`) {
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (
-        url === `${chain.transactionService}/api/v1/tokens/${token.address}`
+        url === `${chain.transactionService}/api/v1/tokens/${token.address}/`
       ) {
         tokenFetches++;
         return Promise.resolve({ data: rawify(token), status: 200 });
