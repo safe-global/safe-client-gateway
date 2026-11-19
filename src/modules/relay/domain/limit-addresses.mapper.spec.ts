@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { Hex } from 'viem';
 import {
   encodeAbiParameters,
   getAddress,
   keccak256,
   parseAbiParameters,
+  slice,
 } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
@@ -54,6 +56,8 @@ import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/
 import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '#/modules/relay/domain/errors/invalid-multisend.error';
+import { InvalidTransferError } from '#/modules/relay/domain/errors/invalid-transfer.error';
 import { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
 import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -1796,6 +1800,143 @@ describe('LimitAddressesMapper', () => {
 
       expect(resolved.safe).toBeNull();
       expect(resolved.addresses).toHaveLength(1);
+    });
+
+    describe('undecodable calldata', () => {
+      const version = faker.helpers.arrayElement(
+        SAFE_VERSIONS[chainId].filter((candidate) =>
+          PROXY_FACTORY_VERSIONS[chainId].includes(candidate),
+        ),
+      );
+
+      it.each<Hex>(['0x00000000', '0x'])(
+        'should reject %s as an invalid transfer',
+        async (data) => {
+          await expect(
+            target.resolveTarget({
+              version,
+              chainId,
+              data,
+              to: getAddress(faker.finance.ethereumAddress()),
+            }),
+          ).rejects.toThrow(InvalidTransferError);
+        },
+      );
+
+      it.each([
+        ['an unknown selector', (): Hex => '0x00000000'],
+        ['empty', (): Hex => '0x'],
+        ['not a setup call', (): Hex => execTransactionEncoder().encode()],
+        [
+          'a truncated setup call',
+          (): Hex =>
+            slice(
+              setupEncoder().encode(),
+              0,
+              faker.number.int({ min: 4, max: 35 }),
+            ),
+        ],
+      ])(
+        'should reject a Safe creation whose initializer is %s as an invalid transfer',
+        async (_, initializer) => {
+          const data = createProxyWithNonceEncoder()
+            .with(
+              'singleton',
+              faker.helpers.arrayElement(
+                getSafeSingletonDeployments({ version, chainId }),
+              ),
+            )
+            .with('initializer', initializer())
+            .encode();
+
+          await expect(
+            target.resolveTarget({
+              version,
+              chainId,
+              data,
+              to: faker.helpers.arrayElement(
+                getProxyFactoryDeployments({ version, chainId }),
+              ),
+            }),
+          ).rejects.toThrow(InvalidTransferError);
+        },
+      );
+
+      it.each([
+        ['transfer', erc20TransferEncoder],
+        ['transferFrom', erc20TransferFromEncoder],
+      ])(
+        'should reject an execTransaction of a truncated ERC-20 %s as an invalid transfer',
+        async (_, encoder) => {
+          const data = execTransactionEncoder()
+            .with(
+              'data',
+              slice(
+                encoder().encode(),
+                0,
+                faker.number.int({ min: 4, max: 35 }),
+              ),
+            )
+            .encode();
+
+          await expect(
+            target.resolveTarget({
+              version,
+              chainId,
+              data,
+              to: getAddress(faker.finance.ethereumAddress()),
+            }),
+          ).rejects.toThrow(InvalidTransferError);
+        },
+      );
+
+      it('should reject a MultiSend with an empty batch as an invalid multiSend', async () => {
+        const multiSendVersion = faker.helpers.arrayElement(
+          MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+        );
+
+        await expect(
+          target.resolveTarget({
+            version: multiSendVersion,
+            chainId,
+            data: multiSendEncoder().with('transactions', '0x').encode(),
+            to: faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version: multiSendVersion,
+                chainId,
+              }),
+            ),
+          }),
+        ).rejects.toThrow(InvalidMultiSendError);
+      });
+
+      it('should reject a recovery with an empty batch as an invalid transfer', async () => {
+        const multiSendVersion = faker.helpers.arrayElement(
+          MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+        );
+        const data = execTransactionFromModuleEncoder()
+          .with(
+            'to',
+            faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version: multiSendVersion,
+                chainId,
+              }),
+            ),
+          )
+          .with('data', multiSendEncoder().with('transactions', '0x').encode())
+          .encode();
+
+        await expect(
+          target.resolveTarget({
+            version: multiSendVersion,
+            chainId,
+            data,
+            to: getAddress(faker.finance.ethereumAddress()),
+          }),
+        ).rejects.toThrow(InvalidTransferError);
+        expect(mockSafeRepository.getSafesByModule).not.toHaveBeenCalled();
+      });
     });
   });
 });

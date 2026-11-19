@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
-import { getAddress, zeroAddress } from 'viem';
+import { getAddress, slice, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
@@ -105,6 +105,24 @@ describe('RelayTransactionHelper', () => {
 
       expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
         true,
+      );
+    });
+
+    it.each([
+      ['transfer', erc20TransferEncoder],
+      ['transferFrom', erc20TransferFromEncoder],
+    ])('should return false for a truncated ERC-20 %s', (_, encoder) => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      // Keeps the selector, cuts the arguments short
+      const truncated = slice(
+        encoder().encode(),
+        0,
+        faker.number.int({ min: 4, max: 35 }),
+      );
+      const data = execTransactionEncoder().with('data', truncated).encode();
+
+      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
+        false,
       );
     });
 
@@ -652,6 +670,31 @@ describe('RelayTransactionHelper', () => {
           }),
         ).resolves.toBeNull();
       });
+
+      it('should return null for a MultiSend batch that decodes to no transactions', async () => {
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
+        const version = faker.helpers.arrayElement(
+          MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+        );
+        const multiSend = faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        );
+        const data = encoder()
+          .with('to', multiSend)
+          .with('data', multiSendEncoder().with('transactions', '0x').encode())
+          .encode();
+
+        await expect(
+          helper.getSafeBeingRecovered({
+            version,
+            chainId,
+            to: getAddress(faker.finance.ethereumAddress()),
+            data,
+          }),
+        ).resolves.toBeNull();
+
+        expect(mockSafeRepository.getSafesByModule).not.toHaveBeenCalled();
+      });
     });
 
     it('should return null for non-DelayModifier calldata', async () => {
@@ -915,6 +958,44 @@ describe('RelayTransactionHelper', () => {
         InvalidMultiSendError,
       );
     });
+
+    it('should throw InvalidMultiSendError for an empty batch', () => {
+      const data = multiSendEncoder().with('transactions', '0x').encode();
+
+      expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
+        InvalidMultiSendError,
+      );
+    });
+
+    it('should throw InvalidMultiSendError for a batch cut inside its first transaction header', () => {
+      const transactions = multiSendTransactionsEncoder([
+        {
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: BigInt(0),
+          data: execTransactionEncoder().encode(),
+          operation: 0,
+        },
+      ]);
+      // operation (1) + to (20) + value (32) + data length (32) bytes
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          slice(transactions, 0, faker.number.int({ min: 1, max: 84 })),
+        )
+        .encode();
+
+      expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
+        InvalidMultiSendError,
+      );
+    });
+
+    it('should throw InvalidMultiSendError for a MultiSend selector without arguments', () => {
+      const data = slice(multiSendEncoder().encode(), 0, 4);
+
+      expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
+        InvalidMultiSendError,
+      );
+    });
   });
 
   describe('getOwnersFromCreateProxyWithNonce', () => {
@@ -967,26 +1048,30 @@ describe('RelayTransactionHelper', () => {
       );
     });
 
-    it('should throw when data is not a createProxyWithNonce call', () => {
-      expect(() => helper.getOwnersFromCreateProxyWithNonce('0x')).toThrow();
+    it('should return null when data is not a createProxyWithNonce call', () => {
+      expect(helper.getOwnersFromCreateProxyWithNonce('0x')).toBeNull();
     });
 
-    it('should throw when the initializer is not a setup call', () => {
-      const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = PROXY_FACTORY_VERSIONS[chainId][0];
-      const [singleton] = getSafeSingletonDeployments({ version, chainId });
-      if (!singleton) {
-        return;
-      }
+    it.each([
+      ['an unknown selector', (): Hex => '0x00000000'],
+      ['empty', (): Hex => '0x'],
       // execTransaction is a valid Safe ABI function but not 'setup'
+      ['not a setup call', (): Hex => execTransactionEncoder().encode()],
+      [
+        'a truncated setup call',
+        (): Hex =>
+          slice(
+            setupEncoder().encode(),
+            0,
+            faker.number.int({ min: 4, max: 35 }),
+          ),
+      ],
+    ])('should return null when the initializer is %s', (_, initializer) => {
       const data = createProxyWithNonceEncoder()
-        .with('singleton', singleton)
-        .with('initializer', execTransactionEncoder().encode())
+        .with('initializer', initializer())
         .encode();
 
-      expect(() => helper.getOwnersFromCreateProxyWithNonce(data)).toThrow(
-        'Not a setup call',
-      );
+      expect(helper.getOwnersFromCreateProxyWithNonce(data)).toBeNull();
     });
   });
 });

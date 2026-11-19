@@ -127,12 +127,9 @@ export class RelayTransactionHelper {
   }
 
   private isValidErc20Transfer(args: { to: Address; data: Hex }): boolean {
-    // Can throw but called after this.erc20Decoder.helpers.isTransfer
-    const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
-      data: args.data,
-    });
+    const erc20DecodedData = this.decodeErc20(args.data);
 
-    if (erc20DecodedData.functionName !== 'transfer') {
+    if (erc20DecodedData?.functionName !== 'transfer') {
       return false;
     }
 
@@ -142,18 +139,26 @@ export class RelayTransactionHelper {
   }
 
   private isValidErc20TransferFrom(args: { to: Address; data: Hex }): boolean {
-    // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
-    const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
-      data: args.data,
-    });
+    const erc20DecodedData = this.decodeErc20(args.data);
 
-    if (erc20DecodedData.functionName !== 'transferFrom') {
+    if (erc20DecodedData?.functionName !== 'transferFrom') {
       return false;
     }
 
     const [sender, recipient] = erc20DecodedData.args;
     // to 'self' (the Safe) or from sender to sender as recipient is not allowed
     return sender !== recipient && recipient !== args.to;
+  }
+
+  /** `null` when the selector matches but the arguments do not decode. */
+  private decodeErc20(
+    data: Hex,
+  ): ReturnType<Erc20Decoder['decodeFunctionData']> | null {
+    try {
+      return this.erc20Decoder.decodeFunctionData({ data });
+    } catch {
+      return null;
+    }
   }
 
   async isOfficialMastercopy(args: {
@@ -186,6 +191,11 @@ export class RelayTransactionHelper {
   getSafeAddressFromMultiSend(data: Hex): Address {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
+
+    // The decoder returns no transactions for an empty or undecodable batch
+    if (transactions.length === 0) {
+      throw new InvalidMultiSendError();
+    }
 
     // Every transaction is a valid execTransaction
     const isEveryValid = transactions.every((transaction) => {
@@ -302,27 +312,30 @@ export class RelayTransactionHelper {
     );
   }
 
-  getOwnersFromCreateProxyWithNonce(data: Hex): ReadonlyArray<Address> {
-    const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
-      data,
-    });
+  /**
+   * Returns `null` when the calldata or its initializer does not decode to a
+   * `createProxyWithNonce` with a `setup` initializer.
+   */
+  getOwnersFromCreateProxyWithNonce(data: Hex): ReadonlyArray<Address> | null {
+    try {
+      const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
+        data,
+      });
+      if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
+        return null;
+      }
 
-    if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
-      // Should never happen but check is needed to satisfy TypeScript
-      throw Error('Not a createProxyWithNonce call');
+      const decodedSafe = this.safeDecoder.decodeFunctionData({
+        data: decodedProxyFactory.args[1],
+      });
+      if (decodedSafe.functionName !== 'setup') {
+        return null;
+      }
+
+      return decodedSafe.args[0];
+    } catch {
+      return null;
     }
-
-    const initializer = decodedProxyFactory.args[1];
-    const decodedSafe = this.safeDecoder.decodeFunctionData({
-      data: initializer,
-    });
-
-    if (decodedSafe.functionName !== 'setup') {
-      // No custom error thrown, as caller subsequently throws InvalidTransferError
-      throw Error('Not a setup call');
-    }
-
-    return decodedSafe.args[0];
   }
 
   /**
@@ -383,7 +396,8 @@ export class RelayTransactionHelper {
       },
     );
 
-    if (!isEveryTransactionOwnerManagement) {
+    // An empty or undecodable batch recovers nothing
+    if (transactions.length === 0 || !isEveryTransactionOwnerManagement) {
       return null;
     }
 
