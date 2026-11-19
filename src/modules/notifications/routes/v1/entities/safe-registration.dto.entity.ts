@@ -12,6 +12,7 @@ export const SafeRegistrationSchema = z.object({
       error: 'Invalid address',
     }),
   ),
+  // Plain strings: '' means unsigned, malformed values are rejected (422) at recovery
   signatures: z.array(z.string()),
 });
 
@@ -20,7 +21,7 @@ export class SafeRegistration
 {
   @ApiProperty()
   chainId!: string;
-  @ApiProperty()
+  @ApiProperty({ type: [String] })
   safes!: Array<Address>;
   @ApiProperty()
   signatures!: Array<string>;
