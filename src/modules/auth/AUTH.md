@@ -232,7 +232,7 @@ Use `assertAuthenticated(payload)` from `utils/assert-authenticated.utils.ts` to
 - Default max lifetime: **24 hours** (`AUTH_VALIDITY_PERIOD_SECONDS`, default `86400`)
 - SiWe messages may include `expirationTime`; gateway enforces whichever is shorter
 - SiWe messages may include `notBefore`; if present, the JWT `nbf` claim is set and the token is not valid before that time
-- SiWe message time bounds (`issuedAt`, `expirationTime`, `notBefore`) are validated with a tolerated clock skew between client and server (`AUTH_CLOCK_SKEW_SECONDS`, default `30`) to avoid rejecting valid messages when clocks are slightly out of sync
+- SiWe message time bounds (`issuedAt`, `expirationTime`, `notBefore`) are validated with a tolerated clock skew between client and server (`AUTH_CLOCK_SKEW_SECONDS`, default `30`) to avoid rejecting valid messages when clocks are slightly out of sync. A `notBefore` within that skew sets `nbf` to the issue time, and an `expirationTime` less than two whole seconds ahead is rejected with `401`
 - Auth0 tokens inherit their `exp` from Auth0; the cookie `maxAge` is derived from the JWT `exp` claim
 - Logout redirect checks `auth_method` from the current token (without re-verifying it) to decide whether to route through Auth0's logout endpoint
 

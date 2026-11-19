@@ -76,8 +76,9 @@ export class AuthService {
     );
 
     if (expirationTime) {
-      // The SiWE check tolerates clock skew, but a token with a past exp is unusable
-      if (toSecondsTimestamp(expirationTime) <= toSecondsTimestamp(now)) {
+      // The SiWE check tolerates clock skew, but the token's exp (whole seconds)
+      // must be 2+ seconds ahead to verify and to give the cookie a non-zero Max-Age
+      if (toSecondsTimestamp(expirationTime) <= toSecondsTimestamp(now) + 1) {
         throw new UnauthorizedException('Message has expired');
       }
       assertExpirationTime(

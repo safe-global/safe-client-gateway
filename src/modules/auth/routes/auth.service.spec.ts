@@ -286,6 +286,40 @@ describe('AuthService', () => {
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
+    it('should throw UnauthorizedException when expirationTime is less than two whole seconds ahead', async () => {
+      const startOfSecond = Math.floor(now.getTime() / 1_000) * 1_000;
+      const siweMessage = siweMessageBuilder()
+        .with('expirationTime', new Date(startOfSecond + 1_999))
+        .build();
+
+      siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+
+      await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
+        new UnauthorizedException('Message has expired'),
+      );
+
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should sign a token when expirationTime is two whole seconds ahead', async () => {
+      const startOfSecond = Math.floor(now.getTime() / 1_000) * 1_000;
+      const expirationTime = new Date(startOfSecond + 2_000);
+      const siweMessage = siweMessageBuilder()
+        .with('expirationTime', expirationTime)
+        .build();
+
+      siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+      authRepositoryMock.signToken.mockReturnValue('token');
+
+      await expect(target.authenticateWithSiwe(siweArgs)).resolves.toEqual({
+        accessToken: 'token',
+      });
+      expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ exp: expirationTime }),
+      );
+    });
+
     it('should use the current date for nbf when notBefore is in the future', async () => {
       const siweMessage = siweMessageBuilder()
         .with(
