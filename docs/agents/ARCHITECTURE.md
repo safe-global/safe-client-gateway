@@ -149,10 +149,10 @@ flowchart TD
         B --> C{"cacheService.hGet"}
         C -->|hit| D["Return cached JSON"]
         C -->|miss| E["Fetch via INetworkService"]
-        E -->|2xx| F{"shouldBeCached: invalidationTimeMs check"}
-        F -->|yes| G["hSet with TTL, jitter applied"]
-        F -->|no, stale| H["Return without caching"]
-        E -->|404| I["Cache negative result: notFoundExpireTimeSeconds"]
+        E -->|2xx| F["hSetIfFresh with response TTL"]
+        E -->|404| I["hSetIfFresh with notFoundExpireTimeSeconds"]
+        F --> H["Return upstream result"]
+        I --> H
     end
 
     subgraph Invalidate["Invalidation path"]
@@ -164,16 +164,18 @@ flowchart TD
         N --> O["cacheService deleteByKey, sets invalidationTimeMs marker"]
     end
 
-    G -.-> C
+    F -.-> C
+    I -.-> C
     O -.-> F
+    O -.-> I
 ```
 
-`CacheFirstDataSource` (`src/datasources/cache/cache.first.data.source.ts`) is the single hit/miss/write path used by every caching datasource: `hGet` the key, and on a miss, fetch from the network and `hSet` the JSON response with a TTL.
+`CacheFirstDataSource` (`src/datasources/cache/cache.first.data.source.ts`) reads the entry with `hGet`. On a miss, it fetches from the network and uses `hSetIfFresh` to conditionally cache the JSON response with a TTL.
 A response with HTTP 404 is cached too, but as a negative result, for `notFoundExpireTimeSeconds` (configured per-domain, e.g. `expirationTimeInSeconds.notFound.contract`/`.token` in `src/config/entities/configuration.ts`) — this stops a nonexistent contract or token from being re-requested upstream on every call.
 
 A slow in-flight fetch can otherwise race an invalidation and write stale data back into the cache after the invalidation already ran.
-`CacheFirstDataSource`'s private `_shouldBeCached` check guards against this: `deleteByKey` (`src/datasources/cache/redis.cache.service.ts`) both unlinks the key and stamps an `invalidationTimeMs:<key>` marker with the current time.
-Before writing a freshly-fetched response, `_shouldBeCached` compares the fetch's start time against that marker and skips the write if the fetch started before the last invalidation.
+`deleteByKey` (`src/datasources/cache/redis.cache.service.ts`) unlinks the key and stamps an `invalidationTimeMs:<key>` marker with the current time.
+The `hSetIfFresh` Lua script checks the marker and writes the entry atomically. It skips the write if the upstream fetch started at or before the recorded invalidation. For a shared HTTP request, the check uses the original fetch's start time.
 
 Every cache entry is addressed by a `CacheDir` (`src/datasources/cache/entities/cache-dir.entity.ts`), a plain `{ key, field }` pair: `key` names the Redis hash (the resource, e.g. one Safe's balances) and `field` names the entry within it (the query-parameter variant, e.g. a `trusted`/`excludeSpam` combination).
 `hGet`/`hSet` therefore operate on Redis hashes, not flat string keys, so every variant of a resource's cached responses lives under one Redis key.
