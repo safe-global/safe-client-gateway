@@ -392,6 +392,16 @@ describe('AuthPayload entity', () => {
   describe('hasFreshMfa', () => {
     const nowSeconds = (): number => Math.floor(Date.now() / 1_000);
 
+    // The test and `hasFreshMfa` must read the same second.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(faker.date.recent());
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const oidcPayload = (mfaVerifiedAt: number | undefined): AuthPayload =>
       new AuthPayload(
         oidcAuthPayloadDtoBuilder()
