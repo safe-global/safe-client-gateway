@@ -2220,49 +2220,6 @@ describe('Relay controller', () => {
                     statusCode: 422,
                   });
               });
-
-              if (SAFE_VERSIONS[chainId].includes(version)) {
-                it('should return 422 creating an official Safe with an undecodable initializer', async () => {
-                  const chain = chainBuilder()
-                    .with('chainId', chainId)
-                    .with('relayer', relayerForChainId(chainId))
-                    .build();
-                  const singleton = faker.helpers.arrayElement(
-                    getSafeSingletonDeployments({ version, chainId }),
-                  );
-                  const to = faker.helpers.arrayElement(
-                    getProxyFactoryDeployments({ version, chainId }),
-                  );
-                  const data = createProxyWithNonceEncoder()
-                    .with('singleton', singleton)
-                    .with('initializer', '0x00000000')
-                    .encode();
-                  networkService.get.mockImplementation(({ url }) => {
-                    switch (url) {
-                      case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-                        return Promise.resolve({
-                          data: rawify(chain),
-                          status: 200,
-                        });
-                      default:
-                        return Promise.reject(
-                          `No matching rule for url: ${url}`,
-                        );
-                    }
-                  });
-
-                  await request(app.getHttpServer())
-                    .post(`/v1/chains/${chain.chainId}/relay`)
-                    .send({ version, to, data })
-                    .expect(422)
-                    .expect({
-                      message:
-                        'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
-                      statusCode: 422,
-                    });
-                  expect(networkService.post).not.toHaveBeenCalled();
-                });
-              }
             },
           );
         });
@@ -3170,6 +3127,58 @@ describe('Relay controller', () => {
             limit: relayLimit,
           });
       });
+    });
+  });
+
+  describe('Undecodable calldata', () => {
+    it('should return 422 creating an official Safe with an undecodable initializer', async () => {
+      const chainId = faker.helpers.arrayElement(
+        supportedChainIds.filter((candidate) =>
+          SAFE_VERSIONS[candidate].some((version) =>
+            PROXY_FACTORY_VERSIONS[candidate].includes(version),
+          ),
+        ),
+      );
+      const version = faker.helpers.arrayElement(
+        SAFE_VERSIONS[chainId].filter((candidate) =>
+          PROXY_FACTORY_VERSIONS[chainId].includes(candidate),
+        ),
+      );
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
+      const data = createProxyWithNonceEncoder()
+        .with(
+          'singleton',
+          faker.helpers.arrayElement(
+            getSafeSingletonDeployments({ version, chainId }),
+          ),
+        )
+        .with('initializer', '0x00000000')
+        .encode();
+      const to = faker.helpers.arrayElement(
+        getProxyFactoryDeployments({ version, chainId }),
+      );
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(422)
+        .expect({
+          message:
+            'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+          statusCode: 422,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
     });
   });
 

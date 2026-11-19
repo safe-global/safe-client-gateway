@@ -192,7 +192,8 @@ export class RelayTransactionHelper {
     // Decode transactions within MultiSend
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
 
-    // The decoder returns no transactions for an empty or undecodable batch
+    // The decoder returns no transactions for an empty batch or one whose
+    // first transaction does not decode
     if (transactions.length === 0) {
       throw new InvalidMultiSendError();
     }
@@ -396,7 +397,7 @@ export class RelayTransactionHelper {
       },
     );
 
-    // An empty or undecodable batch recovers nothing
+    // A batch that decodes to no transactions recovers nothing
     if (transactions.length === 0 || !isEveryTransactionOwnerManagement) {
       return null;
     }
