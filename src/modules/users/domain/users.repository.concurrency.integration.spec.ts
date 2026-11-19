@@ -179,10 +179,11 @@ describe('UsersRepository concurrency', () => {
     return result.identifiers[0].id as Member['id'];
   };
 
-  // Throws if `call` settles before waiting on a lock held by `holder`.
+  // Throws if `call` settles or the test aborts before it waits on `holder`'s lock.
   const waitUntilBlockedBy = async (
     holder: QueryRunner,
     call: Promise<unknown>,
+    signal: AbortSignal,
   ): Promise<void> => {
     const [{ pid }]: Array<{ pid: number }> = await holder.query(
       'SELECT pg_backend_pid() AS pid',
@@ -197,6 +198,7 @@ describe('UsersRepository concurrency', () => {
       },
     );
     while (!settled) {
+      signal.throwIfAborted();
       const rows: Array<{ count: number }> = await dataSource.query(
         `SELECT count(*)::int AS count FROM pg_stat_activity
          WHERE $1 = ANY(pg_blocking_pids(pid))`,
@@ -212,7 +214,9 @@ describe('UsersRepository concurrency', () => {
     throw new Error('The call finished without waiting on the lock.');
   };
 
-  it('waits for an in-flight admin change before deciding', async () => {
+  it('waits for an in-flight admin change before deciding', async ({
+    signal,
+  }) => {
     const userId = await insertUser();
     const coAdminUserId = await insertUser();
     const spaceId = await insertSpace();
@@ -238,7 +242,7 @@ describe('UsersRepository concurrency', () => {
       await queryRunner.manager.delete(Member, coAdminMemberId);
 
       deletion = usersRepository.delete(authPayload);
-      await waitUntilBlockedBy(queryRunner, deletion);
+      await waitUntilBlockedBy(queryRunner, deletion, signal);
 
       await queryRunner.commitTransaction();
     } finally {
@@ -258,7 +262,9 @@ describe('UsersRepository concurrency', () => {
     ).resolves.not.toBeNull();
   });
 
-  it('rejects a deletion that would orphan a concurrently created space', async () => {
+  it('rejects a deletion that would orphan a concurrently created space', async ({
+    signal,
+  }) => {
     const userId = await insertUser();
 
     const queryRunner = dataSource.createQueryRunner();
@@ -283,7 +289,7 @@ describe('UsersRepository concurrency', () => {
           siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
         ),
       );
-      await waitUntilBlockedBy(queryRunner, deletion);
+      await waitUntilBlockedBy(queryRunner, deletion, signal);
 
       await queryRunner.commitTransaction();
     } finally {
@@ -302,7 +308,9 @@ describe('UsersRepository concurrency', () => {
     );
   });
 
-  it('makes a promotion wait for an in-flight account deletion', async () => {
+  it('makes a promotion wait for an in-flight account deletion', async ({
+    signal,
+  }) => {
     const userId = await insertUser();
     const adminUserId = await insertUser();
     const spaceId = await insertSpace();
@@ -333,7 +341,7 @@ describe('UsersRepository concurrency', () => {
         userId,
         role: 'ADMIN',
       });
-      await waitUntilBlockedBy(queryRunner, promotion);
+      await waitUntilBlockedBy(queryRunner, promotion, signal);
 
       await queryRunner.commitTransaction();
     } finally {
@@ -346,7 +354,7 @@ describe('UsersRepository concurrency', () => {
     await promotion;
   });
 
-  it.each([
+  it.for([
     {
       name: 'demotion',
       act: (args: {
@@ -369,7 +377,7 @@ describe('UsersRepository concurrency', () => {
     },
   ])(
     'refuses a $name of the co-admin while the actor is leaving',
-    async ({ act }) => {
+    async ({ act }, { signal }) => {
       const actorUserId = await insertUser();
       const coAdminUserId = await insertUser();
       const spaceId = await insertSpace();
@@ -392,7 +400,7 @@ describe('UsersRepository concurrency', () => {
         await queryRunner.manager.delete(Member, actorMemberId);
 
         change = act({ actorUserId, userId: coAdminUserId, spaceId });
-        await waitUntilBlockedBy(queryRunner, change);
+        await waitUntilBlockedBy(queryRunner, change, signal);
 
         await queryRunner.commitTransaction();
       } finally {
