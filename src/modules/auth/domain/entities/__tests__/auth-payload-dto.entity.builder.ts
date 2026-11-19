@@ -11,11 +11,6 @@ import type {
 } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthMethod } from '#/modules/auth/domain/entities/auth-payload.entity';
 
-/**
- * A positive integer ID as a string, for `sub` (a user ID) and `chain_id`.
- * The range is wide so two payloads built in one test do not share an ID by
- * chance.
- */
 export function authPayloadIdBuilder(): string {
   return faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }).toString();
 }
