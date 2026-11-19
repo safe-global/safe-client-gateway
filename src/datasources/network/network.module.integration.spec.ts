@@ -15,6 +15,9 @@ import {
 import { ConfigurationModule } from '#/config/configuration.module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/configuration';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerModule } from '#/datasources/circuit-breaker/circuit-breaker.module';
 import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitBreakerException } from '#/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
@@ -22,6 +25,7 @@ import {
   NetworkRequestError,
   NetworkResponseError,
 } from '#/datasources/network/entities/network.error.entity';
+import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
 import type { FetchClient } from '#/datasources/network/network.module';
 import {
   FetchClientToken,
@@ -150,9 +154,12 @@ describe('NetworkModule', () => {
 
       const url = faker.internet.url({ appendSlash: false });
 
-      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
-        new NetworkResponseError(new URL(url), response, json),
-      );
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toMatchObject({
+        url: new URL(url),
+        response,
+        data: json,
+        requestStartedAtMs: expect.any(Number),
+      });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -228,6 +235,83 @@ describe('NetworkModule', () => {
         key,
       });
     });
+
+    it.each([200, 404])(
+      'does not cache a shared %s response from before an invalidation',
+      async (status) => {
+        const cache = new FakeCacheService();
+        const dataSource = new CacheFirstDataSource(
+          cache,
+          new FetchNetworkService(fetchClient, loggingService),
+          loggingService,
+          app.get(IConfigurationService),
+        );
+        const args = {
+          cacheDir: new CacheDir(
+            faker.string.alphanumeric(),
+            faker.string.alphanumeric(),
+          ),
+          url: faker.internet.url(),
+          expireTimeSeconds: faker.number.int({ min: 1, max: 60 }),
+          notFoundExpireTimeSeconds: faker.number.int({ min: 1, max: 60 }),
+        };
+        const body = JSON.parse(fakeJson());
+        const pendingResponse = Promise.withResolvers<Response>();
+        const fetchStarted = Promise.withResolvers<void>();
+        fetchMock.mockImplementationOnce(() => {
+          fetchStarted.resolve();
+          return pendingResponse.promise;
+        });
+
+        const startedAt = Date.now();
+        const now = vi.spyOn(Date, 'now').mockReturnValue(startedAt);
+        try {
+          const original = dataSource
+            .get(args)
+            .catch((error: unknown) => error);
+          await fetchStarted.promise;
+
+          now.mockReturnValue(startedAt + 1);
+          await cache.deleteByKey(args.cacheDir.key);
+          now.mockReturnValue(startedAt + 2);
+          const follower = dataSource
+            .get(args)
+            .catch((error: unknown) => error);
+          await vi.waitFor(() => {
+            expect(loggingService.debug).toHaveBeenCalledWith(
+              expect.objectContaining({
+                type: 'EXTERNAL_REQUEST_CACHE_HIT',
+                url: new URL(args.url).href,
+              }),
+            );
+          });
+
+          pendingResponse.resolve(Response.json(body, { status }));
+          const results = await Promise.all([original, follower]);
+          expect(fetchMock).toHaveBeenCalledTimes(1);
+          if (status === 404) {
+            for (const result of results) {
+              expect(result).toBeInstanceOf(NetworkResponseError);
+              expect(result).toHaveProperty('requestStartedAtMs', startedAt);
+            }
+          } else {
+            expect(results).toEqual([body, body]);
+          }
+          await expect(cache.hGet(args.cacheDir)).resolves.toBeNull();
+
+          const freshBody = JSON.parse(fakeJson());
+          fetchMock.mockResolvedValueOnce(Response.json(freshBody));
+          await expect(dataSource.get(args)).resolves.toEqual(freshBody);
+          expect(fetchMock).toHaveBeenCalledTimes(2);
+          await expect(cache.hGet(args.cacheDir)).resolves.toBe(
+            JSON.stringify(freshBody),
+          );
+        } finally {
+          now.mockRestore();
+          pendingResponse.resolve(Response.json(body, { status }));
+        }
+      },
+    );
 
     it('shares requests that differ only by their request ID', async () => {
       const json = fakeJson();
@@ -318,7 +402,12 @@ describe('NetworkModule', () => {
           method: 'POST',
           body: JSON.stringify({ example: faker.lorem.word() }),
         }),
-      ).rejects.toThrow(new NetworkResponseError(new URL(url), response, json));
+      ).rejects.toMatchObject({
+        url: new URL(url),
+        response,
+        data: json,
+        requestStartedAtMs: expect.any(Number),
+      });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -338,7 +427,12 @@ describe('NetworkModule', () => {
           method: 'POST',
           body: JSON.stringify({ example: faker.lorem.word() }),
         }),
-      ).rejects.toThrow(new NetworkResponseError(new URL(url), response, json));
+      ).rejects.toMatchObject({
+        url: new URL(url),
+        response,
+        data: json,
+        requestStartedAtMs: expect.any(Number),
+      });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });

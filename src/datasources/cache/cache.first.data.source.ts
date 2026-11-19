@@ -39,10 +39,6 @@ import type { Raw } from '#/validation/entities/raw.entity';
  */
 @Injectable()
 export class CacheFirstDataSource {
-  private readonly inFlightGets = new Map<
-    string,
-    { startTimeMs: number; response: Promise<Raw<unknown>> }
-  >();
   private readonly areDebugLogsEnabled: boolean;
   private readonly areConfigHooksDebugLogsEnabled: boolean;
 
@@ -80,34 +76,8 @@ export class CacheFirstDataSource {
     networkRequest?: NetworkRequest;
     expireTimeSeconds?: number;
   }): Promise<Raw<T>> {
-    const {
-      cacheDir,
-      url,
-      networkRequest,
-      expireTimeSeconds,
-      notFoundExpireTimeSeconds,
-    } = args;
-    // Request-specific headers and query parameters can change the upstream response.
-    const coalescingKey =
-      expireTimeSeconds !== undefined &&
-      expireTimeSeconds > 0 &&
-      !networkRequest?.headers &&
-      !networkRequest?.params
-        ? () =>
-            JSON.stringify([
-              cacheDir.key,
-              cacheDir.field,
-              url,
-              expireTimeSeconds,
-              notFoundExpireTimeSeconds,
-              networkRequest?.timeout,
-              networkRequest?.responseType,
-              networkRequest?.circuitBreaker?.key,
-            ])
-        : undefined;
     return await this.tryCache({
       ...args,
-      coalescingKey,
       queryFn: (startTimeMs) => {
         return this._getFromNetworkAndWriteCache({
           ...args,
@@ -166,57 +136,13 @@ export class CacheFirstDataSource {
     cacheDir: CacheDir;
     notFoundExpireTimeSeconds: number;
     queryFn: (startTimeMs: number) => Promise<Raw<T>>;
-    coalescingKey?: () => string;
   }): Promise<Raw<T>> {
     const cached = await this.cacheService.hGet(args.cacheDir);
     if (cached != null) {
       return this._getFromCachedData(args.cacheDir, cached);
     }
 
-    const coalescingKey = args.coalescingKey?.();
-    if (coalescingKey === undefined) {
-      return await this.fetchOnMiss(args, Date.now());
-    }
-
-    let inFlight = this.inFlightGets.get(coalescingKey);
-    while (inFlight) {
-      const invalidationTime = await this.cacheService.getInvalidationTimeMs(
-        args.cacheDir.key,
-      );
-      if (
-        invalidationTime === null ||
-        invalidationTime < inFlight.startTimeMs
-      ) {
-        return structuredClone(await inFlight.response);
-      }
-      const latest = this.inFlightGets.get(coalescingKey);
-      if (latest === inFlight) {
-        break;
-      }
-      inFlight = latest;
-    }
-
     const startTimeMs = Date.now();
-    const response = this.fetchOnMiss(args, startTimeMs);
-    const flight = { startTimeMs, response };
-    this.inFlightGets.set(coalescingKey, flight);
-    try {
-      return await response;
-    } finally {
-      if (this.inFlightGets.get(coalescingKey) === flight) {
-        this.inFlightGets.delete(coalescingKey);
-      }
-    }
-  }
-
-  private async fetchOnMiss<T>(
-    args: {
-      cacheDir: CacheDir;
-      notFoundExpireTimeSeconds: number;
-      queryFn: (startTimeMs: number) => Promise<Raw<T>>;
-    },
-    startTimeMs: number,
-  ): Promise<Raw<T>> {
     try {
       return await args.queryFn(startTimeMs);
     } catch (error) {
@@ -228,7 +154,7 @@ export class CacheFirstDataSource {
           args.cacheDir,
           error,
           args.notFoundExpireTimeSeconds,
-          startTimeMs,
+          error.requestStartedAtMs ?? startTimeMs,
         );
       }
       throw error;
@@ -278,14 +204,16 @@ export class CacheFirstDataSource {
         },
   ): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
-    const { startTimeMs } = args;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
-    const { data } = await this.networkService[args.method]<T>({
+    const { data, requestStartedAtMs } = await this.networkService[
+      args.method
+    ]<T>({
       url: args.url,
       networkRequest: args.networkRequest,
       data: args.data,
     });
 
+    const startTimeMs = requestStartedAtMs ?? args.startTimeMs;
     const written =
       args.expireTimeSeconds !== undefined &&
       args.expireTimeSeconds > 0 &&

@@ -11,6 +11,7 @@ export class NetworkResponseError extends Error {
     readonly url: URL,
     readonly response: Response,
     readonly data?: unknown,
+    readonly requestStartedAtMs?: number,
   ) {
     super();
   }
