@@ -179,10 +179,7 @@ describe('UsersRepository concurrency', () => {
     return result.identifiers[0].id as Member['id'];
   };
 
-  // Proves the call under test is waiting on a lock that `holder` holds,
-  // without a fixed sleep or a wall-clock deadline: on a slow runner it only
-  // polls longer, and the test timeout still bounds it. Fails fast if the call
-  // settles first, since that means it never waited on the lock.
+  // Throws if `call` settles before waiting on a lock held by `holder`.
   const waitUntilBlockedBy = async (
     holder: QueryRunner,
     call: Promise<unknown>,
