@@ -201,20 +201,13 @@ describe('RedisCacheService', () => {
     const newerTime = olderTime + faker.number.int({ min: 1, max: 1000 });
     const markerKey = `invalidationTimeMs:${cacheDir.key}`;
     const resume = Promise.withResolvers<void>();
-    const unlink = redisClient.unlink.bind(redisClient);
-    const evalSha = redisClient.evalSha.bind(redisClient);
-    const delayedUnlink = vi
-      .spyOn(redisClient, 'unlink')
-      .mockImplementationOnce(async (key) => {
-        await resume.promise;
-        return unlink(key);
-      });
-    const delayedEvalSha = vi
-      .spyOn(redisClient, 'evalSha')
-      .mockImplementationOnce(async (sha, options) => {
-        await resume.promise;
-        return evalSha(sha, options);
-      });
+    const pipeline = redisClient.multi();
+    const execute = pipeline.execAsPipeline.bind(pipeline);
+    vi.spyOn(pipeline, 'execAsPipeline').mockImplementationOnce(async () => {
+      await resume.promise;
+      return execute();
+    });
+    const multi = vi.spyOn(redisClient, 'multi').mockReturnValueOnce(pipeline);
     const now = vi.spyOn(Date, 'now').mockReturnValue(olderTime);
     const queuedInvalidation = redisCacheService.deleteByKey(cacheDir.key);
 
@@ -237,8 +230,7 @@ describe('RedisCacheService', () => {
         await queuedInvalidation;
       } finally {
         now.mockRestore();
-        delayedUnlink.mockRestore();
-        delayedEvalSha.mockRestore();
+        multi.mockRestore();
       }
     }
 
@@ -247,26 +239,6 @@ describe('RedisCacheService', () => {
     );
     expect(await redisClient.exists(cacheDir.key)).toBe(0);
     expect(await redisClient.pExpireTime(markerKey)).toBe(deadline);
-  });
-
-  it('writes the marker when Redis returns NOSCRIPT for the hash', async () => {
-    const key = faker.string.alphanumeric();
-    const evalSha = redisClient.evalSha.bind(redisClient);
-    const missingScript = vi
-      .spyOn(redisClient, 'evalSha')
-      .mockImplementationOnce((_sha, options) =>
-        evalSha('0'.repeat(40), options),
-      );
-    try {
-      const start = Date.now();
-      await redisCacheService.deleteByKey(key);
-
-      expect(
-        await redisCacheService.getInvalidationTimeMs(key),
-      ).toBeGreaterThanOrEqual(start);
-    } finally {
-      missingScript.mockRestore();
-    }
   });
 
   it('a newer invalidation renews the marker for the full configured TTL', async () => {

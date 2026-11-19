@@ -16,14 +16,14 @@ type RedisTransaction = ReturnType<RedisClientType['multi']>;
 
 const transactionMock = {
   hSet: vi.fn(),
+  eval: vi.fn(),
   expire: vi.fn(),
+  unlink: vi.fn(),
   exec: vi.fn(),
+  execAsPipeline: vi.fn(),
 } as unknown as MockedObject<RedisTransaction>;
 
 const multiMock = vi.fn();
-const unlinkMock = vi.fn<RedisClientType['unlink']>();
-const evalShaMock = vi.fn<RedisClientType['evalSha']>();
-const evalMock = vi.fn<RedisClientType['eval']>();
 let isClientReady = true;
 let isOfflineQueueDisabled = false;
 
@@ -35,12 +35,10 @@ const redisClientMock = {
     return { disableOfflineQueue: isOfflineQueueDisabled };
   },
   multi: multiMock,
-  eval: evalMock,
-  evalSha: evalShaMock,
   hGet: vi.fn(),
   hSet: vi.fn(),
   expire: vi.fn(),
-  unlink: unlinkMock,
+  unlink: vi.fn(),
 } as unknown as MockedObject<RedisClientType>;
 
 const mockLoggingService = {
@@ -60,11 +58,11 @@ describe('RedisCacheService', () => {
     isOfflineQueueDisabled = false;
     multiMock.mockReturnValue(transactionMock);
     transactionMock.hSet.mockReturnValue(transactionMock);
+    transactionMock.eval.mockReturnValue(transactionMock);
     transactionMock.expire.mockReturnValue(transactionMock);
+    transactionMock.unlink.mockReturnValue(transactionMock);
     transactionMock.exec.mockResolvedValue([]);
-    unlinkMock.mockResolvedValue(0);
-    evalShaMock.mockResolvedValue(1);
-    evalMock.mockResolvedValue(1);
+    transactionMock.execAsPipeline.mockResolvedValue([]);
 
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     fakeConfigurationService = new FakeConfigurationService();
@@ -148,7 +146,7 @@ describe('RedisCacheService', () => {
         source: 'RedisCacheService',
         event: `Error setting/expiring ${cacheDir.key}:${cacheDir.field}`,
       });
-      expect(unlinkMock).toHaveBeenCalledWith(cacheDir.key);
+      expect(redisClientMock.unlink).toHaveBeenCalledWith(cacheDir.key);
     });
 
     it('rethrows the failed command error rather than the MultiErrorReply wrapper', async () => {
@@ -176,14 +174,14 @@ describe('RedisCacheService', () => {
       const now = Date.now();
       const key = faker.string.alphanumeric();
       const unlinkedCount = faker.number.int({ min: 0, max: 1 });
-      unlinkMock.mockResolvedValue(unlinkedCount);
+      transactionMock.execAsPipeline.mockResolvedValue([unlinkedCount, 1]);
 
       const result = await target.deleteByKey(key);
 
       expect(result).toBe(unlinkedCount);
-      expect(multiMock).not.toHaveBeenCalled();
-      expect(evalShaMock).toHaveBeenCalledWith(
-        expect.stringMatching(/^[a-f0-9]{40}$/),
+      expect(multiMock).toHaveBeenCalledOnce();
+      expect(transactionMock.eval).toHaveBeenCalledWith(
+        SET_INVALIDATION_TIME_SCRIPT,
         {
           keys: [`invalidationTimeMs:${key}`],
           arguments: [
@@ -193,10 +191,13 @@ describe('RedisCacheService', () => {
         },
       );
       expect(transactionMock.expire).not.toHaveBeenCalled();
-      expect(unlinkMock).toHaveBeenCalledWith(key);
-      expect(unlinkMock).toHaveBeenCalledBefore(evalShaMock);
+      expect(transactionMock.unlink).toHaveBeenCalledWith(key);
+      expect(transactionMock.unlink).toHaveBeenCalledBefore(
+        transactionMock.eval,
+      );
+      expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
       expect(transactionMock.exec).not.toHaveBeenCalled();
-      expect(evalMock).not.toHaveBeenCalled();
+      expect(redisClientMock.unlink).not.toHaveBeenCalled();
       expect(redisClientMock.hSet).not.toHaveBeenCalled();
     });
 
@@ -213,26 +214,28 @@ describe('RedisCacheService', () => {
       );
       const key = faker.string.alphanumeric();
       const unlinkedCount = faker.number.int({ min: 0, max: 1 });
-      unlinkMock.mockResolvedValue(unlinkedCount);
+      transactionMock.execAsPipeline.mockResolvedValue([unlinkedCount]);
 
       const result = await target.deleteByKey(key);
 
       expect(result).toBe(unlinkedCount);
-      expect(unlinkMock).toHaveBeenCalledWith(key);
+      expect(transactionMock.unlink).toHaveBeenCalledWith(key);
       expect(transactionMock.hSet).not.toHaveBeenCalled();
-      expect(evalShaMock).not.toHaveBeenCalled();
-      expect(evalMock).not.toHaveBeenCalled();
+      expect(transactionMock.eval).not.toHaveBeenCalled();
       expect(transactionMock.expire).not.toHaveBeenCalled();
+      expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
     });
 
-    it('preserves a concurrent invalidation marker and rethrows a marker write error', async () => {
+    it('preserves a concurrent invalidation marker and rethrows the pipeline error', async () => {
       const key = faker.string.alphanumeric();
       const error = new Error(faker.lorem.sentence());
-      const failedMarkerWrite = Promise.withResolvers<never>();
-      evalShaMock.mockReturnValueOnce(failedMarkerWrite.promise);
+      const failedPipeline = Promise.withResolvers<never>();
+      transactionMock.execAsPipeline.mockReturnValueOnce(
+        failedPipeline.promise,
+      );
       const firstInvalidation = target.deleteByKey(key);
       await target.deleteByKey(key);
-      failedMarkerWrite.reject(error);
+      failedPipeline.reject(error);
 
       await expect(firstInvalidation).rejects.toBe(error);
 
@@ -241,24 +244,7 @@ describe('RedisCacheService', () => {
         source: 'RedisCacheService',
         event: `Error deleting ${key} or setting/expiring invalidationTimeMs:${key}`,
       });
-      expect(unlinkMock.mock.calls).toEqual([[key], [key]]);
-      expect(evalMock).not.toHaveBeenCalled();
-    });
-
-    it('retries only the marker with the original arguments on NOSCRIPT', async () => {
-      const key = faker.string.alphanumeric();
-      unlinkMock.mockResolvedValueOnce(1);
-      evalShaMock.mockRejectedValueOnce(
-        new ErrorReply('NOSCRIPT No matching script. Please use EVAL.'),
-      );
-
-      expect(await target.deleteByKey(key)).toBe(1);
-
-      expect(unlinkMock.mock.calls).toEqual([[key]]);
-      expect(evalMock).toHaveBeenCalledExactlyOnceWith(
-        SET_INVALIDATION_TIME_SCRIPT,
-        evalShaMock.mock.calls[0][1],
-      );
+      expect(redisClientMock.unlink).not.toHaveBeenCalled();
     });
   });
 
@@ -291,8 +277,7 @@ describe('RedisCacheService', () => {
         target.deleteByKey(faker.string.alphanumeric()),
       ).rejects.toThrow(ClientOfflineError);
 
-      expect(unlinkMock).not.toHaveBeenCalled();
-      expect(evalShaMock).not.toHaveBeenCalled();
+      expect(transactionMock.execAsPipeline).not.toHaveBeenCalled();
     });
 
     it('sends the batch while the client is ready', async () => {
@@ -324,8 +309,7 @@ describe('RedisCacheService', () => {
 
       await target.deleteByKey(faker.string.alphanumeric());
 
-      expect(unlinkMock).toHaveBeenCalledOnce();
-      expect(evalShaMock).toHaveBeenCalledOnce();
+      expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
     });
   });
 
@@ -385,9 +369,11 @@ describe('RedisCacheService', () => {
 
       await target.deleteByKey(key);
 
-      expect(unlinkMock).toHaveBeenCalledWith(`${keyPrefix}-${key}`);
-      expect(evalShaMock).toHaveBeenCalledWith(
-        expect.stringMatching(/^[a-f0-9]{40}$/),
+      expect(transactionMock.unlink).toHaveBeenCalledWith(
+        `${keyPrefix}-${key}`,
+      );
+      expect(transactionMock.eval).toHaveBeenCalledWith(
+        SET_INVALIDATION_TIME_SCRIPT,
         {
           keys: [`${keyPrefix}-invalidationTimeMs:${key}`],
           arguments: [
