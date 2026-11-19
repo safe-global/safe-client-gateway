@@ -9,6 +9,7 @@ import type { ZerionWalletPortfolio } from '#/modules/balances/datasources/entit
 import type { IZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import type { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
 import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import { DEFAULT_TOKEN_LIST_FEATURE } from '#/modules/balances/domain/trusted-token-list.helper';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
@@ -177,6 +178,31 @@ describe('SafesV2Service', () => {
     ).not.toHaveBeenCalled();
     expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { features: [DEFAULT_TOKEN_LIST_FEATURE], expected: true },
+    { features: [], expected: false },
+  ])(
+    'sends trusted=$expected to the balances repo for trusted=true and features $features',
+    async ({ features, expected }) => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockChainsRepository.getChain.mockResolvedValue({
+        ...buildChain('11155111', true),
+        features,
+      });
+      mockBalancesRepository.getBalances.mockResolvedValue([]);
+
+      await service.getSafeOverview({
+        currency: 'USD',
+        addresses: [{ chainId: '11155111', address }],
+        trusted: true,
+      });
+
+      expect(mockBalancesRepository.getBalances).toHaveBeenCalledWith(
+        expect.objectContaining({ trusted: expected }),
+      );
+    },
+  );
 
   it('serves a testnet chain from Zerion once testnets are enabled', async () => {
     enableZerionTestnets();

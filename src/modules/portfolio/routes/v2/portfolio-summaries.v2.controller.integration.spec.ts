@@ -264,42 +264,42 @@ describe('PortfolioSummariesV2Controller', () => {
     );
   });
 
-  it('counts untrusted tokens when trusted=false', async () => {
+  it('makes one Zerion call for trusted=true, trusted=false and the GET /v2/safes default', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     const chain = chainBuilder()
       .with('chainId', String(firstChainId))
       .with('isTestnet', false)
       .build();
-    const [trustedValue, untrustedValue] = [fiat(), fiat()];
-    mockUpstreams({
+    const value = fiat();
+    const getPositions = mockUpstreams({
       chains: [chain],
       address,
-      rows: [
-        zerionRow(firstNetwork, trustedValue),
-        zerionRow(firstNetwork, untrustedValue, { isTrash: true }),
-      ],
+      rows: [zerionRow(firstNetwork, value)],
     });
+    const safes = `${chain.chainId}:${address}`;
+    const currency = faker.helpers.arrayElement(currencies);
+    const fiatTotal = getNumberString(value);
 
+    for (const trusted of ['true', 'false']) {
+      await request(app.getHttpServer())
+        .get('/v2/portfolio/summaries')
+        .query({ safes, currency, trusted })
+        .expect(200)
+        .expect(({ body }) => expect(body).toMatchObject([{ fiatTotal }]));
+    }
     await request(app.getHttpServer())
-      .get('/v2/portfolio/summaries')
-      .query({
-        safes: `${chain.chainId}:${address}`,
-        currency: faker.helpers.arrayElement(currencies),
-        trusted: 'false',
-      })
+      .get('/v2/safes')
+      .query({ safes, currency })
       .expect(200)
-      .expect(({ body }) =>
-        expect(body).toMatchObject([
-          { fiatTotal: getNumberString(trustedValue + untrustedValue) },
-        ]),
-      );
+      .expect(({ body }) => expect(body).toMatchObject([{ fiatTotal }]));
 
+    expect(getPositions).toHaveBeenCalledTimes(1);
     expect(networkService.get).toHaveBeenCalledWith(
       expect.objectContaining({
         url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,
         networkRequest: expect.objectContaining({
-          params: expect.not.objectContaining({
-            'filter[trash]': expect.anything(),
+          params: expect.objectContaining({
+            'filter[trash]': 'only_non_trash',
           }),
         }),
       }),

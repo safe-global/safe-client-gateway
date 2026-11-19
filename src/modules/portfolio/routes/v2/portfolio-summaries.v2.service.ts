@@ -11,6 +11,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { getTxServiceTrusted } from '#/modules/balances/domain/trusted-token-list.helper';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import type { PortfolioSnapshot } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
@@ -296,7 +297,7 @@ export class PortfolioSummariesV2Service {
         chain: args.chain,
         safeAddress: args.address,
         fiatCode: args.currency,
-        trusted: args.trusted,
+        trusted: getTxServiceTrusted(args),
       });
       return this.mapper.fromBalances({
         chainId: args.chain.chainId,

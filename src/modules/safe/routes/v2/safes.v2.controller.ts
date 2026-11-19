@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  Controller,
-  DefaultValuePipe,
-  Get,
-  ParseBoolPipe,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -15,6 +9,7 @@ import {
 import type { Address } from 'viem';
 import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
@@ -62,8 +57,8 @@ export class SafesV2Controller {
     required: false,
     type: Boolean,
     description:
-      'If true, only includes trusted tokens in balance calculations.',
-    example: false,
+      'If true, only includes trusted tokens in balance calculations. Defaults to true, like GET /v1/portfolio. Chains without a default token list always include all tokens.',
+    example: true,
   })
   @ApiOkResponse({
     type: SafeOverview,
@@ -75,15 +70,15 @@ export class SafesV2Controller {
     @Query('currency') currency: string,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema))
     addresses: Caip10Addresses,
-    @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
-    trusted: boolean,
+    @Query('trusted', new ValidationPipe(BooleanStringSchema.optional()))
+    trusted: boolean | undefined,
     @Query('wallet_address', new ValidationPipe(AddressSchema.optional()))
     walletAddress?: Address,
   ): Promise<Array<SafeOverview>> {
     return this.service.getSafeOverview({
       currency,
       addresses,
-      trusted,
+      trusted: trusted ?? true,
       walletAddress,
     });
   }

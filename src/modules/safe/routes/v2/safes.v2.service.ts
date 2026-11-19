@@ -13,6 +13,7 @@ import {
 import { asError } from '#/logging/utils';
 import { IZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { getTxServiceTrusted } from '#/modules/balances/domain/trusted-token-list.helper';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
@@ -343,7 +344,6 @@ export class SafesV2Service {
       address: args.address,
       currency: args.currency,
       isTestnet: args.isTestnet,
-      trusted: args.trusted,
     });
     const distribution =
       portfolio.data.attributes.positions_distribution_by_chain;
@@ -496,7 +496,7 @@ export class SafesV2Service {
     const balances = await this.balancesRepository.getBalances({
       chain,
       safeAddress,
-      trusted,
+      trusted: getTxServiceTrusted({ chain, trusted }),
       fiatCode: currency,
     });
 

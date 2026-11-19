@@ -110,7 +110,6 @@ describe('PortfolioRepository', () => {
           fiatCode,
           isTestnet: undefined,
           sync: undefined,
-          trusted: undefined,
         });
 
         const cacheDir = CacheRouter.getPortfolioCacheDir({
@@ -144,7 +143,6 @@ describe('PortfolioRepository', () => {
           address,
           fiatCode,
           isTestnet: undefined,
-          trusted: undefined,
           sync: true,
         });
       });
@@ -698,7 +696,6 @@ describe('PortfolioRepository', () => {
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode: args.fiatCode,
-        trusted: args.trusted,
         isTestnet: args.isTestnet,
         sync: undefined,
       });
@@ -931,6 +928,27 @@ describe('PortfolioRepository', () => {
 
       expect(fromAssets).toEqual(portfolio);
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+    });
+
+    it('shares one entry and one Zerion call between trusted and untrusted reads', async () => {
+      const portfolio = portfolioBuilder().build();
+      let stored: string | null = null;
+      mockCacheService.hGet.mockImplementation(() => Promise.resolve(stored));
+      mockCacheService.hSet.mockImplementation((_, value) => {
+        stored = value;
+        return Promise.resolve();
+      });
+      mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+      await repository.getPortfolioSnapshot({ ...args, trusted: true });
+      await repository.getPortfolioSnapshot({ ...args, trusted: false });
+      await repository.getPortfolio({ ...args, trusted: true });
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+      expect(
+        new Set(mockCacheService.hGet.mock.calls.map(([dir]) => dir.field))
+          .size,
+      ).toBe(1);
     });
 
     it('refetches an entry cached before snapshots carried timestamps', async () => {

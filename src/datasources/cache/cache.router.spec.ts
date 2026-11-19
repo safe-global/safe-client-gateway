@@ -57,19 +57,17 @@ describe('CacheRouter', () => {
       const dir = CacheRouter.getPortfolioCacheDir({
         address,
         fiatCode: 'USD',
-        trusted: true,
         isTestnet: false,
       });
 
       expect(dir.key).toBe(`portfolio_${address}_zerion`);
-      expect(dir.field).toBe('usd_trusted');
+      expect(dir.field).toBe('usd');
     });
 
     it('should produce correct cache dir for wallet portfolio endpoint', () => {
       const dir = CacheRouter.getZerionWalletPortfolioCacheDir({
         address,
         fiatCode: 'EUR',
-        trusted: false,
         isTestnet: true,
       });
 

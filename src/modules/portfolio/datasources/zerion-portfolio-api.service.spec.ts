@@ -124,57 +124,71 @@ describe('ZerionPortfolioApi', () => {
       });
     });
 
-    it.each([true, false])(
-      'should log portfolio request failures with trusted=%s',
-      async (trusted) => {
-        const address = getAddress(faker.finance.ethereumAddress());
-        const fiatCode = 'USD';
-        const sourceError = new NetworkResponseError(
-          new URL(`${zerionBaseUri}/v1/wallets/${address}/positions/`),
-          new Response(null, { status: 401, statusText: 'Unauthorized' }),
-          {
-            errors: [
-              {
-                code: 'unauthorized',
-                title: 'Unauthorized',
-                detail: 'Invalid Zerion API key',
-              },
-            ],
-          },
-        );
-        const dataSourceError = new DataSourceError('Unauthorized', 401);
-        mockNetworkService.get.mockRejectedValue(sourceError);
-        mockHttpErrorFactory.from.mockReturnValue(dataSourceError);
+    it('should log portfolio request failures without the API key', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = 'USD';
+      const sourceError = new NetworkResponseError(
+        new URL(`${zerionBaseUri}/v1/wallets/${address}/positions/`),
+        new Response(null, { status: 401, statusText: 'Unauthorized' }),
+        {
+          errors: [
+            {
+              code: 'unauthorized',
+              title: 'Unauthorized',
+              detail: 'Invalid Zerion API key',
+            },
+          ],
+        },
+      );
+      const dataSourceError = new DataSourceError('Unauthorized', 401);
+      mockNetworkService.get.mockRejectedValue(sourceError);
+      mockHttpErrorFactory.from.mockReturnValue(dataSourceError);
 
-        await expect(
-          service.getPortfolio({
-            address,
-            fiatCode,
-            trusted,
-            isTestnet: false,
-            sync: true,
-          }),
-        ).rejects.toBe(dataSourceError);
-
-        expect(mockLoggingService.error).toHaveBeenCalledWith({
-          type: LogType.PortfolioRequestError,
-          source: 'ZerionPortfolioApi',
-          event: 'Portfolio request failed',
-          safeAddress: address,
+      await expect(
+        service.getPortfolio({
+          address,
           fiatCode,
-          trusted,
-          sync: true,
           isTestnet: false,
-          request_status: 401,
-          detail: 'Invalid Zerion API key',
-        });
-        expect(
-          JSON.stringify(mockLoggingService.error.mock.calls[0][0]),
-        ).not.toContain(zerionApiKey);
-        expect(
-          JSON.stringify(mockLoggingService.error.mock.calls[0][0]),
-        ).not.toContain('Authorization');
-      },
-    );
+          sync: true,
+        }),
+      ).rejects.toBe(dataSourceError);
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: LogType.PortfolioRequestError,
+        source: 'ZerionPortfolioApi',
+        event: 'Portfolio request failed',
+        safeAddress: address,
+        fiatCode,
+        sync: true,
+        isTestnet: false,
+        request_status: 401,
+        detail: 'Invalid Zerion API key',
+      });
+      expect(
+        JSON.stringify(mockLoggingService.error.mock.calls[0][0]),
+      ).not.toContain(zerionApiKey);
+      expect(
+        JSON.stringify(mockLoggingService.error.mock.calls[0][0]),
+      ).not.toContain('Authorization');
+    });
+
+    it('always asks Zerion for non-trash positions only', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [] }),
+        status: 200,
+      });
+
+      await service.getPortfolio({ address, fiatCode: 'USD' });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,
+        networkRequest: expect.objectContaining({
+          params: expect.objectContaining({
+            'filter[trash]': 'only_non_trash',
+          }),
+        }),
+      });
+    });
   });
 });

@@ -124,7 +124,11 @@ describe('ZerionWalletPortfolioApi', () => {
       url: `${zerionBaseUri}/v1/wallets/${address}/portfolio`,
       networkRequest: {
         headers: { Authorization: `Basic ${zerionApiKey}` },
-        params: { currency: 'usd', 'filter[positions]': 'no_filter' },
+        params: {
+          currency: 'usd',
+          'filter[positions]': 'no_filter',
+          'filter[trash]': 'only_non_trash',
+        },
       },
     });
     expect(mockCacheService.hSet).toHaveBeenCalled();
@@ -160,7 +164,7 @@ describe('ZerionWalletPortfolioApi', () => {
     expect(mockCacheService.hSet).not.toHaveBeenCalled();
   });
 
-  it('sends the testnet header and trash filter for testnet + trusted', async () => {
+  it('sends the testnet header and the trash filter on testnets', async () => {
     mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
       data: rawify(buildPortfolioResponse({ ethereum: 1 })),
@@ -171,7 +175,6 @@ describe('ZerionWalletPortfolioApi', () => {
       address,
       currency: 'eur',
       isTestnet: true,
-      trusted: true,
     });
 
     expect(mockNetworkService.get).toHaveBeenCalledWith({
@@ -187,7 +190,7 @@ describe('ZerionWalletPortfolioApi', () => {
     });
   });
 
-  it('keys the cache distinctly by testnet and trusted', () => {
+  it('keys the cache distinctly by testnet', () => {
     const mainnet = CacheRouter.getZerionWalletPortfolioCacheDir({
       address,
       fiatCode: 'usd',
@@ -198,13 +201,7 @@ describe('ZerionWalletPortfolioApi', () => {
       fiatCode: 'usd',
       isTestnet: true,
     });
-    const trusted = CacheRouter.getZerionWalletPortfolioCacheDir({
-      address,
-      fiatCode: 'usd',
-      trusted: true,
-    });
 
     expect(mainnet.field).not.toBe(testnet.field);
-    expect(mainnet.field).not.toBe(trusted.field);
   });
 });

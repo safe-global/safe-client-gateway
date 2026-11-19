@@ -101,16 +101,22 @@ export class PortfolioRepository implements IPortfolioRepository {
     };
   }
 
+  /**
+   * One entry per address, currency and environment. Not per `trusted`: the
+   * Zerion call is the same for both values, and `trusted` is applied as a
+   * filter after the read.
+   *
+   * @param args - The wallet, currency and environment
+   * @returns The cache entry of the unfiltered portfolio
+   */
   private _getCacheDir(args: {
     address: Address;
     fiatCode: string;
-    trusted?: boolean;
     isTestnet?: boolean;
   }): CacheDir {
     return CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
-      trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
   }
@@ -154,7 +160,6 @@ export class PortfolioRepository implements IPortfolioRepository {
     const rawPortfolio = await this.portfolioApi.getPortfolio({
       address: args.address,
       fiatCode: args.fiatCode,
-      trusted: args.trusted,
       isTestnet: args.isTestnet,
       sync: args.sync,
     });

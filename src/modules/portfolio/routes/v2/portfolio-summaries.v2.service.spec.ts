@@ -11,6 +11,7 @@ import { getNumberString } from '#/domain/common/utils/utils';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
 import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import { DEFAULT_TOKEN_LIST_FEATURE } from '#/modules/balances/domain/trusted-token-list.helper';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
@@ -257,12 +258,10 @@ describe('PortfolioSummariesV2Service', () => {
     mockBalancesRepository.getBalances.mockResolvedValue([
       balanceBuilder().with('fiatBalance', getNumberString(value)).build(),
     ]);
-    const trusted = faker.datatype.boolean();
-
     const result = await service.getSummaries({
       safes: [{ chainId: unsupportedChainId, address }],
       currency,
-      trusted,
+      trusted: false,
     });
 
     expect(result).toEqual([
@@ -278,10 +277,33 @@ describe('PortfolioSummariesV2Service', () => {
       chain: chainsById[unsupportedChainId],
       safeAddress: address,
       fiatCode: currency,
-      trusted,
+      trusted: false,
     });
     expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { features: [DEFAULT_TOKEN_LIST_FEATURE], expected: true },
+    { features: [], expected: false },
+  ])(
+    'sends trusted=$expected to the Transaction Service for trusted=true and features $features',
+    async ({ features, expected }) => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = { ...chainsById[unsupportedChainId], features };
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockBalancesRepository.getBalances.mockResolvedValue([]);
+
+      await service.getSummaries({
+        safes: [{ chainId: unsupportedChainId, address }],
+        currency,
+        trusted: true,
+      });
+
+      expect(mockBalancesRepository.getBalances).toHaveBeenCalledWith(
+        expect.objectContaining({ trusted: expected }),
+      );
+    },
+  );
 
   it('falls back to the Transaction Service when the snapshot is unavailable', async () => {
     const address = getAddress(faker.finance.ethereumAddress());

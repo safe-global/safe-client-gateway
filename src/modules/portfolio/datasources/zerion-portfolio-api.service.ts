@@ -89,7 +89,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     address: Address;
     fiatCode: string;
     chainIds?: Array<string>;
-    trusted?: boolean;
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Raw<Portfolio>> {
@@ -113,13 +112,12 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   /**
    * Fetches positions from Zerion API.
    *
-   * @param {{ address: Address; fiatCode: string; trusted?: boolean; isTestnet?: boolean }} args - Fetch parameters
+   * @param {{ address: Address; fiatCode: string; isTestnet?: boolean }} args - Fetch parameters
    * @returns {Promise<Array<ZerionBalance>>} Promise that resolves to Zerion balance positions
    */
   private async _fetchPositions(args: {
     address: Address;
     fiatCode: string;
-    trusted?: boolean;
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Array<ZerionBalance>> {
@@ -130,11 +128,10 @@ export class ZerionPortfolioApi implements IPortfolioApi {
         currency: args.fiatCode.toLowerCase(),
         sort: 'value',
         'filter[positions]': 'no_filter',
+        // Zerion's default, sent explicitly. `trusted` does not change it, so
+        // both values share one call and one cache entry.
+        'filter[trash]': 'only_non_trash',
       };
-
-      if (args.trusted) {
-        params['filter[trash]'] = 'only_non_trash';
-      }
 
       if (args.sync) {
         params.sync = 'true';
@@ -166,7 +163,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private _logPortfolioRequestError(args: {
     address: Address;
     fiatCode: string;
-    trusted?: boolean;
     isTestnet?: boolean;
     sync?: boolean;
     error: unknown;
@@ -177,7 +173,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       event: 'Portfolio request failed',
       safeAddress: args.address,
       fiatCode: args.fiatCode,
-      trusted: Boolean(args.trusted),
       sync: Boolean(args.sync),
       isTestnet: Boolean(args.isTestnet),
       request_status:

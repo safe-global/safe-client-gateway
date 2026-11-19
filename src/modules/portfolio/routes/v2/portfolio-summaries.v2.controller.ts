@@ -51,7 +51,7 @@ export class PortfolioSummariesV2Controller {
     required: false,
     type: Boolean,
     description:
-      'If true, only trusted tokens count. Defaults to true, like GET /v1/portfolio, so the totals match the Assets page.',
+      'If true, only trusted tokens count. Defaults to true, like GET /v1/portfolio, so the totals match the Assets page. Chains without a default token list always include all tokens.',
     example: true,
   })
   @ApiOkResponse({ type: PortfolioSummary, isArray: true })

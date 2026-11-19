@@ -1263,18 +1263,17 @@ export class CacheRouter {
 
   /**
    * Cache for full portfolio (positions endpoint). Zerion /v1/wallets/{address}/positions.
+   * Not keyed by `trusted`: the Zerion call is the same for both values.
    */
   static getPortfolioCacheDir(args: {
     address: Address;
     fiatCode: string;
-    trusted?: boolean;
     isTestnet?: boolean;
   }): CacheDir {
-    const trustedSuffix = args.trusted ? '_trusted' : '';
     const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getPortfolioCacheKey(args),
-      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
+      `${args.fiatCode.toLowerCase()}${testnetSuffix}`,
     );
   }
 
@@ -1284,18 +1283,17 @@ export class CacheRouter {
 
   /**
    * Cache for wallet portfolio summary. Zerion /v1/wallets/{address}/portfolio.
+   * Not keyed by `trusted`: the Zerion call is the same for both values.
    */
   static getZerionWalletPortfolioCacheDir(args: {
     address: Address;
     fiatCode: string;
-    trusted?: boolean;
     isTestnet?: boolean;
   }): CacheDir {
-    const trustedSuffix = args.trusted ? '_trusted' : '';
     const testnetSuffix = args.isTestnet ? '_testnet' : '';
     return new CacheDir(
       CacheRouter.getZerionWalletPortfolioCacheKey(args),
-      `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
+      `${args.fiatCode.toLowerCase()}${testnetSuffix}`,
     );
   }
 
