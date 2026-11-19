@@ -43,7 +43,7 @@ describe('RedisCacheService', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     await redisClient.flushDb();
-    defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
+    defaultExpirationTimeInSeconds = faker.number.int({ min: 60, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });
     maxTtlDeviated =
       MAX_TTL - (MAX_TTL * defaultExpirationDeviatePercent) / 100;
@@ -244,7 +244,9 @@ describe('RedisCacheService', () => {
       '',
       faker.date.recent().getTime().toString(),
     );
-    await redisClient.expire(invalidationKey, defaultExpirationTimeInSeconds);
+    // Leave a clear gap so a reset to the full configured TTL fails this test.
+    const shorterTtlSeconds = Math.floor(defaultExpirationTimeInSeconds / 2);
+    await redisClient.expire(invalidationKey, shorterTtlSeconds);
     const previousTtl = await redisClient.pTTL(invalidationKey);
     const startTime = Date.now();
 
