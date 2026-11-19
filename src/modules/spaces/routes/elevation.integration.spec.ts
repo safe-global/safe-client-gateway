@@ -402,8 +402,13 @@ describe('Workspace step-up elevation (ElevationGuard)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
-    await testDbFactory.destroyTestDatabase(testDatabase);
+    try {
+      await app?.close();
+    } finally {
+      if (testDatabase) {
+        await testDbFactory.destroyTestDatabase(testDatabase);
+      }
+    }
   });
 
   const nowSeconds = (): number => Math.floor(Date.now() / 1_000);

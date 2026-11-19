@@ -83,8 +83,13 @@ describe('SurveysController', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
-    await testDbFactory.destroyTestDatabase(testDatabase);
+    try {
+      await app?.close();
+    } finally {
+      if (testDatabase) {
+        await testDbFactory.destroyTestDatabase(testDatabase);
+      }
+    }
   });
 
   /**
