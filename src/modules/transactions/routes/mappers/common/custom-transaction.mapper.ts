@@ -13,25 +13,22 @@ import {
   CustomTransactionInfo,
   MultiSendTransactionInfo,
 } from '#/modules/transactions/routes/entities/custom-transaction.entity';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
 export class CustomTransactionMapper {
-  constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
-
   async mapCustomTransaction(
     transaction: MultisigTransaction | ModuleTransaction,
     dataSize: number,
-    chainId: string,
+    addressLookups: AddressLookups,
     humanDescription: string | null,
     dataDecoded: DataDecoded | null,
   ): Promise<CustomTransactionInfo | MultiSendTransactionInfo> {
-    const toAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      transaction.to,
-      ['TOKEN', 'CONTRACT'],
-    );
+    const toAddressInfo = await addressLookups.getOrDefault(transaction.to, [
+      'TOKEN',
+      'CONTRACT',
+    ]);
 
     const methodName = dataDecoded?.method ?? null;
     const isCancellation = this.isCancellation(transaction, dataSize);

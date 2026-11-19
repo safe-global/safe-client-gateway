@@ -17,7 +17,6 @@ import {
   erc20TokenBuilder,
   erc721TokenBuilder,
 } from '#/modules/tokens/domain/__tests__/token.builder';
-import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
 import type { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import { Transaction } from '#/modules/transactions/routes/entities/transaction.entity';
 import { TransactionInfoType } from '#/modules/transactions/routes/entities/transaction-info.entity';
@@ -30,16 +29,13 @@ import { Erc20Transfer } from '#/modules/transactions/routes/entities/transfers/
 import type { SwapTransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
 import { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
 import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
-import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
-const addressInfoHelper = vi.mocked({
+const addressLookups = vi.mocked({
   getOrDefault: vi.fn(),
-} as MockedObject<AddressInfoHelper>);
-
-const tokenRepository = vi.mocked({
   getToken: vi.fn(),
-} as MockedObject<TokenRepository>);
+} as MockedObject<AddressLookups>);
 
 const swapTransferInfoMapper = vi.mocked({
   mapSwapTransferInfo: vi.fn(),
@@ -57,9 +53,7 @@ describe('Transfer mapper (Unit)', () => {
     vi.resetAllMocks();
 
     const transferInfoMapper = new TransferInfoMapper(
-      tokenRepository,
       swapTransferInfoMapper,
-      addressInfoHelper,
       mockLoggingService,
     );
     mapper = new TransferMapper(transferInfoMapper);
@@ -77,9 +71,10 @@ describe('Transfer mapper (Unit)', () => {
           .with('from', safe.address)
           .build();
         const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-        addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+        addressLookups.getOrDefault.mockResolvedValue(addressInfo);
 
         const actual = await mapper.mapTransfers({
+          addressLookups,
           chainId,
           transfers: [transfer],
           safe,
@@ -121,10 +116,11 @@ describe('Transfer mapper (Unit)', () => {
         swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
           'Not settlement',
         );
-        addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-        tokenRepository.getToken.mockResolvedValue(token);
+        addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+        addressLookups.getToken.mockResolvedValue(token);
 
         const actual = await mapper.mapTransfers({
+          addressLookups,
           chainId,
           transfers: [transfer],
           safe,
@@ -166,10 +162,11 @@ describe('Transfer mapper (Unit)', () => {
           swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
             'Not settlement',
           );
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue(token);
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue(token);
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -205,10 +202,11 @@ describe('Transfer mapper (Unit)', () => {
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue(token);
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue(token);
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -232,10 +230,11 @@ describe('Transfer mapper (Unit)', () => {
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue(token);
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue(token);
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -284,10 +283,11 @@ describe('Transfer mapper (Unit)', () => {
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', trusted)
             .build();
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue(token);
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue(token);
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -394,13 +394,14 @@ describe('Transfer mapper (Unit)', () => {
               version: '1.1.0',
             },
           } as const);
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue({
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue({
             ...transfer.tokenInfo,
             type: 'ERC20',
           });
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -519,13 +520,14 @@ describe('Transfer mapper (Unit)', () => {
               version: '1.1.0',
             },
           } as const);
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue({
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue({
             ...transfer.tokenInfo,
             type: 'ERC20',
           });
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -642,13 +644,14 @@ describe('Transfer mapper (Unit)', () => {
               version: '1.1.0',
             },
           } as const);
-          addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-          tokenRepository.getToken.mockResolvedValue({
+          addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+          addressLookups.getToken.mockResolvedValue({
             ...transfer.tokenInfo,
             type: 'ERC20',
           });
 
           const actual = await mapper.mapTransfers({
+            addressLookups,
             chainId,
             transfers: [transfer],
             safe,
@@ -699,8 +702,8 @@ describe('Transfer mapper (Unit)', () => {
       swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
         'Not settlement',
       );
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-      tokenRepository.getToken
+      addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+      addressLookups.getToken
         .mockResolvedValueOnce(erc721Token)
         .mockResolvedValueOnce(trustedErc20Token)
         .mockResolvedValueOnce(trustedErc20Token)
@@ -708,6 +711,7 @@ describe('Transfer mapper (Unit)', () => {
         .mockResolvedValueOnce(untrustedErc20Token);
 
       const actual = await mapper.mapTransfers({
+        addressLookups,
         chainId,
         // TODO: Add swap transfers
         transfers: [

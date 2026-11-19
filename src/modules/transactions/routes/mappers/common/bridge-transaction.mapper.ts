@@ -13,7 +13,7 @@ import {
 } from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import { BridgeFee } from '#/modules/transactions/routes/entities/bridge/fees.entity';
 import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
@@ -22,7 +22,6 @@ export class BridgeTransactionMapper {
     private readonly liFiDecoder: LiFiDecoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
-    private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IBridgeRepository)
     private readonly bridgeRepository: IBridgeRepository,
     @Inject(IChainsRepository)
@@ -30,6 +29,7 @@ export class BridgeTransactionMapper {
   ) {}
 
   public async mapSwap(args: {
+    addressLookups: AddressLookups;
     data: Address;
     executionDate: Date | null;
     chainId: string;
@@ -38,9 +38,7 @@ export class BridgeTransactionMapper {
     const decoded = this.liFiDecoder.decodeSwap(args.data);
 
     const [recipient, fromToken, toToken] = await Promise.all([
-      this.addressInfoHelper.getOrDefault(args.chainId, decoded.toAddress, [
-        'CONTRACT',
-      ]),
+      args.addressLookups.getOrDefault(decoded.toAddress, ['CONTRACT']),
       this._getTokenInfo({
         tokenAddress: decoded.fromToken,
         chainId: args.chainId,
@@ -77,6 +75,7 @@ export class BridgeTransactionMapper {
   }
 
   public async mapSwapAndBridge(args: {
+    addressLookups: AddressLookups;
     chainId: string;
     data: Address;
     executionDate: Date | null;
@@ -89,9 +88,7 @@ export class BridgeTransactionMapper {
         tokenAddress: decoded.fromToken,
         chainId: args.chainId,
       }),
-      this.addressInfoHelper.getOrDefault(args.chainId, decoded.toAddress, [
-        'CONTRACT',
-      ]),
+      args.addressLookups.getOrDefault(decoded.toAddress, ['CONTRACT']),
       this.getSwapAndBridgeInfo({
         ...args,
         decoded,

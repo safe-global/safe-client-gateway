@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { EthereumTransaction } from '#/modules/safe/domain/entities/ethereum-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import {
   isCreationTransaction,
@@ -27,6 +25,7 @@ import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers
 import { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
 import { TransferImitationMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-imitation.mapper';
 import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { DateLabel } from '#/routes/common/entities/date-label.entity';
 
 @Injectable()
@@ -73,11 +72,7 @@ export class TransactionsHistoryMapper {
       })),
     );
 
-    // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
-    await this.prefetchAddressInfos({
-      chainId,
-      transactions: decodedTransactions,
-    });
+    const addressLookups = this.addressInfoHelper.createLookups(chainId);
 
     let previousTransaction: TransactionItem | undefined;
     let transactions = decodedTransactions;
@@ -93,6 +88,7 @@ export class TransactionsHistoryMapper {
         chainId,
         safe,
         onlyTrusted,
+        addressLookups,
       });
 
       // Remove first transaction that was requested to get previous day timestamp
@@ -106,6 +102,7 @@ export class TransactionsHistoryMapper {
       previousTransaction,
       onlyTrusted,
       showImitations,
+      addressLookups,
     });
 
     // The groups respect timezone offset – this was done for grouping only.
@@ -133,55 +130,12 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private async prefetchAddressInfos(args: {
-    chainId: string;
-    transactions: Array<DecodedTransaction>;
-  }): Promise<void> {
-    // Prefetch tokens and contracts AddressInfos for transactions
-    const transactions = args.transactions.flatMap(
-      ({ transaction, dataDecoded }) =>
-        isMultisigTransaction(transaction)
-          ? [{ transaction, dataDecoded }]
-          : [],
-    );
-    await this.multisigTransactionMapper.prefetchAddressInfos({
-      chainId: args.chainId,
-      transactions,
-    });
-    // Prefetch tokens and contracts AddressInfos for native Ethereum transfers
-    const transfers = args.transactions
-      .map(({ transaction }) => transaction)
-      .filter(isEthereumTransaction);
-    const addressesFromTransfers = Array.from(
-      new Set(this.getAddressesFromTransfers(transfers)),
-    );
-    await this.addressInfoHelper.getCollection(
-      args.chainId,
-      addressesFromTransfers,
-      ['TOKEN', 'CONTRACT'],
-    );
-  }
-
-  private getAddressesFromTransfers(
-    transferTransactions: Array<EthereumTransaction>,
-  ): Array<Address> {
-    return transferTransactions.flatMap((tx) =>
-      [
-        tx.from,
-        ...(tx.transfers?.flatMap((transfer) => [
-          transfer.to,
-          transfer.from,
-          'tokenAddress' in transfer ? transfer.tokenAddress : undefined,
-        ]) ?? []),
-      ].filter((address): address is Address => !!address),
-    );
-  }
-
   private async getPreviousTransaction(args: {
     transactions: Array<DecodedTransaction>;
     chainId: string;
     safe: Safe;
     onlyTrusted: boolean;
+    addressLookups: AddressLookups;
   }): Promise<TransactionItem | undefined> {
     const { transaction, dataDecoded } = args.transactions[0];
 
@@ -192,6 +146,7 @@ export class TransactionsHistoryMapper {
       args.safe,
       args.onlyTrusted,
       dataDecoded,
+      args.addressLookups,
     );
 
     return Array.isArray(mappedPreviousTransaction)
@@ -207,6 +162,7 @@ export class TransactionsHistoryMapper {
     previousTransaction: TransactionItem | undefined;
     onlyTrusted: boolean;
     showImitations: boolean;
+    addressLookups: AddressLookups;
   }): Promise<Array<TransactionItem>> {
     const mappedTransactions = await Promise.all(
       args.transactions.map(({ transaction, dataDecoded }) => {
@@ -216,6 +172,7 @@ export class TransactionsHistoryMapper {
           args.safe,
           args.onlyTrusted,
           dataDecoded,
+          args.addressLookups,
         );
       }),
     );
@@ -265,6 +222,7 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
+    addressLookups: AddressLookups,
   ): Promise<Array<TransactionItem>> {
     const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
 
@@ -273,6 +231,7 @@ export class TransactionsHistoryMapper {
       transfers: limitedTransfers,
       safe,
       onlyTrusted,
+      addressLookups,
     });
 
     return nestedTransactions.map(
@@ -286,6 +245,7 @@ export class TransactionsHistoryMapper {
     safe: Safe,
     onlyTrusted: boolean,
     dataDecoded: DataDecoded | null,
+    addressLookups: AddressLookups,
   ): Promise<TransactionItem | Array<TransactionItem> | undefined> {
     if (isMultisigTransaction(transaction)) {
       return new TransactionItem(
@@ -294,6 +254,7 @@ export class TransactionsHistoryMapper {
           transaction,
           safe,
           dataDecoded,
+          addressLookups,
         ),
       );
     }
@@ -303,18 +264,25 @@ export class TransactionsHistoryMapper {
           chainId,
           transaction,
           dataDecoded,
+          addressLookups,
         ),
       );
     }
     if (isEthereumTransaction(transaction)) {
       const transfers = transaction.transfers;
       if (transfers != null) {
-        return await this.mapTransfers(transfers, chainId, safe, onlyTrusted);
+        return await this.mapTransfers(
+          transfers,
+          chainId,
+          safe,
+          onlyTrusted,
+          addressLookups,
+        );
       }
     } else if (isCreationTransaction(transaction)) {
       return new TransactionItem(
         await this.creationTransactionMapper.mapTransaction(
-          chainId,
+          addressLookups,
           transaction,
           safe,
         ),

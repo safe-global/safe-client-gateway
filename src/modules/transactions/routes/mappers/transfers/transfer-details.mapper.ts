@@ -9,10 +9,14 @@ import {
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
 import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class TransferDetailsMapper {
-  constructor(private readonly transferInfoMapper: TransferInfoMapper) {}
+  constructor(
+    private readonly transferInfoMapper: TransferInfoMapper,
+    private readonly addressInfoHelper: AddressInfoHelper,
+  ) {}
 
   async mapDetails(
     chainId: string,
@@ -28,6 +32,7 @@ export class TransferDetailsMapper {
         chainId,
         transfer,
         safe,
+        this.addressInfoHelper.createLookups(chainId),
       ),
       txData: null,
       detailedExecutionInfo: null,

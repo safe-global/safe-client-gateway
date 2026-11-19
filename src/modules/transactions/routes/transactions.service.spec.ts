@@ -30,6 +30,7 @@ import type { TransactionsHistoryMapper } from '#/modules/transactions/routes/ma
 import type { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
 import type { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 const mockSafeRepository = {
   getSafe: vi.fn(),
@@ -73,6 +74,7 @@ describe('TransactionsService', () => {
       mockLoggingService,
       {} as ITokenRepository,
       configurationService,
+      {} as AddressInfoHelper,
     );
     mockQueuedItemsMapper.getQueuedItems.mockResolvedValue([]);
   });

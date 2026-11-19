@@ -21,26 +21,23 @@ import { SetModuleGuard } from '#/modules/transactions/routes/entities/settings-
 import { SwapOwner } from '#/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { SettingsChangeMapper } from '#/modules/transactions/routes/mappers/common/settings-change.mapper';
-import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
-const addressInfoHelper = vi.mocked({
+const addressLookups = vi.mocked({
   getOrDefault: vi.fn(),
-} as MockedObject<AddressInfoHelper>);
+} as MockedObject<AddressLookups>);
 
 describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   let mapper: SettingsChangeMapper;
 
   beforeEach(() => {
-    mapper = new SettingsChangeMapper(
-      addressInfoHelper,
-      new DataDecodedParamHelper(),
-    );
+    mapper = new SettingsChangeMapper(new DataDecodedParamHelper());
   });
 
   it('should build a SetFallbackHandler setting', async () => {
     const handlerValue = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValue(
+    addressLookups.getOrDefault.mockResolvedValue(
       new AddressInfo(handlerValue),
     );
     const dataDecoded = dataDecodedBuilder()
@@ -50,10 +47,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new SetFallbackHandler(new AddressInfo(handlerValue));
     expect(actual).toEqual(expected);
@@ -65,10 +59,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .with('parameters', [])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     expect(actual).toBeNull();
   });
@@ -84,10 +75,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new AddOwner(
       new AddressInfo(ownerValue),
@@ -110,10 +98,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new RemoveOwner(
       new AddressInfo(ownerValue),
@@ -136,10 +121,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new SwapOwner(
       new AddressInfo(oldOwner),
@@ -150,7 +132,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a ChangeMasterCopy setting', async () => {
     const newMasterCopy = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValue(
+    addressLookups.getOrDefault.mockResolvedValue(
       new AddressInfo(newMasterCopy),
     );
     const dataDecoded = dataDecodedBuilder()
@@ -160,10 +142,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new ChangeMasterCopy(new AddressInfo(newMasterCopy));
     expect(actual).toEqual(expected);
@@ -171,7 +150,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a EnableModule setting', async () => {
     const moduleAddress = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValue(
+    addressLookups.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
     const dataDecoded = dataDecodedBuilder()
@@ -181,10 +160,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new EnableModule(new AddressInfo(moduleAddress));
     expect(actual).toEqual(expected);
@@ -192,7 +168,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a DisableModule setting', async () => {
     const moduleAddress = faker.finance.ethereumAddress();
-    addressInfoHelper.getOrDefault.mockResolvedValue(
+    addressLookups.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
     const dataDecoded = dataDecodedBuilder()
@@ -205,10 +181,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new DisableModule(new AddressInfo(moduleAddress));
     expect(actual).toEqual(expected);
@@ -223,10 +196,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new ChangeThreshold(Number(thresholdValue));
     expect(actual).toEqual(expected);
@@ -235,7 +205,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a SetGuard setting', async () => {
     const guardAddress = faker.finance.ethereumAddress();
     const guardAddressInfo = new AddressInfo(guardAddress);
-    addressInfoHelper.getOrDefault.mockResolvedValue(guardAddressInfo);
+    addressLookups.getOrDefault.mockResolvedValue(guardAddressInfo);
     const dataDecoded = dataDecodedBuilder()
       .with('method', 'setGuard')
       .with('parameters', [
@@ -243,10 +213,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new SetGuard(new AddressInfo(guardAddress));
     expect(actual).toEqual(expected);
@@ -261,10 +228,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     expect(actual).toEqual(new DeleteGuard());
   });
@@ -272,7 +236,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a SetModuleGuard setting', async () => {
     const moduleGuardAddress = faker.finance.ethereumAddress();
     const moduleGuardAddressInfo = new AddressInfo(moduleGuardAddress);
-    addressInfoHelper.getOrDefault.mockResolvedValue(moduleGuardAddressInfo);
+    addressLookups.getOrDefault.mockResolvedValue(moduleGuardAddressInfo);
     const dataDecoded = dataDecodedBuilder()
       .with('method', 'setModuleGuard')
       .with('parameters', [
@@ -280,10 +244,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     const expected = new SetModuleGuard(new AddressInfo(moduleGuardAddress));
     expect(actual).toEqual(expected);
@@ -297,10 +258,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(
-      faker.string.numeric(),
-      dataDecoded,
-    );
+    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
 
     expect(actual).toEqual(new DeleteModuleGuard());
   });
@@ -312,7 +270,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     await expect(
-      mapper.mapSettingsChange(faker.string.numeric(), dataDecoded),
+      mapper.mapSettingsChange(addressLookups, dataDecoded),
     ).rejects.toThrow();
   });
 });

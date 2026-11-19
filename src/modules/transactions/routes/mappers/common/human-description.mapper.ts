@@ -19,8 +19,6 @@ import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-tr
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { isMultisigTransaction } from '#/modules/safe/domain/entities/transaction.entity';
 import { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
-import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import { MAX_UINT256 } from '#/modules/transactions/routes/constants';
 import {
   RichAddressFragment,
@@ -30,13 +28,13 @@ import {
   RichTextFragment,
   RichTokenValueFragment,
 } from '#/modules/transactions/routes/entities/human-description.entity';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class HumanDescriptionMapper {
   private static SIG_HASH_INDEX = 10;
 
   constructor(
-    @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IHumanDescriptionRepository)
     private readonly humanDescriptionRepository: HumanDescriptionRepository,
@@ -46,8 +44,13 @@ export class HumanDescriptionMapper {
   public async mapHumanDescription(
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
+    addressLookups: AddressLookups,
   ): Promise<string | null> {
-    const richDecodedInfo = await this.mapRichDecodedInfo(transaction, chainId);
+    const richDecodedInfo = await this.mapRichDecodedInfo(
+      transaction,
+      chainId,
+      addressLookups,
+    );
 
     if (!richDecodedInfo?.fragments) {
       return null;
@@ -77,6 +80,7 @@ export class HumanDescriptionMapper {
   private async mapRichDecodedInfo(
     transaction: MultisigTransaction | ModuleTransaction,
     chainId: string,
+    addressLookups: AddressLookups,
   ): Promise<RichDecodedInfo | null> {
     if (!(transaction.data && isHex(transaction.data) && transaction.to)) {
       return null;
@@ -99,7 +103,7 @@ export class HumanDescriptionMapper {
       const richDecodedInfoFragments = await this.enrichFragments(
         humanDescriptionFragments,
         transaction,
-        chainId,
+        addressLookups,
       );
 
       const richDecodedInfo = await this.enrichSafeAppInfo(
@@ -120,13 +124,13 @@ export class HumanDescriptionMapper {
   private enrichFragments(
     fragments: Array<HumanDescriptionFragment>,
     transaction: MultisigTransaction | ModuleTransaction,
-    chainId: string,
+    addressLookups: AddressLookups,
   ): Promise<Array<RichDecodedInfoFragment>> {
     return Promise.all(
       fragments.map((fragment) => {
         switch (fragment.type) {
           case ValueType.TokenValue:
-            return this.enrichTokenValue(fragment, transaction, chainId);
+            return this.enrichTokenValue(fragment, transaction, addressLookups);
           case ValueType.Address:
             return new RichAddressFragment(fragment.value);
           case ValueType.Text:
@@ -143,13 +147,10 @@ export class HumanDescriptionMapper {
   private async enrichTokenValue(
     fragment: TokenValueFragment,
     transaction: MultisigTransaction | ModuleTransaction,
-    chainId: string,
+    addressLookups: AddressLookups,
   ): Promise<RichTokenValueFragment> {
-    const token = await this.tokenRepository
-      .getToken({
-        chainId,
-        address: transaction.to,
-      })
+    const token = await addressLookups
+      .getToken(transaction.to)
       .catch(() => null);
 
     let amount: string;

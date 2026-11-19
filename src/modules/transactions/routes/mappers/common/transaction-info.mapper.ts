@@ -13,8 +13,6 @@ import type {
 import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
-import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import type {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
@@ -47,6 +45,7 @@ import { SettingsChangeMapper } from '#/modules/transactions/routes/mappers/comm
 import { SwapOrderMapper } from '#/modules/transactions/routes/mappers/common/swap-order.mapper';
 import { TwapOrderMapper } from '#/modules/transactions/routes/mappers/common/twap-order.mapper';
 import { VaultTransactionMapper } from '#/modules/transactions/routes/mappers/common/vault-transaction.mapper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -68,7 +67,6 @@ export class MultisigTransactionInfoMapper {
   ];
 
   constructor(
-    @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -100,6 +98,7 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
     dataDecoded: DataDecoded | null,
+    addressLookups: AddressLookups,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
     const dataByteLength = transaction.data
@@ -113,11 +112,13 @@ export class MultisigTransactionInfoMapper {
       await this.humanDescriptionMapper.mapHumanDescription(
         transaction,
         chainId,
+        addressLookups,
       );
 
     if (this.isLifiTransactionsMappingEnabled) {
       try {
         const swap = await this.mapSwap({
+          addressLookups,
           chainId,
           transaction,
         });
@@ -126,6 +127,7 @@ export class MultisigTransactionInfoMapper {
         }
 
         const swapAndBridge = await this.mapSwapAndBridge({
+          addressLookups,
           chainId,
           transaction,
         });
@@ -205,7 +207,7 @@ export class MultisigTransactionInfoMapper {
       return await this.customTransactionMapper.mapCustomTransaction(
         transaction,
         dataSize,
-        chainId,
+        addressLookups,
         humanDescription,
         dataDecoded,
       );
@@ -213,7 +215,7 @@ export class MultisigTransactionInfoMapper {
 
     if (this.isNativeCoinTransfer(value, dataSize)) {
       return this.nativeCoinTransferMapper.mapNativeCoinTransfer(
-        chainId,
+        addressLookups,
         transaction,
         humanDescription,
       );
@@ -221,7 +223,7 @@ export class MultisigTransactionInfoMapper {
 
     if (this.isSettingsChange(transaction, value, dataSize, dataDecoded)) {
       const settingsInfo = await this.settingsChangeMapper.mapSettingsChange(
-        chainId,
+        addressLookups,
         dataDecoded,
       );
 
@@ -239,15 +241,15 @@ export class MultisigTransactionInfoMapper {
     }
 
     if (this.isValidTokenTransfer(transaction.safe, dataDecoded)) {
-      const token = await this.tokenRepository
-        .getToken({ chainId, address: transaction.to })
+      const token = await addressLookups
+        .getToken(transaction.to)
         .catch(() => null);
 
       switch (token?.type) {
         case 'ERC20':
           return this.erc20TransferMapper.mapErc20Transfer(
             token,
-            chainId,
+            addressLookups,
             transaction,
             humanDescription,
             dataDecoded,
@@ -255,7 +257,7 @@ export class MultisigTransactionInfoMapper {
         case 'ERC721':
           return this.erc721TransferMapper.mapErc721Transfer(
             token,
-            chainId,
+            addressLookups,
             transaction,
             humanDescription,
             dataDecoded,
@@ -266,13 +268,14 @@ export class MultisigTransactionInfoMapper {
     return this.customTransactionMapper.mapCustomTransaction(
       transaction,
       dataSize,
-      chainId,
+      addressLookups,
       humanDescription,
       dataDecoded,
     );
   }
 
   private async mapSwap(args: {
+    addressLookups: AddressLookups;
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<SwapTransactionInfo | null> {
@@ -283,6 +286,7 @@ export class MultisigTransactionInfoMapper {
 
     try {
       return await this.bridgeTransactionMapper.mapSwap({
+        addressLookups: args.addressLookups,
         data: transaction.data,
         executionDate: args.transaction.executionDate,
         chainId: args.chainId,
@@ -295,6 +299,7 @@ export class MultisigTransactionInfoMapper {
   }
 
   private async mapSwapAndBridge(args: {
+    addressLookups: AddressLookups;
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<BridgeAndSwapTransactionInfo | null> {
@@ -305,6 +310,7 @@ export class MultisigTransactionInfoMapper {
 
     try {
       return this.bridgeTransactionMapper.mapSwapAndBridge({
+        addressLookups: args.addressLookups,
         chainId: args.chainId,
         data: transaction.data,
         executionDate: args.transaction.executionDate,

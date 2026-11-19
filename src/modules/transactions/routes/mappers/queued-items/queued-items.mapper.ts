@@ -14,6 +14,8 @@ import {
 } from '#/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '#/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
 import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 class TransactionGroup {
   nonce!: number;
@@ -26,6 +28,7 @@ export class QueuedItemsMapper {
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly mapper: MultisigTransactionMapper,
+    private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
   async getQueuedItems(
@@ -37,6 +40,7 @@ export class QueuedItemsMapper {
   ): Promise<Array<QueuedItem>> {
     const transactionGroups = this.groupByNonce(transactions.results);
     let lastProcessedNonce = previousPageLastNonce ?? -1;
+    const addressLookups = this.addressInfoHelper.createLookups(chainId);
 
     return await Promise.all(
       transactionGroups.map(async (transactionGroup) => {
@@ -64,6 +68,7 @@ export class QueuedItemsMapper {
           conflictFromPreviousPage,
           isEdgeGroup,
           transactionGroup,
+          addressLookups,
         );
 
         transactionGroupItems.push(...mappedTransactionItems);
@@ -79,6 +84,7 @@ export class QueuedItemsMapper {
     conflictFromPreviousPage: boolean,
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
+    addressLookups: AddressLookups,
   ): Promise<Array<TransactionQueuedItem>> {
     const decodedTransactions = await Promise.all(
       transactionGroup.transactions.map(async (transaction) => ({
@@ -88,12 +94,6 @@ export class QueuedItemsMapper {
         ),
       })),
     );
-
-    // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
-    await this.mapper.prefetchAddressInfos({
-      chainId: chainId,
-      transactions: decodedTransactions,
-    });
 
     return Promise.all(
       decodedTransactions.map(async ({ transaction, dataDecoded }, idx) => {
@@ -105,6 +105,7 @@ export class QueuedItemsMapper {
             transaction,
             safe,
             dataDecoded,
+            addressLookups,
           ),
           this.getConflictType(
             isFirstInGroup,

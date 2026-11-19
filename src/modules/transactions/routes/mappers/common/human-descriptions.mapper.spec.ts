@@ -12,6 +12,7 @@ import {
 import type { MockedObject } from 'vitest';
 import { truncateAddress } from '#/domain/common/utils/utils';
 import type { ILoggingService } from '#/logging/logging.interface';
+import type { ContractsRepository } from '#/modules/contracts/domain/contracts.repository';
 
 import { HumanDescriptionApi } from '#/modules/human-description/datasources/human-description-api.service';
 import { HumanDescriptionRepository } from '#/modules/human-description/domain/human-description.repository';
@@ -24,11 +25,16 @@ import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
 import { MAX_UINT256 } from '#/modules/transactions/routes/constants';
 import { SafeAppInfo } from '#/modules/transactions/routes/entities/safe-app-info.entity';
 import { HumanDescriptionMapper } from '#/modules/transactions/routes/mappers/common/human-description.mapper';
+import { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 const tokenRepository = vi.mocked({
   getToken: vi.fn(),
 } as MockedObject<TokenRepository>);
+
+const contractsRepository = vi.mocked({
+  getContract: vi.fn(),
+} as MockedObject<ContractsRepository>);
 
 const mockLoggingService: MockedObject<ILoggingService> = {
   info: vi.fn(),
@@ -54,6 +60,7 @@ describe('Human descriptions mapper (Unit)', () => {
   let mockTransferData: Hex;
   let toAddress: AddressInfo;
   let chainId: string;
+  let addressLookups: AddressLookups;
   let token: Token;
   let transaction: MultisigTransaction;
 
@@ -62,6 +69,12 @@ describe('Human descriptions mapper (Unit)', () => {
 
     toAddress = new AddressInfo(faker.finance.ethereumAddress());
     chainId = faker.string.numeric();
+    addressLookups = new AddressLookups(
+      chainId,
+      tokenRepository,
+      contractsRepository,
+      mockLoggingService,
+    );
     token = tokenBuilder()
       .with('decimals', faker.number.int({ min: 1, max: 18 }))
       .build();
@@ -79,7 +92,6 @@ describe('Human descriptions mapper (Unit)', () => {
       .build();
 
     mapper = new HumanDescriptionMapper(
-      tokenRepository,
       mockLoggingService,
       humanDescriptionRepository,
       safeAppInfoMapper,
@@ -92,6 +104,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toBeNull();
@@ -107,6 +120,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toBeNull();
@@ -118,6 +132,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toEqual(
@@ -137,6 +152,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toBeNull();
@@ -150,6 +166,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toEqual(
@@ -175,6 +192,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toEqual(`Approve unlimited ${token.symbol}`);
@@ -196,6 +214,7 @@ describe('Human descriptions mapper (Unit)', () => {
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
+      addressLookups,
     );
 
     expect(humanDescription).toEqual(

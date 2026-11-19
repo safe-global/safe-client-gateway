@@ -1,23 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { type Address, getAddress, isAddress } from 'viem';
 import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
-import type { DecodedTransaction } from '#/modules/transactions/domain/entities/decoded-transaction.entity';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
 } from '#/modules/transactions/routes/constants';
 import { Transaction } from '#/modules/transactions/routes/entities/transaction.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionInfoMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -28,8 +25,6 @@ export class MultisigTransactionMapper {
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
     private readonly noteMapper: MultisigTransactionNoteMapper,
     private readonly transactionVerifier: TransactionVerifierHelper,
-    private readonly addressInfoHelper: AddressInfoHelper,
-    private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 
   async mapTransaction(
@@ -37,6 +32,7 @@ export class MultisigTransactionMapper {
     transaction: MultisigTransaction,
     safe: Safe,
     dataDecoded: DataDecoded | null,
+    addressLookups: AddressLookups,
   ): Promise<Transaction> {
     // TODO: This should be located on the domain layer but only route layer exists
     this.transactionVerifier.verifyApiTransaction({
@@ -49,6 +45,7 @@ export class MultisigTransactionMapper {
       chainId,
       transaction,
       dataDecoded,
+      addressLookups,
     );
     const executionInfo = this.executionInfoMapper.mapExecutionInfo(
       transaction,
@@ -71,44 +68,6 @@ export class MultisigTransactionMapper {
       safeAppInfo,
       note,
       transaction.transactionHash,
-    );
-  }
-
-  /**
-   * Prefetches the AddressInfo for the given transactions.
-   * This method collects all unique addresses from the transactions and fetches their AddressInfo,
-   * to prevent multiple parallel requests for the same addresses.
-   */
-  public async prefetchAddressInfos(args: {
-    chainId: string;
-    transactions: Array<DecodedTransaction<MultisigTransaction>>;
-  }): Promise<void> {
-    const addresses: Set<Address> = new Set();
-    for (const { transaction, dataDecoded } of args.transactions) {
-      addresses.add(transaction.safe);
-      addresses.add(transaction.to);
-
-      if (dataDecoded) {
-        const fromAddress = this.dataDecodedParamHelper.getFromParam(
-          dataDecoded,
-          transaction.safe,
-        );
-        if (isAddress(fromAddress)) {
-          addresses.add(getAddress(fromAddress));
-        }
-        const toAddress = this.dataDecodedParamHelper.getToParam(
-          dataDecoded,
-          transaction.safe,
-        );
-        if (isAddress(toAddress)) {
-          addresses.add(getAddress(toAddress));
-        }
-      }
-    }
-    await this.addressInfoHelper.getCollection(
-      args.chainId,
-      Array.from(addresses),
-      ['TOKEN', 'CONTRACT'],
     );
   }
 }

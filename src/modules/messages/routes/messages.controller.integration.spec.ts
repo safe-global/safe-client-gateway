@@ -1186,7 +1186,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));

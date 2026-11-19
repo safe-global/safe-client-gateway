@@ -101,6 +101,34 @@ describe('AddressInfoHelper', () => {
     });
   });
 
+  describe('createLookups', () => {
+    it('should create lookups for the chain', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      const lookups = target.createLookups(chainId);
+      const result = await lookups.getToken(token.address);
+
+      expect(result).toBe(token);
+      expect(tokenRepository.getToken).toHaveBeenCalledWith({
+        chainId,
+        address: token.address,
+      });
+    });
+
+    it('should create separate lookups each time', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      await target.createLookups(chainId).getToken(token.address);
+      await target.createLookups(chainId).getToken(token.address);
+
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(2);
+    });
+  });
+
   // Note: we do not test the intricacies of `get` here as it is covered above
   describe('getOrDefault', () => {
     it('should return a default if no source is found', async () => {

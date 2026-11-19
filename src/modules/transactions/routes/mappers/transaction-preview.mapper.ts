@@ -13,6 +13,7 @@ import type { PreviewTransactionDto } from '#/modules/transactions/routes/entiti
 import { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
 import { TransactionDataMapper } from '#/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class TransactionPreviewMapper {
@@ -23,6 +24,7 @@ export class TransactionPreviewMapper {
     private readonly dataDecoderRepository: IDataDecoderRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
 
   async mapTransactionPreview(
@@ -57,6 +59,7 @@ export class TransactionPreviewMapper {
       chainId,
       multisigTransaction,
       dataDecoded,
+      this.addressInfoHelper.createLookups(chainId),
     );
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,

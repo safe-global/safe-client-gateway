@@ -10,12 +10,11 @@ import { ModuleExecutionInfo } from '#/modules/transactions/routes/entities/modu
 import { Transaction } from '#/modules/transactions/routes/entities/transaction.entity';
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class ModuleTransactionMapper {
   constructor(
-    private readonly addressInfoHelper: AddressInfoHelper,
     private readonly statusMapper: ModuleTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
   ) {}
@@ -24,17 +23,17 @@ export class ModuleTransactionMapper {
     chainId: string,
     transaction: ModuleTransaction,
     dataDecoded: DataDecoded | null,
+    addressLookups: AddressLookups,
   ): Promise<Transaction> {
     const txStatus = this.statusMapper.mapTransactionStatus(transaction);
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       transaction,
       dataDecoded,
+      addressLookups,
     );
     const executionInfo = new ModuleExecutionInfo(
-      await this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
-        'CONTRACT',
-      ]),
+      await addressLookups.getOrDefault(transaction.module, ['CONTRACT']),
     );
 
     return new Transaction(

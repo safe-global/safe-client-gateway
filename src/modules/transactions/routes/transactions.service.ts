@@ -69,6 +69,7 @@ import { TransactionPreviewMapper } from '#/modules/transactions/routes/mappers/
 import { TransactionsHistoryMapper } from '#/modules/transactions/routes/mappers/transactions-history.mapper';
 import { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
 import { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 import type { Page } from '#/routes/common/entities/page.entity';
 import {
   buildNextPageURL,
@@ -101,6 +102,7 @@ export class TransactionsService {
     private readonly tokenRepository: ITokenRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly addressInfoHelper: AddressInfoHelper,
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
@@ -256,11 +258,7 @@ export class TransactionsService {
         ),
       })),
     );
-    await this.multisigTransactionMapper.prefetchAddressInfos({
-      chainId: args.chainId,
-      transactions: decodedTransactions,
-    });
-
+    const addressLookups = this.addressInfoHelper.createLookups(args.chainId);
     const mappedTransactions = await Promise.all(
       decodedTransactions.map(({ transaction, dataDecoded }) => {
         return this.multisigTransactionMapper.mapTransaction(
@@ -268,6 +266,7 @@ export class TransactionsService {
           transaction,
           safeInfo,
           dataDecoded,
+          addressLookups,
         );
       }),
     );
@@ -343,6 +342,7 @@ export class TransactionsService {
       offset: args.paginationData?.offset,
     });
 
+    const addressLookups = this.addressInfoHelper.createLookups(args.chainId);
     const results = await Promise.all(
       domainTransactions.results.map(async (domainTransaction) => {
         const dataDecoded =
@@ -355,6 +355,7 @@ export class TransactionsService {
             args.chainId,
             domainTransaction,
             dataDecoded,
+            addressLookups,
           ),
         );
       }),
@@ -411,6 +412,7 @@ export class TransactionsService {
         transfers: transfers.results,
         safe: safeInfo,
         onlyTrusted: args.onlyTrusted,
+        addressLookups: this.addressInfoHelper.createLookups(args.chainId),
       })
     ).map((incomingTransfer) => new IncomingTransfer(incomingTransfer));
 
@@ -462,6 +464,7 @@ export class TransactionsService {
         transfers: transfers.results,
         safe: safeInfo,
         onlyTrusted: args.onlyTrusted,
+        addressLookups: this.addressInfoHelper.createLookups(args.chainId),
       })
     ).map((transfer) => new TransactionItem(transfer));
 

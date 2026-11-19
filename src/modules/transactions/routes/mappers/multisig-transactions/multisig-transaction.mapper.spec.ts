@@ -1,33 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Mocked, MockedObject } from 'vitest';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '#/modules/contracts/domain/entities/__tests__/contract.builder';
-import {
-  dataDecodedBuilder,
-  dataDecodedParameterBuilder,
-} from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
-import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import { transferTransactionInfoBuilder } from '#/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { MultisigExecutionInfo } from '#/modules/transactions/routes/entities/multisig-execution-info.entity';
 import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
 import type { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import type { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
 import type { MultisigTransactionExecutionInfoMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import type { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import type { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
-import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 describe('MultisigTransactionMapper', () => {
   let mapper: MultisigTransactionMapper;
 
-  const addressInfoHelper = vi.mocked({
-    getCollection: vi.fn(),
-  } as MockedObject<AddressInfoHelper>);
+  const addressLookups = vi.mocked({
+    getOrDefault: vi.fn(),
+  } as MockedObject<AddressLookups>);
   const statusMapper = {
     mapTransactionStatus: vi.fn(),
   } as unknown as Mocked<MultisigTransactionStatusMapper>;
@@ -59,82 +52,7 @@ describe('MultisigTransactionMapper', () => {
       safeAppInfoMapper,
       noteMapper,
       transactionVerifier,
-      addressInfoHelper,
-      new DataDecodedParamHelper(),
     );
-  });
-
-  describe('prefetchAddressInfos', () => {
-    it('should call addressInfoHelper.getCollection with the correct parameters', async () => {
-      const chain = chainBuilder().build();
-      const safe = safeBuilder().build();
-      const tokens = [tokenBuilder().build(), tokenBuilder().build()];
-      const contracts = [contractBuilder().build(), contractBuilder().build()];
-      const transaction1 = multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('to', tokens[0].address)
-        .build();
-      const decodedData1 = dataDecodedBuilder()
-        .with('method', 'transferFrom')
-        .with('parameters', [
-          dataDecodedParameterBuilder()
-            .with('name', 'from')
-            .with('value', contracts[0].address)
-            .build(),
-          dataDecodedParameterBuilder()
-            .with('name', 'to')
-            .with('value', contracts[1].address)
-            .build(),
-        ])
-        .build();
-      const transaction2 = multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('to', tokens[1].address)
-        .build();
-      const decodedData2 = dataDecodedBuilder()
-        .with('method', 'transfer')
-        .with('parameters', [
-          dataDecodedParameterBuilder()
-            .with('name', 'to')
-            .with('value', tokens[0].address)
-            .build(),
-        ])
-        .build();
-      const transaction3 = multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('to', tokens[1].address)
-        .build();
-      const decodedData3 = dataDecodedBuilder()
-        .with('method', 'transfer')
-        .with('parameters', [
-          dataDecodedParameterBuilder()
-            .with('name', 'to')
-            .with('value', tokens[0].address)
-            .build(),
-        ])
-        .build();
-      await mapper.prefetchAddressInfos({
-        chainId: chain.chainId,
-        transactions: [
-          { transaction: transaction1, dataDecoded: decodedData1 },
-          { transaction: transaction2, dataDecoded: decodedData2 },
-          { transaction: transaction3, dataDecoded: decodedData3 },
-        ],
-      });
-
-      // Check that the addressInfoHelper.getCollection was called with deduplicated addresses
-      expect(addressInfoHelper.getCollection).toHaveBeenCalledWith(
-        chain.chainId,
-        expect.arrayContaining([
-          safe.address,
-          tokens[0].address,
-          tokens[1].address,
-          contracts[0].address,
-          contracts[1].address,
-        ]),
-        ['TOKEN', 'CONTRACT'],
-      );
-    });
   });
 
   describe('mapTransaction', () => {
@@ -161,9 +79,42 @@ describe('MultisigTransactionMapper', () => {
         transaction,
         safe,
         null,
+        addressLookups,
       );
 
       expect(result.note).toBe(expectedNote);
+    });
+
+    it('should map the transaction info with the given address lookups', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      const txInfo = transferTransactionInfoBuilder().build();
+
+      statusMapper.mapTransactionStatus.mockReturnValue(
+        TransactionStatus.Success,
+      );
+      transactionInfoMapper.mapTransactionInfo.mockResolvedValue(txInfo);
+      executionInfoMapper.mapExecutionInfo.mockReturnValue(
+        new MultisigExecutionInfo(0, 0, 0, null),
+      );
+      safeAppInfoMapper.mapSafeAppInfo.mockResolvedValue(null);
+
+      const result = await mapper.mapTransaction(
+        chain.chainId,
+        transaction,
+        safe,
+        null,
+        addressLookups,
+      );
+
+      expect(result.txInfo).toBe(txInfo);
+      expect(transactionInfoMapper.mapTransactionInfo).toHaveBeenCalledWith(
+        chain.chainId,
+        transaction,
+        null,
+        addressLookups,
+      );
     });
   });
 });
