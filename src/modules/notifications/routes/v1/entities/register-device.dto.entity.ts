@@ -6,13 +6,32 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import type { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
-import { SafeRegistration } from '#/modules/notifications/routes/v1/entities/safe-registration.entity';
+import { z } from 'zod';
+import { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
+import {
+  SafeRegistration,
+  SafeRegistrationSchema,
+} from '#/modules/notifications/routes/v1/entities/safe-registration.entity';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
+
+export const RegisterDeviceDtoSchema = z.object({
+  uuid: UuidSchema.nullish(),
+  cloudMessagingToken: z.string(),
+  buildNumber: z.string(),
+  bundle: z.string(),
+  deviceType: z.enum(DeviceType),
+  version: z.string(),
+  timestamp: NumericStringSchema.nullish(),
+  safeRegistrations: z.array(SafeRegistrationSchema),
+});
 
 @ApiExtraModels(SafeRegistration)
-export class RegisterDeviceDto {
+export class RegisterDeviceDto
+  implements z.infer<typeof RegisterDeviceDtoSchema>
+{
   @ApiPropertyOptional({ type: String, nullable: true })
-  uuid?: UUID;
+  uuid?: UUID | null;
   @ApiProperty()
   cloudMessagingToken!: string;
   @ApiProperty()
@@ -24,7 +43,7 @@ export class RegisterDeviceDto {
   @ApiProperty()
   version!: string;
   @ApiPropertyOptional({ type: String, nullable: true })
-  timestamp?: string;
+  timestamp?: string | null;
   @ApiProperty({
     type: 'array',
     items: { $ref: getSchemaPath(SafeRegistration) },

@@ -4,7 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import { type INestApplication, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { getAddress, numberToHex } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -261,6 +261,109 @@ describe('Notifications Controller', () => {
       expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
         safeRegistrationsWithSafe.length,
       );
+    });
+
+    it('Should accept a registration without signatures', async () => {
+      const registerDeviceDto = await buildInputDto(1);
+      registerDeviceDto.safeRegistrations[0].safes = [
+        getAddress(faker.finance.ethereumAddress()),
+      ];
+      registerDeviceDto.safeRegistrations[0].signatures = [];
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(200);
+
+      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+        1,
+      );
+    });
+
+    it('Should return 422 if safeRegistrations is missing', async () => {
+      const registerDeviceDto = await buildInputDto();
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send({ ...registerDeviceDto, safeRegistrations: undefined })
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'array',
+          path: ['safeRegistrations'],
+          message: 'Invalid input: expected array, received undefined',
+        });
+
+      expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
+    });
+
+    it.each(['safes', 'signatures'])(
+      'Should return 422 if a safe registration has no %s',
+      async (field) => {
+        const registerDeviceDto = await buildInputDto(1);
+
+        await request(app.getHttpServer())
+          .post('/v1/register/notifications')
+          .send({
+            ...registerDeviceDto,
+            safeRegistrations: [
+              { ...registerDeviceDto.safeRegistrations[0], [field]: undefined },
+            ],
+          })
+          .expect({
+            statusCode: 422,
+            code: 'invalid_type',
+            expected: 'array',
+            path: ['safeRegistrations', 0, field],
+            message: 'Invalid input: expected array, received undefined',
+          });
+
+        expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+        expect(
+          notificationServiceV2.upsertSubscriptions,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      [
+        'of invalid length',
+        (signature: string): string => signature.slice(0, -2),
+      ],
+      [
+        'with an invalid v',
+        (signature: string): string => `${signature.slice(0, -2)}05`,
+      ],
+      [
+        'with a zero r',
+        (signature: string): string =>
+          `0x${'0'.repeat(64)}${signature.slice(66)}`,
+      ],
+      // No point on secp256k1 has x = 5
+      [
+        'with an r off the curve',
+        (signature: string): string =>
+          `${numberToHex(5, { size: 32 })}${signature.slice(66)}`,
+      ],
+    ])('Should return 422 for a signature %s', async (_, malformSignature) => {
+      const registerDeviceDto = await buildInputDto(1);
+      const [safeRegistration] = registerDeviceDto.safeRegistrations;
+      safeRegistration.safes = [getAddress(faker.finance.ethereumAddress())];
+      safeRegistration.signatures = [
+        malformSignature(safeRegistration.signatures[0]),
+      ];
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect({
+          statusCode: 422,
+          message: 'Invalid signature',
+        });
+
+      expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
     });
   });
 
