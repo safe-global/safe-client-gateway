@@ -51,6 +51,75 @@ describe('CacheFirstDataSource', () => {
   });
 
   describe('get', () => {
+    it.each([false, true])(
+      'coalesces a concurrent miss only if the original request is current (invalidated: %s)',
+      async (invalidated) => {
+        const args = {
+          url: faker.internet.url(),
+          cacheDir: new CacheDir(faker.word.sample(), faker.word.sample()),
+          expireTimeSeconds: faker.number.int({ min: 1, max: 60 }),
+          notFoundExpireTimeSeconds: faker.number.int({ min: 1, max: 60 }),
+        };
+        const firstResponse =
+          Promise.withResolvers<Awaited<ReturnType<INetworkService['get']>>>();
+        const firstStarted = Promise.withResolvers<void>();
+        const oldData = JSON.parse(fakeJson());
+        const newData = JSON.parse(fakeJson());
+        const followerCount = invalidated ? 1 : 19;
+        const checkedMarkers = Promise.withResolvers<void>();
+        let markerReads = 0;
+        const readMarker =
+          fakeCacheService.getInvalidationTimeMs.bind(fakeCacheService);
+        vi.spyOn(fakeCacheService, 'getInvalidationTimeMs').mockImplementation(
+          async (key) => {
+            const marker = await readMarker(key);
+            if (++markerReads === followerCount) {
+              checkedMarkers.resolve();
+            }
+            return marker;
+          },
+        );
+        mockNetworkService.get
+          .mockImplementationOnce(() => {
+            firstStarted.resolve();
+            return firstResponse.promise;
+          })
+          .mockResolvedValueOnce({ data: newData, status: 200 });
+
+        const first = cacheFirstDataSource.get(args);
+        await firstStarted.promise;
+        if (invalidated) {
+          vi.advanceTimersByTime(1);
+          await fakeCacheService.deleteByKey(args.cacheDir.key);
+          vi.advanceTimersByTime(1);
+        }
+
+        const followers = Promise.all(
+          Array.from({ length: followerCount }, () =>
+            cacheFirstDataSource.get(args),
+          ),
+        );
+        await checkedMarkers.promise;
+        if (invalidated) {
+          await expect(followers).resolves.toEqual([newData]);
+        }
+        firstResponse.resolve({ data: oldData, status: 200 });
+
+        await expect(first).resolves.toEqual(oldData);
+        await expect(followers).resolves.toEqual(
+          Array.from({ length: followerCount }, () =>
+            invalidated ? newData : oldData,
+          ),
+        );
+        expect(mockNetworkService.get).toHaveBeenCalledTimes(
+          invalidated ? 2 : 1,
+        );
+        await expect(fakeCacheService.hGet(args.cacheDir)).resolves.toBe(
+          JSON.stringify(invalidated ? newData : oldData),
+        );
+      },
+    );
+
     it('should return the data returned by the underlying network interface and cache it', async () => {
       const targetUrl = faker.internet.url({ appendSlash: false });
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
