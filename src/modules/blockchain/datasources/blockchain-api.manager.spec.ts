@@ -140,7 +140,7 @@ describe('BlockchainApiManager', () => {
       expect(fetch).toHaveBeenNthCalledWith(1, rpcUrl, {
         body: expect.any(String),
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
@@ -203,7 +203,7 @@ describe('BlockchainApiManager', () => {
       expect(fetch).toHaveBeenNthCalledWith(1, rpcUrl, {
         body: expect.any(String),
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
