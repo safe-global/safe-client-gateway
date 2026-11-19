@@ -3,6 +3,7 @@ import type { Address, Hex } from 'viem';
 import type { Page } from '#/domain/entities/page.entity';
 import type { Message } from '#/modules/messages/domain/entities/message.entity';
 import type { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
+import type { DeclaredAttribution } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 
 export const IMessagesRepository = Symbol('IMessagesRepository');
 
@@ -30,6 +31,7 @@ export interface IMessagesRepository {
     message: string | TypedData;
     signature: Hex;
     origin: string | null;
+    declared: DeclaredAttribution | null;
   }): Promise<unknown>;
 
   updateMessageSignature(args: {

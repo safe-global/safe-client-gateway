@@ -2,6 +2,7 @@
 import type { Address, Hash, Hex } from 'viem';
 import type { z } from 'zod';
 import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { DeclaredAttribution } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 import type {
   NestedTransactionDtoSchema,
   ProposeTransactionDtoSchema,
@@ -41,4 +42,5 @@ export class ProposeTransactionDto
   signature!: Hex | null;
   origin!: string | null;
   nestedTransaction!: NestedTransactionDto | null;
+  declared!: DeclaredAttribution | null;
 }

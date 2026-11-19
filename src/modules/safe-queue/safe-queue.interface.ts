@@ -6,6 +6,7 @@ import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entit
 import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import type { DeclaredAttribution } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 
@@ -118,6 +119,7 @@ export interface ISafeQueueService {
     message: unknown;
     signature: string;
     origin: string | null;
+    declared: DeclaredAttribution | null;
   }): Promise<unknown>;
 
   postMessageSignature(args: {
