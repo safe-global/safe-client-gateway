@@ -32,9 +32,7 @@ describe('RedisCacheService', () => {
   const keyPrefix = '';
   let redisClient: RedisClientType;
 
-  // `flushDb` below empties the whole database between tests. Integration
-  // specs share one Redis, and BullMQ queues and the TypeORM query cache of
-  // other specs live in database 0, so this spec gets a database of its own.
+  // Not 0: `flushDb` would wipe other specs' keys.
   const redisDatabase = 15;
 
   beforeAll(async () => {
