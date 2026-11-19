@@ -78,9 +78,10 @@ export class CacheFirstDataSource {
   }): Promise<Raw<T>> {
     return await this.tryCache({
       ...args,
-      queryFn: () => {
+      queryFn: (startTimeMs) => {
         return this._getFromNetworkAndWriteCache({
           ...args,
+          startTimeMs,
           method: 'get',
         });
       },
@@ -110,9 +111,10 @@ export class CacheFirstDataSource {
   }): Promise<Raw<T>> {
     return await this.tryCache({
       ...args,
-      queryFn: () => {
+      queryFn: (startTimeMs) => {
         return this._getFromNetworkAndWriteCache({
           ...args,
+          startTimeMs,
           method: 'post',
         });
       },
@@ -133,15 +135,16 @@ export class CacheFirstDataSource {
   private async tryCache<T>(args: {
     cacheDir: CacheDir;
     notFoundExpireTimeSeconds: number;
-    queryFn: () => Promise<Raw<T>>;
+    queryFn: (startTimeMs: number) => Promise<Raw<T>>;
   }): Promise<Raw<T>> {
     const cached = await this.cacheService.hGet(args.cacheDir);
     if (cached != null) {
       return this._getFromCachedData(args.cacheDir, cached);
     }
 
+    const startTimeMs = Date.now();
     try {
-      return await args.queryFn();
+      return await args.queryFn(startTimeMs);
     } catch (error) {
       if (
         error instanceof NetworkResponseError &&
@@ -151,6 +154,7 @@ export class CacheFirstDataSource {
           args.cacheDir,
           error,
           args.notFoundExpireTimeSeconds,
+          startTimeMs,
         );
       }
       throw error;
@@ -185,6 +189,7 @@ export class CacheFirstDataSource {
           url: string;
           networkRequest?: NetworkRequest;
           expireTimeSeconds?: number;
+          startTimeMs: number;
           method: 'get';
           data?: never;
         }
@@ -193,32 +198,31 @@ export class CacheFirstDataSource {
           url: string;
           networkRequest?: NetworkRequest;
           expireTimeSeconds?: number;
+          startTimeMs: number;
           method: 'post';
           data: object;
         },
   ): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
+    const { startTimeMs } = args;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
-    const startTimeMs = Date.now();
     const { data } = await this.networkService[args.method]<T>({
       url: args.url,
       networkRequest: args.networkRequest,
       data: args.data,
     });
 
-    // hSet does not write without a positive TTL, so the invalidation
-    // check is not needed in that case.
-    const isCacheable =
-      args.expireTimeSeconds !== undefined && args.expireTimeSeconds > 0;
-    const shouldBeCached =
-      isCacheable && (await this._shouldBeCached(key, startTimeMs));
-    if (shouldBeCached) {
-      await this.cacheService.hSet(
+    const written =
+      args.expireTimeSeconds !== undefined &&
+      args.expireTimeSeconds > 0 &&
+      (await this.cacheService.hSetIfFresh(
         args.cacheDir,
         JSON.stringify(data),
         args.expireTimeSeconds,
-      );
+        startTimeMs,
+      ));
 
+    if (written) {
       // TODO: transient logging for debugging
       if (
         this.areDebugLogsEnabled &&
@@ -251,46 +255,19 @@ export class CacheFirstDataSource {
   }
 
   /**
-   * Validates that the request is more recent than the last invalidation recorded for the item,
-   * preventing a race condition where outdated data is stored due to the request being initiated
-   * before the source communicated a change (via webhook or by other means).
-   *
-   * Returns true if (any of the following):
-   * 1. An invalidationTimeMs entry for the key received as param is *not* found in the cache.
-   * 2. An entry *is* found and contains an integer that is less than the received startTimeMs param.
-   *
-   * @param key key part of the {@link CacheDir} holding the requested item
-   * @param startTimeMs Unix epoch timestamp in ms when the request was initiated
-   * @returns true if any of the above conditions is met
-   */
-  private async _shouldBeCached(
-    key: string,
-    startTimeMs: number,
-  ): Promise<boolean> {
-    const invalidationTimeMsStr = await this.cacheService.hGet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
-    );
-
-    if (!invalidationTimeMsStr) {
-      return true;
-    }
-
-    const invalidationTimeMs = Number(invalidationTimeMsStr);
-    return (
-      Number.isInteger(invalidationTimeMs) && invalidationTimeMs < startTimeMs
-    );
-  }
-
-  /**
    * Caches a not found error.
    * @param cacheDir - {@link CacheDir} where the error should be placed
    */
-  private cacheNotFoundError(
+  private async cacheNotFoundError(
     cacheDir: CacheDir,
     error: NetworkResponseError,
-    notFoundExpireTimeSeconds?: number,
+    notFoundExpireTimeSeconds: number,
+    startTimeMs: number,
   ): Promise<void> {
-    return this.cacheService.hSet(
+    if (notFoundExpireTimeSeconds <= 0) {
+      return;
+    }
+    await this.cacheService.hSetIfFresh(
       cacheDir,
       JSON.stringify({
         data: error.data,
@@ -298,6 +275,7 @@ export class CacheFirstDataSource {
         url: error.url,
       }),
       notFoundExpireTimeSeconds,
+      startTimeMs,
     );
   }
 
