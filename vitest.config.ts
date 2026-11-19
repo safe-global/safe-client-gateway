@@ -131,6 +131,8 @@ export default defineConfig({
             './test/shared-module-cache-setup.ts',
           ],
           testTimeout: 60000,
+          // beforeAll creates a database, runs migrations and boots the app
+          hookTimeout: 60000,
         },
       },
       {
