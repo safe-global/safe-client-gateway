@@ -118,6 +118,7 @@ export class MultisigTransactionInfoMapper {
     if (this.isLifiTransactionsMappingEnabled) {
       try {
         const swap = await this.mapSwap({
+          addressLookups,
           chainId,
           transaction,
         });
@@ -126,6 +127,7 @@ export class MultisigTransactionInfoMapper {
         }
 
         const swapAndBridge = await this.mapSwapAndBridge({
+          addressLookups,
           chainId,
           transaction,
         });
@@ -273,6 +275,7 @@ export class MultisigTransactionInfoMapper {
   }
 
   private async mapSwap(args: {
+    addressLookups: AddressLookups;
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<SwapTransactionInfo | null> {
@@ -283,6 +286,7 @@ export class MultisigTransactionInfoMapper {
 
     try {
       return await this.bridgeTransactionMapper.mapSwap({
+        addressLookups: args.addressLookups,
         data: transaction.data,
         executionDate: args.transaction.executionDate,
         chainId: args.chainId,
@@ -295,6 +299,7 @@ export class MultisigTransactionInfoMapper {
   }
 
   private async mapSwapAndBridge(args: {
+    addressLookups: AddressLookups;
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<BridgeAndSwapTransactionInfo | null> {
@@ -305,6 +310,7 @@ export class MultisigTransactionInfoMapper {
 
     try {
       return this.bridgeTransactionMapper.mapSwapAndBridge({
+        addressLookups: args.addressLookups,
         chainId: args.chainId,
         data: transaction.data,
         executionDate: args.transaction.executionDate,

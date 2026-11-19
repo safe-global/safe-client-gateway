@@ -111,6 +111,7 @@ describe('AddressLookups', () => {
         logoUri: contract.logoUrl,
       };
       expect(results).toEqual([expected, expected]);
+      expect(results[0]).not.toBe(results[1]);
       expect(contractsRepository.getContract).toHaveBeenCalledTimes(1);
       expect(contractsRepository.getContract).toHaveBeenCalledWith({
         chainId,

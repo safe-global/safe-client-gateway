@@ -4,7 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -75,7 +75,10 @@ describe('List module transactions by Safe with LiFi mapping - Transactions Cont
     chain: Chain;
     diamondAddress: ModuleTransaction['to'];
     moduleTransactions: Array<ModuleTransaction>;
-  }): void {
+  }) {
+    const getContract = vi.fn((address: Address) =>
+      contractBuilder().with('address', address).build(),
+    );
     const { chain, diamondAddress, moduleTransactions } = args;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getModuleTransactionsUrlPattern = `${chain.transactionService}/api/v1/safes/`;
@@ -111,11 +114,12 @@ describe('List module transactions by Safe with LiFi mapping - Transactions Cont
         });
       }
       if (url.startsWith(getContractUrlPattern)) {
+        const address = getAddress(url.slice(getContractUrlPattern.length));
         return Promise.resolve({
           data: rawify(
             pageBuilder()
               .with('count', 1)
-              .with('results', [contractBuilder().build()])
+              .with('results', [getContract(address)])
               .build(),
           ),
           status: 200,
@@ -133,6 +137,7 @@ describe('List module transactions by Safe with LiFi mapping - Transactions Cont
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
+    return getContract;
   }
 
   it('Does not get the LiFi chains for transactions that do not call LiFi', async () => {
@@ -168,7 +173,7 @@ describe('List module transactions by Safe with LiFi mapping - Transactions Cont
     );
   });
 
-  it('Maps a swap that calls the LiFi diamond address', async () => {
+  it('Maps LiFi swaps on one page with one contract fetch per recipient', async () => {
     const chain = chainBuilder().build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const diamondAddress = getAddress(faker.finance.ethereumAddress());
@@ -176,22 +181,29 @@ describe('List module transactions by Safe with LiFi mapping - Transactions Cont
       .with('sendingAssetId', getAddress(faker.finance.ethereumAddress()))
       .with('receivingAssetId', getAddress(faker.finance.ethereumAddress()))
       .build();
-    const moduleTransaction = moduleTransactionBuilder()
-      .with('safe', safeAddress)
-      .with('to', diamondAddress)
-      .with(
-        'data',
-        swapTokensSingleV3ERC20ToERC20Encoder()
-          .with('swapData', swapData)
-          .encode(),
-      )
-      .with('operation', Operation.CALL)
-      .with('value', '0')
-      .build();
-    mockUpstreams({
+    const moduleAddress = getAddress(faker.finance.ethereumAddress());
+    const moduleTransactions = faker.helpers.multiple(
+      () =>
+        moduleTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('module', moduleAddress)
+          .with('to', diamondAddress)
+          .with(
+            'data',
+            swapTokensSingleV3ERC20ToERC20Encoder()
+              .with('receiver', safeAddress)
+              .with('swapData', swapData)
+              .encode(),
+          )
+          .with('operation', Operation.CALL)
+          .with('value', '0')
+          .build(),
+      { count: 2 },
+    );
+    const getContract = mockUpstreams({
       chain,
       diamondAddress,
-      moduleTransactions: [moduleTransaction],
+      moduleTransactions,
     });
 
     await request(app.getHttpServer())
@@ -200,18 +212,22 @@ describe('List module transactions by Safe with LiFi mapping - Transactions Cont
       )
       .expect(200)
       .then(({ body }) => {
-        expect(body.results).toMatchObject([
-          {
+        expect(body.results).toMatchObject(
+          moduleTransactions.map(() => ({
             transaction: {
               txInfo: {
                 type: 'Swap',
+                recipient: { value: safeAddress },
                 fromAmount: swapData.fromAmount.toString(),
               },
             },
-          },
-        ]);
+          })),
+        );
       });
 
+    expect(getContract).toHaveBeenCalledWith(safeAddress);
+    expect(getContract).toHaveBeenCalledWith(moduleAddress);
+    expect(getContract).toHaveBeenCalledTimes(2);
     expect(networkService.get).toHaveBeenCalledWith(
       expect.objectContaining({ url: `${bridgeUrl}/v1/chains` }),
     );

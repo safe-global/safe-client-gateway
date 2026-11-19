@@ -2,7 +2,6 @@
 import type { Address } from 'viem';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
-import type { Contract } from '#/modules/data-decoder/domain/v2/entities/contract.entity';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
@@ -19,7 +18,7 @@ export type Source = 'CONTRACT' | 'TOKEN';
  */
 export class AddressLookups {
   private readonly tokens = new Map<Address, Promise<Token>>();
-  private readonly contracts = new Map<Address, Promise<Contract>>();
+  private readonly contracts = new Map<Address, Promise<AddressInfo>>();
 
   constructor(
     private readonly chainId: string,
@@ -76,16 +75,23 @@ export class AddressLookups {
     );
   }
 
-  private getContract(address: Address): Promise<Contract> {
-    let contract = this.contracts.get(address);
-    if (!contract) {
-      contract = this.contractsRepository.getContract({
-        chainId: this.chainId,
-        contractAddress: address,
-      });
-      this.contracts.set(address, contract);
+  private async getContractInfo(address: Address): Promise<AddressInfo> {
+    let info = this.contracts.get(address);
+    if (!info) {
+      info = this.contractsRepository
+        .getContract({ chainId: this.chainId, contractAddress: address })
+        .then(
+          (contract) =>
+            new AddressInfo(
+              contract.address,
+              contract.displayName || contract.name,
+              contract.logoUrl,
+            ),
+        );
+      this.contracts.set(address, info);
     }
-    return contract;
+    const { value, name, logoUri } = await info;
+    return new AddressInfo(value, name, logoUri);
   }
 
   private async getFromSource(
@@ -93,14 +99,8 @@ export class AddressLookups {
     source: Source,
   ): Promise<AddressInfo> {
     switch (source) {
-      case 'CONTRACT': {
-        const contract = await this.getContract(address);
-        return new AddressInfo(
-          contract.address,
-          contract.displayName || contract.name,
-          contract.logoUrl,
-        );
-      }
+      case 'CONTRACT':
+        return this.getContractInfo(address);
       case 'TOKEN': {
         const token = await this.getToken(address);
         return new AddressInfo(token.address, token.name, token.logoUri);

@@ -11,14 +11,14 @@ import type { IChainsRepository } from '#/modules/chains/domain/chains.repositor
 import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import { SwapTransactionInfo } from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
-import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 
 describe('BridgeTransactionMapper (Unit)', () => {
   let mapper: BridgeTransactionMapper;
   let liFiDecoder: Mocked<LiFiDecoder>;
   let tokenRepository: Mocked<ITokenRepository>;
-  let addressInfoHelper: Mocked<AddressInfoHelper>;
+  let addressLookups: Mocked<AddressLookups>;
   let bridgeRepository: Mocked<IBridgeRepository>;
   let chainsRepository: Mocked<IChainsRepository>;
 
@@ -36,11 +36,9 @@ describe('BridgeTransactionMapper (Unit)', () => {
       getTokens: vi.fn(),
     } as unknown as Mocked<ITokenRepository>;
 
-    addressInfoHelper = {
-      get: vi.fn(),
+    addressLookups = {
       getOrDefault: vi.fn(),
-      getCollection: vi.fn(),
-    } as unknown as Mocked<AddressInfoHelper>;
+    } as unknown as Mocked<AddressLookups>;
 
     bridgeRepository = {
       getDiamondAddress: vi.fn(),
@@ -56,7 +54,6 @@ describe('BridgeTransactionMapper (Unit)', () => {
     mapper = new BridgeTransactionMapper(
       liFiDecoder,
       tokenRepository,
-      addressInfoHelper,
       bridgeRepository,
       chainsRepository,
     );
@@ -84,6 +81,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
       liFiDecoder.decodeSwap.mockReturnValue(decoded);
 
       const result = await mapper.mapSwap({
+        addressLookups,
         data,
         chainId: faker.string.numeric(),
         executionDate: null,
@@ -146,9 +144,10 @@ describe('BridgeTransactionMapper (Unit)', () => {
         name: 'Test Address',
         logoUri: faker.image.url(),
       };
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+      addressLookups.getOrDefault.mockResolvedValue(addressInfo);
 
       const result = await mapper.mapSwapAndBridge({
+        addressLookups,
         chainId,
         data,
         executionDate: null,
@@ -217,7 +216,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
         name: 'Test Address',
         logoUri: faker.image.url(),
       };
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+      addressLookups.getOrDefault.mockResolvedValue(addressInfo);
 
       const bridgeStatus: BridgeStatus = {
         status: 'DONE',
@@ -266,6 +265,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
       bridgeRepository.getStatus.mockResolvedValue(bridgeStatus);
 
       const result = await mapper.mapSwapAndBridge({
+        addressLookups,
         chainId,
         data,
         executionDate,
@@ -341,7 +341,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
         name: 'Test Address',
         logoUri: faker.image.url(),
       };
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+      addressLookups.getOrDefault.mockResolvedValue(addressInfo);
 
       const bridgeStatus: BridgeStatus = {
         status: 'FAILED',
@@ -356,6 +356,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
       bridgeRepository.getStatus.mockResolvedValue(bridgeStatus);
 
       const result = await mapper.mapSwapAndBridge({
+        addressLookups,
         chainId,
         data,
         executionDate,
@@ -420,7 +421,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
         name: 'Test Address',
         logoUri: faker.image.url(),
       };
-      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+      addressLookups.getOrDefault.mockResolvedValue(addressInfo);
 
       const bridgeStatus: BridgeStatus = {
         status: 'PENDING',
@@ -430,6 +431,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
       bridgeRepository.getStatus.mockResolvedValue(bridgeStatus);
 
       const result = await mapper.mapSwapAndBridge({
+        addressLookups,
         chainId,
         data,
         executionDate,
