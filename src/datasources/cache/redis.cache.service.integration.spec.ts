@@ -43,7 +43,7 @@ describe('RedisCacheService', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     await redisClient.flushDb();
-    defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
+    defaultExpirationTimeInSeconds = faker.number.int({ min: 60, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });
     maxTtlDeviated =
       MAX_TTL - (MAX_TTL * defaultExpirationDeviatePercent) / 100;
@@ -190,6 +190,80 @@ describe('RedisCacheService', () => {
 
     expect(firstResult).toBe(1);
     expect(secondResult).toBe(0);
+  });
+
+  it('a queued invalidation cannot overwrite a newer marker when it resumes', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
+    );
+    const olderTime = faker.date.recent().getTime();
+    const newerTime = olderTime + faker.number.int({ min: 1, max: 1000 });
+    const markerKey = `invalidationTimeMs:${cacheDir.key}`;
+    const resume = Promise.withResolvers<void>();
+    const pipeline = redisClient.multi();
+    const execute = pipeline.execAsPipeline.bind(pipeline);
+    vi.spyOn(pipeline, 'execAsPipeline').mockImplementationOnce(async () => {
+      await resume.promise;
+      return execute();
+    });
+    const multi = vi.spyOn(redisClient, 'multi').mockReturnValueOnce(pipeline);
+    const now = vi.spyOn(Date, 'now').mockReturnValue(olderTime);
+    const queuedInvalidation = redisCacheService.deleteByKey(cacheDir.key);
+
+    let deadline: number;
+    try {
+      now.mockReturnValue(newerTime);
+      await redisCacheService.deleteByKey(cacheDir.key);
+      expect(await redisCacheService.getInvalidationTimeMs(cacheDir.key)).toBe(
+        newerTime,
+      );
+      await redisClient.expire(
+        markerKey,
+        Math.floor(defaultExpirationTimeInSeconds / 2),
+      );
+      deadline = await redisClient.pExpireTime(markerKey);
+      await redisClient.hSet(cacheDir.key, cacheDir.field, fakeJson());
+    } finally {
+      resume.resolve();
+      try {
+        await queuedInvalidation;
+      } finally {
+        now.mockRestore();
+        multi.mockRestore();
+      }
+    }
+
+    expect(await redisCacheService.getInvalidationTimeMs(cacheDir.key)).toBe(
+      newerTime,
+    );
+    expect(await redisClient.exists(cacheDir.key)).toBe(0);
+    expect(await redisClient.pExpireTime(markerKey)).toBe(deadline);
+  });
+
+  it('a newer invalidation renews the marker for the full configured TTL', async () => {
+    const key = faker.string.alphanumeric();
+    const invalidationKey = `invalidationTimeMs:${key}`;
+    await redisClient.hSet(
+      invalidationKey,
+      '',
+      faker.date.recent().getTime().toString(),
+    );
+    const shorterTtlSeconds = Math.floor(defaultExpirationTimeInSeconds / 2);
+    await redisClient.expire(invalidationKey, shorterTtlSeconds);
+    const startTime = Date.now();
+
+    await redisCacheService.deleteByKey(key);
+
+    expect(
+      await redisCacheService.getInvalidationTimeMs(key),
+    ).toBeGreaterThanOrEqual(startTime);
+    const ttl = await redisClient.pTTL(invalidationKey);
+    const fullTtlMs = defaultExpirationTimeInSeconds * 1000;
+    expect(ttl).toBeGreaterThanOrEqual(
+      fullTtlMs - (Date.now() - startTime) - 1,
+    );
+    expect(ttl).toBeLessThanOrEqual(fullTtlMs);
   });
 
   it('Setting a field rethrows the Redis error and unlinks the key when the write is refused', async () => {
