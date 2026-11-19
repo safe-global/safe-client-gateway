@@ -3,7 +3,6 @@
 import { faker } from '@faker-js/faker';
 import { InternalServerErrorException } from '@nestjs/common';
 import type postgres from 'postgres';
-import type { MaybeRow } from 'postgres';
 import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -18,7 +17,7 @@ const mockLoggingService = vi.mocked({
 
 const mockQuery = vi.mocked({
   execute: vi.fn(),
-} as MockedObject<postgres.PendingQuery<Array<MaybeRow>>>);
+} as MockedObject<postgres.PendingQuery<Array<postgres.MaybeRow>>>);
 
 describe('CachedQueryResolver', () => {
   let fakeCacheService: FakeCacheService;

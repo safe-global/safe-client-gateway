@@ -27,7 +27,7 @@ export class TestDbFactory {
   async destroyTestDatabase(database: postgres.Sql): Promise<void> {
     await database.end();
     await this
-      .mainConnection`drop database ${this.mainConnection(database.options.database)} with (force)`;
+      .mainConnection`drop database ${this.mainConnection(database.options.database!)} with (force)`;
     await this.mainConnection.end();
   }
 
