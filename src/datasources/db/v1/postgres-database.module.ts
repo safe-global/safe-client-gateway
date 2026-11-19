@@ -20,10 +20,10 @@ function dbFactory(configurationService: IConfigurationService): postgres.Sql {
     'db.connection.postgres.ssl.enabled',
   )
     ? {
-        requestCert: configurationService.getOrThrow(
+        requestCert: configurationService.getOrThrow<boolean>(
           'db.connection.postgres.ssl.requestCert',
         ),
-        rejectUnauthorized: configurationService.getOrThrow(
+        rejectUnauthorized: configurationService.getOrThrow<boolean>(
           'db.connection.postgres.ssl.rejectUnauthorized',
         ),
         ca,
