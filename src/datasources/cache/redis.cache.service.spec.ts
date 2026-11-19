@@ -225,21 +225,25 @@ describe('RedisCacheService', () => {
       expect(transactionMock.execAsPipeline).toHaveBeenCalledOnce();
     });
 
-    it('logs, unlinks the invalidation marker and rethrows when the pipeline fails', async () => {
+    it('preserves a concurrent invalidation marker and rethrows the pipeline error', async () => {
       const key = faker.string.alphanumeric();
       const error = new Error(faker.lorem.sentence());
-      transactionMock.execAsPipeline.mockRejectedValue(error);
+      const failedPipeline = Promise.withResolvers<never>();
+      transactionMock.execAsPipeline.mockReturnValueOnce(
+        failedPipeline.promise,
+      );
+      const firstInvalidation = target.deleteByKey(key);
+      await target.deleteByKey(key);
+      failedPipeline.reject(error);
 
-      await expect(target.deleteByKey(key)).rejects.toThrow(error);
+      await expect(firstInvalidation).rejects.toBe(error);
 
       expect(mockLoggingService.error).toHaveBeenCalledWith({
         type: LogType.CacheError,
         source: 'RedisCacheService',
         event: `Error deleting ${key} or setting/expiring invalidationTimeMs:${key}`,
       });
-      expect(redisClientMock.unlink).toHaveBeenCalledWith(
-        `invalidationTimeMs:${key}`,
-      );
+      expect(redisClientMock.unlink).not.toHaveBeenCalled();
     });
   });
 

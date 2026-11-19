@@ -131,7 +131,7 @@ export class RedisCacheService
         source: 'RedisCacheService',
         event: `Error deleting ${keyWithPrefix} or setting/expiring ${invalidationKey}`,
       });
-      await this.client.unlink(invalidationKey);
+      // A failed pipeline can complete after another invalidation has set its marker.
       throw error;
     }
   }

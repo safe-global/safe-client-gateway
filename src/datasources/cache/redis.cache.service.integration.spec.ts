@@ -227,7 +227,7 @@ describe('RedisCacheService', () => {
     );
 
     expect(await redisClient.exists(cacheDir.key)).toBe(0);
-    expect(await redisClient.exists(invalidationKey)).toBe(0);
+    expect(await redisClient.pTTL(invalidationKey)).toBeGreaterThan(0);
   });
 
   it('When Module gets destroyed, redis connection is closed', async () => {
