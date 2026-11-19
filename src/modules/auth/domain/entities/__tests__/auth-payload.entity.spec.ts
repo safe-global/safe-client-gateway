@@ -392,9 +392,7 @@ describe('AuthPayload entity', () => {
   describe('hasFreshMfa', () => {
     const nowSeconds = (): number => Math.floor(Date.now() / 1_000);
 
-    // The tests and `hasFreshMfa` both read the clock in whole seconds. On a
-    // real clock the second can tick over between the two reads, which moves
-    // a stamp at the exact window edge one second past it.
+    // The test and `hasFreshMfa` must read the same second.
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(faker.date.recent());

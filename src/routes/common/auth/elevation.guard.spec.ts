@@ -40,9 +40,7 @@ describe('ElevationGuard', () => {
   const siwePayload = (): AuthPayloadDto => siweAuthPayloadDtoBuilder().build();
 
   beforeEach(() => {
-    // The tests and the guard both read the clock in whole seconds. On a real
-    // clock the second can tick over between the two reads, which moves a
-    // session at the exact window edge one second past it.
+    // The test and the guard must read the same second.
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(faker.date.recent());
 
