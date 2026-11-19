@@ -4,4 +4,6 @@ import type { Raw } from '#/validation/entities/raw.entity';
 export interface NetworkResponse<T> {
   data: Raw<T>;
   status: number;
+  /** Wall-clock start of the upstream fetch, including when it was shared. */
+  requestStartedAtMs?: number;
 }

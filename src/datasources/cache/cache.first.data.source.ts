@@ -154,7 +154,7 @@ export class CacheFirstDataSource {
           args.cacheDir,
           error,
           args.notFoundExpireTimeSeconds,
-          startTimeMs,
+          error.requestStartedAtMs ?? startTimeMs,
         );
       }
       throw error;
@@ -204,14 +204,16 @@ export class CacheFirstDataSource {
         },
   ): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
-    const { startTimeMs } = args;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
-    const { data } = await this.networkService[args.method]<T>({
+    const { data, requestStartedAtMs } = await this.networkService[
+      args.method
+    ]<T>({
       url: args.url,
       networkRequest: args.networkRequest,
       data: args.data,
     });
 
+    const startTimeMs = requestStartedAtMs ?? args.startTimeMs;
     const written =
       args.expireTimeSeconds !== undefined &&
       args.expireTimeSeconds > 0 &&
