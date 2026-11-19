@@ -29,7 +29,10 @@ import alertsApiConfiguration from '#/modules/alerts/datasources/configuration/_
 import alertsConfiguration from '#/modules/alerts/routes/configuration/__tests__/alerts.configuration';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
-import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import {
+  chainBuilder,
+  otherChainIdBuilder,
+} from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { addRecoveryModuleDtoBuilder } from '#/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
 import { RecoveryController } from '#/modules/recovery/routes/recovery.controller';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -159,7 +162,7 @@ describe('Recovery Controller', () => {
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
       const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
+        .with('chain_id', otherChainIdBuilder(chain.chainId))
         .with('signer_address', signerAddress)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -430,7 +433,7 @@ describe('Recovery Controller', () => {
       const safe = safeBuilder().build();
       const signerAddress = safe.owners[0];
       const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('chain_id', faker.string.numeric({ exclude: [chain.chainId] }))
+        .with('chain_id', otherChainIdBuilder(chain.chainId))
         .with('signer_address', signerAddress)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
