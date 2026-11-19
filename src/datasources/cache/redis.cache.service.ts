@@ -6,6 +6,7 @@ import type { RedisClientType } from '#/datasources/cache/cache.module';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { CacheKeyPrefix, MAX_TTL } from '#/datasources/cache/constants';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { SET_CACHE_IF_FRESH_SCRIPT } from '#/datasources/cache/scripts/set-cache-if-fresh.script';
 import { SET_INVALIDATION_TIME_SCRIPT } from '#/datasources/cache/scripts/set-invalidation-time.script';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { deviateRandomlyByPercentage } from '#/domain/common/utils/number';
@@ -65,11 +66,9 @@ export class RedisCacheService
     }
 
     const key = this._prefixKey(cacheDir.key);
-    const expirationTime = this.enforceMaxRedisTTL(
-      deviateRandomlyByPercentage(
-        expireTimeSeconds,
-        expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
-      ),
+    const expirationTime = this.getHashExpirationTime(
+      expireTimeSeconds,
+      expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
     );
 
     try {
@@ -95,6 +94,45 @@ export class RedisCacheService
       throw error instanceof MultiErrorReply
         ? (error.errors().next().value ?? error)
         : error;
+    }
+  }
+
+  async hSetIfFresh(
+    cacheDir: CacheDir,
+    value: string,
+    expireTimeSeconds: number,
+    requestStartTimeMs: number,
+  ): Promise<boolean> {
+    if (expireTimeSeconds <= 0) {
+      return false;
+    }
+
+    const key = this._prefixKey(cacheDir.key);
+    const invalidationKey = this._prefixKey(
+      RedisCacheService.invalidationTimeMsCacheDir(cacheDir.key).key,
+    );
+    const expirationTime = this.getHashExpirationTime(
+      expireTimeSeconds,
+      this.defaultExpirationDeviatePercent,
+    );
+    try {
+      const result = await this.client.eval(SET_CACHE_IF_FRESH_SCRIPT, {
+        keys: [key, invalidationKey],
+        arguments: [
+          cacheDir.field,
+          value,
+          expirationTime.toString(),
+          requestStartTimeMs.toString(),
+        ],
+      });
+      return result === 1;
+    } catch (error) {
+      this.loggingService.error({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: `Error conditionally setting/expiring ${key}:${cacheDir.field}`,
+      });
+      throw error;
     }
   }
 
@@ -270,6 +308,12 @@ export class RedisCacheService
         event: 'Error forcing Redis connection close',
       });
     }
+  }
+
+  private getHashExpirationTime(ttl: number, deviationPercent: number): number {
+    return this.enforceMaxRedisTTL(
+      deviateRandomlyByPercentage(ttl, deviationPercent),
+    );
   }
 
   /**
