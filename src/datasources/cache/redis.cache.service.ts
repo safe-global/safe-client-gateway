@@ -113,16 +113,11 @@ export class RedisCacheService
     // see https://redis.io/commands/unlink/
     const pipeline = this.client.multi().unlink(keyWithPrefix);
     if (this.defaultExpirationTimeInSeconds > 0) {
-      pipeline
-        .eval(SET_INVALIDATION_TIME_SCRIPT, {
-          keys: [invalidationKey],
-          arguments: [Date.now().toString()],
-        })
-        .expire(
-          invalidationKey,
-          this.enforceMaxRedisTTL(this.defaultExpirationTimeInSeconds),
-          'NX',
-        );
+      const ttl = this.enforceMaxRedisTTL(this.defaultExpirationTimeInSeconds);
+      pipeline.eval(SET_INVALIDATION_TIME_SCRIPT, {
+        keys: [invalidationKey],
+        arguments: [Date.now().toString(), ttl.toString()],
+      });
     }
 
     try {

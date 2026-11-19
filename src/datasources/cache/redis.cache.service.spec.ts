@@ -174,11 +174,7 @@ describe('RedisCacheService', () => {
       const now = Date.now();
       const key = faker.string.alphanumeric();
       const unlinkedCount = faker.number.int({ min: 0, max: 1 });
-      transactionMock.execAsPipeline.mockResolvedValue([
-        unlinkedCount,
-        faker.number.int({ min: 0, max: 1 }),
-        faker.number.int({ min: 0, max: 1 }),
-      ]);
+      transactionMock.execAsPipeline.mockResolvedValue([unlinkedCount, 1]);
 
       const result = await target.deleteByKey(key);
 
@@ -188,14 +184,13 @@ describe('RedisCacheService', () => {
         SET_INVALIDATION_TIME_SCRIPT,
         {
           keys: [`invalidationTimeMs:${key}`],
-          arguments: [now.toString()],
+          arguments: [
+            now.toString(),
+            defaultExpirationTimeInSeconds.toString(),
+          ],
         },
       );
-      expect(transactionMock.expire).toHaveBeenCalledWith(
-        `invalidationTimeMs:${key}`,
-        defaultExpirationTimeInSeconds,
-        'NX',
-      );
+      expect(transactionMock.expire).not.toHaveBeenCalled();
       expect(transactionMock.unlink).toHaveBeenCalledWith(key);
       expect(transactionMock.unlink).toHaveBeenCalledBefore(
         transactionMock.eval,
@@ -381,14 +376,13 @@ describe('RedisCacheService', () => {
         SET_INVALIDATION_TIME_SCRIPT,
         {
           keys: [`${keyPrefix}-invalidationTimeMs:${key}`],
-          arguments: [now.toString()],
+          arguments: [
+            now.toString(),
+            defaultExpirationTimeInSeconds.toString(),
+          ],
         },
       );
-      expect(transactionMock.expire).toHaveBeenCalledWith(
-        `${keyPrefix}-invalidationTimeMs:${key}`,
-        defaultExpirationTimeInSeconds,
-        'NX',
-      );
+      expect(transactionMock.expire).not.toHaveBeenCalled();
     });
   });
 });
