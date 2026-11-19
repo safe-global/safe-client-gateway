@@ -304,6 +304,29 @@ describe('RedisCacheService', () => {
     expect(await redisClient.pTTL(invalidationKey)).toBeGreaterThan(0);
   });
 
+  it('fills a cache entry and sets its expiry when no invalidation marker exists', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
+    );
+    const value = fakeJson();
+    const start = Date.now();
+
+    expect(
+      await redisCacheService.getInvalidationTimeMs(cacheDir.key),
+    ).toBeNull();
+    expect(
+      await redisCacheService.hSetIfFresh(
+        cacheDir,
+        value,
+        defaultExpirationTimeInSeconds,
+        start,
+      ),
+    ).toBe(true);
+    expect(await redisCacheService.hGet(cacheDir)).toBe(value);
+    expect(await redisClient.ttl(cacheDir.key)).toBeGreaterThan(0);
+  });
+
   it('conditionally fills a cache entry and preserves its existing expiry', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
@@ -321,6 +344,11 @@ describe('RedisCacheService', () => {
 
     const marker = await redisCacheService.getInvalidationTimeMs(cacheDir.key);
     expect(marker).not.toBeNull();
+    expect(
+      await redisCacheService.hSetIfFresh(cacheDir, value, ttl, Number(marker)),
+    ).toBe(false);
+    expect(await redisCacheService.hGet(cacheDir)).toBeNull();
+
     const freshStart = Number(marker) + 1;
     expect(
       await redisCacheService.hSetIfFresh(cacheDir, value, ttl, freshStart),
