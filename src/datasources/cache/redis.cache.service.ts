@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { createHash } from 'node:crypto';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
-import { ClientOfflineError, MultiErrorReply } from 'redis';
+import { ClientOfflineError, ErrorReply, MultiErrorReply } from 'redis';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import type { RedisClientType } from '#/datasources/cache/cache.module';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -14,6 +15,10 @@ import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+
+const SET_INVALIDATION_TIME_SHA = createHash('sha1')
+  .update(SET_INVALIDATION_TIME_SCRIPT)
+  .digest('hex');
 
 @Injectable()
 export class RedisCacheService
@@ -108,22 +113,35 @@ export class RedisCacheService
     const invalidationKey = this._prefixKey(
       RedisCacheService.invalidationTimeMsCacheDir(key).key,
     );
-    // One pipelined round trip. A pipeline rather than MULTI, so the UNLINK
-    // still runs if Redis refuses the marker write (e.g. maxmemory reached).
-    // see https://redis.io/commands/unlink/
-    const pipeline = this.client.multi().unlink(keyWithPrefix);
-    if (this.defaultExpirationTimeInSeconds > 0) {
-      const ttl = this.enforceMaxRedisTTL(this.defaultExpirationTimeInSeconds);
-      pipeline.eval(SET_INVALIDATION_TIME_SCRIPT, {
-        keys: [invalidationKey],
-        arguments: [Date.now().toString(), ttl.toString()],
-      });
-    }
-
     try {
       this.failFastWhenOffline();
-      const [unlinkedCount] = await pipeline.execAsPipeline();
-      return Number(unlinkedCount);
+      if (this.defaultExpirationTimeInSeconds <= 0) {
+        return await this.client.unlink(keyWithPrefix);
+      }
+
+      const ttl = this.enforceMaxRedisTTL(this.defaultExpirationTimeInSeconds);
+      const options = {
+        keys: [invalidationKey],
+        arguments: [Date.now().toString(), ttl.toString()],
+      };
+
+      // node-redis pipelines commands issued in the same event-loop turn.
+      const unlink = this.client.unlink(keyWithPrefix);
+      const stamp = this.client
+        .evalSha(SET_INVALIDATION_TIME_SHA, options)
+        .catch((error: unknown) => {
+          if (
+            error instanceof ErrorReply &&
+            error.message.startsWith('NOSCRIPT ')
+          ) {
+            // Retry the marker with the same timestamp after the script cache is lost.
+            return this.client.eval(SET_INVALIDATION_TIME_SCRIPT, options);
+          }
+          throw error;
+        });
+
+      const [unlinkedCount] = await Promise.all([unlink, stamp]);
+      return unlinkedCount;
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
