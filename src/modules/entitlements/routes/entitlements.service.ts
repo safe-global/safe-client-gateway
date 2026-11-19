@@ -435,7 +435,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const grants = await this.computeGrants(spaceId);
     // A materialization that committed while this was computing already
     // dropped the key; writing back would re-poison it for the whole TTL.
-    // Same guard as `CacheFirstDataSource`'s `_shouldBeCached`.
+    // Compare timestamps before writing. CacheFirstDataSource checks the
+    // marker and writes atomically through hSetIfFresh.
     if (await this.outlivesLastInvalidation(cacheDir.key, startTimeMs)) {
       await this.cacheService.hSet(
         cacheDir,

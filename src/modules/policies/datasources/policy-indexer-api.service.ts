@@ -92,7 +92,10 @@ export class PolicyIndexerApi {
     }
 
     const fetchStartTimeMs = Date.now();
-    const fetched = await this.fetch(misses, args.guardPolicyKinds);
+    const { rows, requestStartedAtMs } = await this.fetch(
+      misses,
+      args.guardPolicyKinds,
+    );
     const policiesStates = await Promise.all(
       args.safes.map(async (safe, index) => {
         const hit = cacheHits[index];
@@ -100,12 +103,12 @@ export class PolicyIndexerApi {
           return hit;
         }
 
-        const policiesState = this.filterPolicyIndexerRowsBySafe(fetched, safe);
+        const policiesState = this.filterPolicyIndexerRowsBySafe(rows, safe);
         await this.cache(
           safe,
           args.guardPolicyKinds,
           policiesState,
-          fetchStartTimeMs,
+          requestStartedAtMs ?? fetchStartTimeMs,
         );
         return policiesState;
       }),
@@ -136,20 +139,21 @@ export class PolicyIndexerApi {
   private async fetch(
     safes: ReadonlyArray<SafeRef>,
     guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
-  ): Promise<PolicyIndexerRows> {
+  ): Promise<{ rows: PolicyIndexerRows; requestStartedAtMs?: number }> {
     try {
-      const { data } = await this.networkService.post<unknown>({
-        url: `${this.baseUri}/v1/graphql`,
-        data: {
-          query: POLICY_INDEXER_STATE_QUERY,
-          variables: toPolicyIndexerVariables(safes, guardPolicyKinds),
-        },
-        networkRequest: {
-          circuitBreaker: { key: CircuitBreakerKeys.getPolicyIndexerKey() },
-        },
-      });
+      const { data, requestStartedAtMs } =
+        await this.networkService.post<unknown>({
+          url: `${this.baseUri}/v1/graphql`,
+          data: {
+            query: POLICY_INDEXER_STATE_QUERY,
+            variables: toPolicyIndexerVariables(safes, guardPolicyKinds),
+          },
+          networkRequest: {
+            circuitBreaker: { key: CircuitBreakerKeys.getPolicyIndexerKey() },
+          },
+        });
 
-      return this.queried(data);
+      return { rows: this.queried(data), requestStartedAtMs };
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
