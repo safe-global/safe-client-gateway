@@ -32,8 +32,13 @@ describe('RedisCacheService', () => {
   const keyPrefix = '';
   let redisClient: RedisClientType;
 
+  // `flushDb` below empties the whole database between tests. Integration
+  // specs share one Redis, and BullMQ queues and the TypeORM query cache of
+  // other specs live in database 0, so this spec gets a database of its own.
+  const redisDatabase = 15;
+
   beforeAll(async () => {
-    redisClient = await redisClientFactory();
+    redisClient = await redisClientFactory({ database: redisDatabase });
   });
 
   afterAll(async () => {
@@ -236,7 +241,7 @@ describe('RedisCacheService', () => {
     // Connection is closed, this is expected to throw an error
     await expect(redisCacheService.ping()).rejects.toThrow();
     // Connection is reopened after this test execution
-    redisClient = await redisClientFactory();
+    redisClient = await redisClientFactory({ database: redisDatabase });
   });
 
   it('creates a missing key and increments its value', async () => {

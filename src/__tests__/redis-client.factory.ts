@@ -2,7 +2,13 @@
 import { createClient } from 'redis';
 import type { RedisClientType } from '#/datasources/cache/cache.module';
 
-export async function redisClientFactory(): Promise<RedisClientType> {
+/**
+ * @param args.database - Redis logical database to select. Defaults to 0,
+ *   the one the app and the other specs use.
+ */
+export async function redisClientFactory(args?: {
+  database?: number;
+}): Promise<RedisClientType> {
   const {
     REDIS_USER,
     REDIS_PASS,
@@ -16,6 +22,7 @@ export async function redisClientFactory(): Promise<RedisClientType> {
     },
     username: REDIS_USER,
     password: REDIS_PASS,
+    database: args?.database,
   });
   await client.connect();
   return client;
