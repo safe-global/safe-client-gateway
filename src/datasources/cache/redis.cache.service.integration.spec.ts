@@ -178,6 +178,58 @@ describe('RedisCacheService', () => {
     );
   });
 
+  it('Deleting key returns the number of removed keys', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    await redisClient.hSet(cacheDir.key, cacheDir.field, fakeJson());
+
+    const firstResult = await redisCacheService.deleteByKey(cacheDir.key);
+    const secondResult = await redisCacheService.deleteByKey(cacheDir.key);
+
+    expect(firstResult).toBe(1);
+    expect(secondResult).toBe(0);
+  });
+
+  it('Setting a field rethrows the Redis error and unlinks the key when the write is refused', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    // A string where the hash should be makes HSET fail with WRONGTYPE.
+    await redisClient.set(cacheDir.key, faker.string.alphanumeric());
+
+    await expect(
+      redisCacheService.hSet(
+        cacheDir,
+        fakeJson(),
+        faker.number.int({ min: 1 }),
+      ),
+    ).rejects.toThrow('WRONGTYPE');
+
+    expect(await redisClient.exists(cacheDir.key)).toBe(0);
+  });
+
+  it('Deleting key still unlinks it and rethrows when the invalidation marker write is refused', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    const invalidationKey = `invalidationTimeMs:${cacheDir.key}`;
+    await redisClient.hSet(cacheDir.key, cacheDir.field, fakeJson());
+    // A string where the marker hash should be makes the marker HSET fail
+    // with WRONGTYPE, while the UNLINK in the same pipeline succeeds.
+    await redisClient.set(invalidationKey, faker.string.alphanumeric());
+
+    await expect(redisCacheService.deleteByKey(cacheDir.key)).rejects.toThrow(
+      'WRONGTYPE',
+    );
+
+    expect(await redisClient.exists(cacheDir.key)).toBe(0);
+    expect(await redisClient.pTTL(invalidationKey)).toBeGreaterThan(0);
+  });
+
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
