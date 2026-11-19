@@ -975,8 +975,6 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  // Important: there is no hook which invalidates this endpoint,
-  // Therefore, this data will live in cache until [ownersExpirationTimeSeconds]
   async getSafesByOwner(ownerAddress: Address): Promise<Raw<SafeList>> {
     try {
       const cacheDir = CacheRouter.getSafesByOwnerCacheDir({
@@ -1001,8 +999,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  // Important: there is no hook which invalidates this endpoint,
-  // Therefore, this data will live in cache until [ownersExpirationTimeSeconds]
+  // Events clear the cache only when the owners change, not when the nonce or other fields of the Safes do
   async getSafesByOwnerV2(args: {
     ownerAddress: Address;
     limit?: number;
@@ -1035,6 +1032,16 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
+  }
+
+  async clearSafesByOwner(ownerAddress: Address): Promise<void> {
+    const args = { chainId: this.chainId, ownerAddress };
+    await Promise.all([
+      this.cacheService.deleteByKey(CacheRouter.getSafesByOwnerCacheKey(args)),
+      this.cacheService.deleteByKey(
+        CacheRouter.getSafesByOwnerV2CacheKey(args),
+      ),
+    ]);
   }
 
   async getEstimation(args: {

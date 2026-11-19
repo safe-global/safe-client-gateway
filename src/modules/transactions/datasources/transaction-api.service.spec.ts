@@ -2524,6 +2524,22 @@ describe('TransactionApi', () => {
     });
   });
 
+  describe('clearSafesByOwner', () => {
+    it('should clear the v1 and v2 Safes of the owner', async () => {
+      const ownerAddress = getAddress(faker.finance.ethereumAddress());
+
+      await service.clearSafesByOwner(ownerAddress);
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_owner_safes_${ownerAddress}`,
+      );
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_owner_safes_v2_${ownerAddress}`,
+      );
+    });
+  });
+
   describe('getEstimation', () => {
     it('should return the estimation received', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());

@@ -215,6 +215,8 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<SafeV2>>>;
 
+  clearSafesByOwner(ownerAddress: Address): Promise<void>;
+
   getEstimation(args: {
     address: Address;
     getEstimationDto: GetEstimationDto;

@@ -31,7 +31,9 @@ import {
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
 } from '#/modules/hooks/routes/entities/__tests__/delegate-events.builder';
+import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-config-updated.builder';
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
+import { SafeConfigOwnerChanges } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { stakeBuilder } from '#/modules/staking/datasources/entities/__tests__/stake.entity.builder';
@@ -1594,6 +1596,121 @@ describe('Hook Events for Cache', () => {
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+  });
+
+  it.each(SafeConfigOwnerChanges)(
+    'SAFE_CONFIG_UPDATED with a %s change clears the Safes of the owner',
+    async (change) => {
+      const event = safeConfigUpdatedEventBuilder()
+        .with('change', change)
+        .build();
+      const ownerAddress = event.data.owner;
+      if (!ownerAddress) {
+        throw new Error('The builder must set an owner');
+      }
+      const cacheDirs = [
+        CacheRouter.getSafesByOwnerCacheDir({
+          chainId: event.chainId,
+          ownerAddress,
+        }),
+        CacheRouter.getSafesByOwnerV2CacheDir({
+          chainId: event.chainId,
+          ownerAddress,
+          limit: faker.number.int({ min: 1 }),
+          offset: faker.number.int(),
+        }),
+      ];
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${event.chainId}`:
+            return Promise.resolve({
+              data: rawify(
+                chainBuilder().with('chainId', event.chainId).build(),
+              ),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      const untouchedCacheDirs = [
+        CacheRouter.getSafesByOwnerV2CacheDir({
+          chainId: event.chainId,
+          ownerAddress: getAddress(faker.finance.ethereumAddress()),
+          limit: faker.number.int({ min: 1 }),
+          offset: faker.number.int(),
+        }),
+        CacheRouter.getSafesByOwnerV2CacheDir({
+          chainId: faker.string.numeric({ length: event.chainId.length + 1 }),
+          ownerAddress,
+          limit: faker.number.int({ min: 1 }),
+          offset: faker.number.int(),
+        }),
+      ];
+      for (const cacheDir of [...cacheDirs, ...untouchedCacheDirs]) {
+        await fakeCacheService.hSet(
+          cacheDir,
+          faker.string.alpha(),
+          faker.number.int({ min: 1 }),
+        );
+      }
+
+      const cb = getSubscriptionCallback(queuesApiService);
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
+
+      for (const cacheDir of cacheDirs) {
+        await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+      }
+      for (const cacheDir of untouchedCacheDirs) {
+        await expect(fakeCacheService.hGet(cacheDir)).resolves.not.toBeNull();
+      }
+    },
+  );
+
+  it('SAFE_CREATED clears the Safes of every owner of the Safe', async () => {
+    const chain = chainBuilder().build();
+    const event = safeCreatedEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    const safe = safeBuilder().with('address', event.address).build();
+    const cacheDirs = safe.owners.flatMap((ownerAddress) => [
+      CacheRouter.getSafesByOwnerCacheDir({
+        chainId: event.chainId,
+        ownerAddress,
+      }),
+      CacheRouter.getSafesByOwnerV2CacheDir({
+        chainId: event.chainId,
+        ownerAddress,
+        limit: faker.number.int({ min: 1 }),
+        offset: faker.number.int(),
+      }),
+    ]);
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${event.address}`:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    for (const cacheDir of cacheDirs) {
+      await fakeCacheService.hSet(
+        cacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+    }
+
+    const cb = getSubscriptionCallback(queuesApiService);
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
+
+    for (const cacheDir of cacheDirs) {
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+    }
   });
 
   it.each(

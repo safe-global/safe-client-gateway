@@ -5,11 +5,14 @@ import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
 import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
 import type { SafeConfigUpdated } from '#/modules/hooks/routes/entities/safe-config-updated.entity';
+import { SafeConfigOwnerChanges } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 
 export function safeConfigUpdatedEventBuilder(): IBuilder<SafeConfigUpdated> {
   return new Builder<SafeConfigUpdated>()
     .with('type', TransactionEventType.SAFE_CONFIG_UPDATED)
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('chainId', faker.string.numeric())
-    .with('txHash', faker.string.hexadecimal());
+    .with('txHash', faker.string.hexadecimal())
+    .with('change', faker.helpers.arrayElement(SafeConfigOwnerChanges))
+    .with('data', { owner: getAddress(faker.finance.ethereumAddress()) });
 }

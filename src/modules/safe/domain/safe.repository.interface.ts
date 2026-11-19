@@ -225,6 +225,11 @@ export interface ISafeRepository {
     ownerAddress: Address;
   }): Promise<SafeList>;
 
+  clearSafesByOwner(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): Promise<void>;
+
   getAllSafesByOwner(args: { ownerAddress: Address }): Promise<SafesByChainId>;
 
   getAllSafesByOwnerV2(args: {
