@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-// Compare and write atomically so a delayed batch cannot roll back a newer marker.
+// Compare and write atomically so a delayed invalidation cannot roll back a newer marker.
 export const SET_INVALIDATION_TIME_SCRIPT = `
 local value = redis.pcall('HGET', KEYS[1], '')
 if type(value) == 'table' and value.err then
