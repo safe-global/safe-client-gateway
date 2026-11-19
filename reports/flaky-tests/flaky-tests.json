@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-16T18:58:26.527Z",
+  "generated_at": "2026-11-19T11:16:56.244Z",
   "summary": {
-    "total_commits": 3577,
-    "flaky_commits": 148,
+    "total_commits": 3674,
+    "flaky_commits": 149,
     "flakiness_rate": 4.1,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-11-16"
+      "to": "2026-11-19"
     }
   },
   "weekly_trend": [
@@ -276,9 +276,9 @@
     },
     {
       "week": "2026-11-16",
-      "commits": 44,
-      "flaky": 0,
-      "rate": 0
+      "commits": 141,
+      "flaky": 1,
+      "rate": 0.7
     }
   ],
   "tests": [
@@ -572,6 +572,13 @@
         "number": 3617,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3617"
       }
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts",
+      "failure_count": 1,
+      "last_failure": "2026-11-17T11:17:33Z",
+      "status": "open",
+      "fix_pr": null
     }
   ]
 }

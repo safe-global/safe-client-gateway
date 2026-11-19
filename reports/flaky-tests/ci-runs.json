@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-16T18:58:26.527Z",
-  "last_checked_at": "2026-11-16T18:58:26.527Z",
+  "generated_at": "2026-11-19T11:16:56.244Z",
+  "last_checked_at": "2026-11-19T11:16:56.244Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-11-16"
+    "to": "2026-11-19"
   },
   "flaky_shas": [
     "3231fd3",
@@ -179,9 +179,27 @@
     "1efc9d3",
     "47477af",
     "dc3acbd",
-    "ab8c16f"
+    "ab8c16f",
+    "7921993"
   ],
   "runs": [
+    {
+      "id": 44072680219,
+      "sha": "7921993",
+      "branch": "claude/charming-hawking-i8qlnf",
+      "conclusion": "failure",
+      "created_at": "2026-11-17T11:17:33Z",
+      "failed_jobs": [
+        "ci / integration-tests (3/3)"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts",
+          "name": "AddressBooksController tags",
+          "error": "Error: Hook timed out in 10000ms."
+        }
+      ]
+    },
     {
       "id": 43455655242,
       "sha": "3231fd3",

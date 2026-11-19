@@ -1,6 +1,16 @@
 {
-  "generated_at": "2026-11-16T18:58:26.527Z",
+  "generated_at": "2026-11-19T11:16:56.244Z",
   "prs": [
+    {
+      "number": 3801,
+      "title": "test(transactions): mock the Safe URL with its trailing slash",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3801",
+      "merged_at": "2026-11-18T10:50:14Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/transactions/routes/transactions-safe-queue.controller.integration.spec.ts"
+      ]
+    },
     {
       "number": 3560,
       "title": "build: migrate runtime, tooling and tests from node to bun",
