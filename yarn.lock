@@ -4682,10 +4682,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postgres@npm:3.4.9":
-  version: 3.4.9
-  resolution: "postgres@npm:3.4.9"
-  checksum: 10/c6c7e85f5cfb00d455bcfee98e7af2abded43323552295044f00a602431465c9296ef6152d45d4a53bf3a72323ca00e03585b7ba6f8713367e42d1ef34d1fa5d
+"postgres@npm:4.1.1":
+  version: 4.1.1
+  resolution: "postgres@npm:4.1.1"
+  checksum: 10/4b5ae1ce6face9d5f2d97edabd271333ee35e6c93a7ba1176dfa0dd3ede1969f73505429f996ae29f4b7bd4449271658af4b1cf7ab69d102aa35f5218955cfa8
   languageName: node
   linkType: hard
 
@@ -4970,7 +4970,7 @@ __metadata:
     pg: "npm:8.23.1"
     pino: "npm:10.4.0"
     pino-pretty: "npm:13.2.0"
-    postgres: "npm:3.4.9"
+    postgres: "npm:4.1.1"
     redis: "npm:6.3.1"
     reflect-metadata: "npm:0.2.2"
     rxjs: "npm:7.8.2"
