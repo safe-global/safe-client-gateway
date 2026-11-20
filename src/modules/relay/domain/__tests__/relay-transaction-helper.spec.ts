@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
-import { getAddress, slice, zeroAddress } from 'viem';
+import { getAddress, size, slice, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
@@ -695,6 +695,60 @@ describe('RelayTransactionHelper', () => {
 
         expect(mockSafeRepository.getSafesByModule).not.toHaveBeenCalled();
       });
+
+      it('should return null for a MultiSend batch cut inside its second transaction header', async () => {
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
+        const version = faker.helpers.arrayElement(
+          MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+        );
+        const multiSend = faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        );
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const transaction = {
+          to: safeAddress,
+          value: BigInt(0),
+          data: execTransactionEncoder()
+            .with('data', addOwnerWithThresholdEncoder().encode())
+            .encode(),
+          operation: 0,
+        };
+        const first = multiSendTransactionsEncoder([transaction]);
+        const transactions = multiSendTransactionsEncoder([
+          transaction,
+          transaction,
+        ]);
+        const data = encoder()
+          .with('to', multiSend)
+          .with(
+            'data',
+            multiSendEncoder()
+              .with(
+                'transactions',
+                slice(
+                  transactions,
+                  0,
+                  size(first) + faker.number.int({ min: 1, max: 84 }),
+                ),
+              )
+              .encode(),
+          )
+          .encode();
+        mockSafeRepository.getSafesByModule.mockResolvedValue({
+          safes: [safeAddress],
+        });
+
+        await expect(
+          helper.getSafeBeingRecovered({
+            version,
+            chainId,
+            to: getAddress(faker.finance.ethereumAddress()),
+            data,
+          }),
+        ).resolves.toBeNull();
+
+        expect(mockSafeRepository.getSafesByModule).not.toHaveBeenCalled();
+      });
     });
 
     it('should return null for non-DelayModifier calldata', async () => {
@@ -981,6 +1035,34 @@ describe('RelayTransactionHelper', () => {
         .with(
           'transactions',
           slice(transactions, 0, faker.number.int({ min: 1, max: 84 })),
+        )
+        .encode();
+
+      expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
+        InvalidMultiSendError,
+      );
+    });
+
+    it('should throw InvalidMultiSendError for a batch cut inside its second transaction header', () => {
+      const transaction = {
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: BigInt(0),
+        data: execTransactionEncoder().encode(),
+        operation: 0,
+      };
+      const first = multiSendTransactionsEncoder([transaction]);
+      const transactions = multiSendTransactionsEncoder([
+        transaction,
+        transaction,
+      ]);
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          slice(
+            transactions,
+            0,
+            size(first) + faker.number.int({ min: 1, max: 84 }),
+          ),
         )
         .encode();
 

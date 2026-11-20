@@ -51,6 +51,7 @@ const mockRelayFeeRelayer = {
 
 const mockLoggingService = {
   warn: vi.fn(),
+  debug: vi.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockSafeRepository = {

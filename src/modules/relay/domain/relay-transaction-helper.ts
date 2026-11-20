@@ -2,10 +2,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import {
+  concat,
   encodeAbiParameters,
+  encodePacked,
   getAddress,
   keccak256,
   parseAbiParameters,
+  size,
   zeroAddress,
 } from 'viem';
 import { LogType } from '#/domain/common/entities/log-type.entity';
@@ -156,7 +159,8 @@ export class RelayTransactionHelper {
   ): ReturnType<Erc20Decoder['decodeFunctionData']> | null {
     try {
       return this.erc20Decoder.decodeFunctionData({ data });
-    } catch {
+    } catch (error) {
+      this.loggingService.debug(`ERC-20 call does not decode: ${error}`);
       return null;
     }
   }
@@ -190,11 +194,9 @@ export class RelayTransactionHelper {
 
   getSafeAddressFromMultiSend(data: Hex): Address {
     // Decode transactions within MultiSend
-    const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
+    const transactions = this.decodeCompleteMultiSend(data);
 
-    // The decoder returns no transactions for an empty batch or one whose
-    // first transaction does not decode
-    if (transactions.length === 0) {
+    if (!transactions || transactions.length === 0) {
       throw new InvalidMultiSendError();
     }
 
@@ -334,7 +336,8 @@ export class RelayTransactionHelper {
       }
 
       return decodedSafe.args[0];
-    } catch {
+    } catch (error) {
+      this.loggingService.debug(`Safe creation does not decode: ${error}`);
       return null;
     }
   }
@@ -397,7 +400,7 @@ export class RelayTransactionHelper {
       },
     );
 
-    // A batch that decodes to no transactions recovers nothing
+    // An empty or partly decodable batch recovers nothing
     if (transactions.length === 0 || !isEveryTransactionOwnerManagement) {
       return null;
     }
@@ -440,10 +443,44 @@ export class RelayTransactionHelper {
       this.isOfficialMultiSendDeployment(args) &&
       this.multiSendDecoder.helpers.isMultiSend(args.data)
     ) {
-      return this.multiSendDecoder.mapMultiSendTransactions(args.data);
+      return this.decodeCompleteMultiSend(args.data) ?? [];
     }
 
     return [{ to: args.address, data: args.data }];
+  }
+
+  /**
+   * `null` unless every byte of the batch decodes: the shared decoder returns
+   * the transactions before the first one that fails.
+   */
+  private decodeCompleteMultiSend(
+    data: Hex,
+  ): ReturnType<MultiSendDecoder['mapMultiSendTransactions']> | null {
+    const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
+    try {
+      const [batch] = this.multiSendDecoder.decodeFunctionData({ data }).args;
+      const reencoded = concat(
+        transactions.map((transaction) =>
+          encodePacked(
+            ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
+            [
+              transaction.operation,
+              transaction.to,
+              transaction.value,
+              BigInt(size(transaction.data)),
+              transaction.data,
+            ],
+          ),
+        ),
+      );
+      if (reencoded.toLowerCase() === batch.toLowerCase()) {
+        return transactions;
+      }
+      this.loggingService.debug('MultiSend batch decodes only in part');
+    } catch (error) {
+      this.loggingService.debug(`MultiSend batch does not decode: ${error}`);
+    }
+    return null;
   }
 
   /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */

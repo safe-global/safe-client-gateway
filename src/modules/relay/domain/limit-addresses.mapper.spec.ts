@@ -86,6 +86,7 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
 
 const mockLoggingService = {
   warn: vi.fn(),
+  debug: vi.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockSafeRepository = vi.mocked({
