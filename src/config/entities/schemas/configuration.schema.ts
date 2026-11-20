@@ -270,6 +270,7 @@ export const RootConfigurationSchema = z
       .int()
       .min(0)
       .optional(),
+    OWNERS_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
     FINGERPRINT_ENCRYPTION_KEY: z.string(),
     INFURA_API_KEY: z.string(),
     JWT_ISSUER: z.string(),

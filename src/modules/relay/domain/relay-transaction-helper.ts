@@ -2,10 +2,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import {
+  BaseError,
+  concatHex,
   encodeAbiParameters,
+  encodePacked,
   getAddress,
   keccak256,
   parseAbiParameters,
+  size,
   zeroAddress,
 } from 'viem';
 import { LogType } from '#/domain/common/entities/log-type.entity';
@@ -127,12 +131,9 @@ export class RelayTransactionHelper {
   }
 
   private isValidErc20Transfer(args: { to: Address; data: Hex }): boolean {
-    // Can throw but called after this.erc20Decoder.helpers.isTransfer
-    const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
-      data: args.data,
-    });
+    const erc20DecodedData = this.decodeErc20(args.data);
 
-    if (erc20DecodedData.functionName !== 'transfer') {
+    if (erc20DecodedData?.functionName !== 'transfer') {
       return false;
     }
 
@@ -142,18 +143,27 @@ export class RelayTransactionHelper {
   }
 
   private isValidErc20TransferFrom(args: { to: Address; data: Hex }): boolean {
-    // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
-    const erc20DecodedData = this.erc20Decoder.decodeFunctionData({
-      data: args.data,
-    });
+    const erc20DecodedData = this.decodeErc20(args.data);
 
-    if (erc20DecodedData.functionName !== 'transferFrom') {
+    if (erc20DecodedData?.functionName !== 'transferFrom') {
       return false;
     }
 
     const [sender, recipient] = erc20DecodedData.args;
     // to 'self' (the Safe) or from sender to sender as recipient is not allowed
     return sender !== recipient && recipient !== args.to;
+  }
+
+  /** `null` when the selector matches but the arguments do not decode. */
+  private decodeErc20(
+    data: Hex,
+  ): ReturnType<Erc20Decoder['decodeFunctionData']> | null {
+    try {
+      return this.erc20Decoder.decodeFunctionData({ data });
+    } catch (error) {
+      this.logDecodeFailure('ERC-20 call does not decode', error);
+      return null;
+    }
   }
 
   async isOfficialMastercopy(args: {
@@ -185,7 +195,11 @@ export class RelayTransactionHelper {
 
   getSafeAddressFromMultiSend(data: Hex): Address {
     // Decode transactions within MultiSend
-    const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
+    const transactions = this.decodeCompleteMultiSend(data);
+
+    if (!transactions || transactions.length === 0) {
+      throw new InvalidMultiSendError();
+    }
 
     // Every transaction is a valid execTransaction
     const isEveryValid = transactions.every((transaction) => {
@@ -302,27 +316,31 @@ export class RelayTransactionHelper {
     );
   }
 
-  getOwnersFromCreateProxyWithNonce(data: Hex): ReadonlyArray<Address> {
-    const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
-      data,
-    });
+  /**
+   * Returns `null` when the calldata or its initializer does not decode to a
+   * `createProxyWithNonce` with a `setup` initializer.
+   */
+  getOwnersFromCreateProxyWithNonce(data: Hex): ReadonlyArray<Address> | null {
+    try {
+      const decodedProxyFactory = this.proxyFactoryDecoder.decodeFunctionData({
+        data,
+      });
+      if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
+        return null;
+      }
 
-    if (decodedProxyFactory.functionName !== 'createProxyWithNonce') {
-      // Should never happen but check is needed to satisfy TypeScript
-      throw Error('Not a createProxyWithNonce call');
+      const decodedSafe = this.safeDecoder.decodeFunctionData({
+        data: decodedProxyFactory.args[1],
+      });
+      if (decodedSafe.functionName !== 'setup') {
+        return null;
+      }
+
+      return decodedSafe.args[0];
+    } catch (error) {
+      this.logDecodeFailure('Safe creation does not decode', error);
+      return null;
     }
-
-    const initializer = decodedProxyFactory.args[1];
-    const decodedSafe = this.safeDecoder.decodeFunctionData({
-      data: initializer,
-    });
-
-    if (decodedSafe.functionName !== 'setup') {
-      // No custom error thrown, as caller subsequently throws InvalidTransferError
-      throw Error('Not a setup call');
-    }
-
-    return decodedSafe.args[0];
   }
 
   /**
@@ -383,7 +401,8 @@ export class RelayTransactionHelper {
       },
     );
 
-    if (!isEveryTransactionOwnerManagement) {
+    // An empty or partly decodable batch recovers nothing
+    if (transactions.length === 0 || !isEveryTransactionOwnerManagement) {
       return null;
     }
 
@@ -425,10 +444,53 @@ export class RelayTransactionHelper {
       this.isOfficialMultiSendDeployment(args) &&
       this.multiSendDecoder.helpers.isMultiSend(args.data)
     ) {
-      return this.multiSendDecoder.mapMultiSendTransactions(args.data);
+      return this.decodeCompleteMultiSend(args.data) ?? [];
     }
 
     return [{ to: args.address, data: args.data }];
+  }
+
+  /**
+   * `null` unless every byte of the batch decodes: the shared decoder returns
+   * the transactions before the first one that fails.
+   */
+  private decodeCompleteMultiSend(
+    data: Hex,
+  ): ReturnType<MultiSendDecoder['mapMultiSendTransactions']> | null {
+    const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
+    try {
+      const [batch] = this.multiSendDecoder.decodeFunctionData({ data }).args;
+      const reencoded = concatHex(
+        transactions.map((transaction) =>
+          encodePacked(
+            ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
+            [
+              transaction.operation,
+              transaction.to,
+              transaction.value,
+              BigInt(size(transaction.data)),
+              transaction.data,
+            ],
+          ),
+        ),
+      );
+      if (reencoded.toLowerCase() === batch.toLowerCase()) {
+        return transactions;
+      }
+      this.logDecodeFailure('MultiSend batch decodes only in part');
+    } catch (error) {
+      this.logDecodeFailure('MultiSend batch does not decode', error);
+    }
+    return null;
+  }
+
+  /** Logs the viem error class only: its message can include the calldata. */
+  private logDecodeFailure(message: string, error?: unknown): void {
+    this.loggingService.debug({
+      type: LogType.TxRelayEligibility,
+      message,
+      error: error instanceof BaseError ? error.name : undefined,
+    });
   }
 
   /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */
@@ -437,14 +499,22 @@ export class RelayTransactionHelper {
     return decoded !== null && decoded.gasPrice > BigInt(0);
   }
 
-  /** Whether the calldata, or any transaction inside its MultiSend, is a refunding execTransaction. */
+  /**
+   * Whether the calldata, or any transaction inside its MultiSend, is a
+   * refunding execTransaction. Throws for a batch that is empty or does not
+   * decode in full.
+   */
   hasRefundingTransaction(data: Hex): boolean {
     if (!this.isMultiSend(data)) {
       return this.isRefundingExecTransaction(data);
     }
-    return this.multiSendDecoder
-      .mapMultiSendTransactions(data)
-      .some((transaction) => this.isRefundingExecTransaction(transaction.data));
+    const transactions = this.decodeCompleteMultiSend(data);
+    if (!transactions || transactions.length === 0) {
+      throw new InvalidMultiSendError();
+    }
+    return transactions.some((transaction) =>
+      this.isRefundingExecTransaction(transaction.data),
+    );
   }
 
   /**

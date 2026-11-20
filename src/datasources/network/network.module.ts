@@ -75,11 +75,13 @@ function createRequestFunction(defaultTimeout: number) {
   ): Promise<NetworkResponse<T>> => {
     let urlObject: URL | null = null;
     let response: Response | null = null;
+    let requestStartedAtMs: number;
 
     try {
       urlObject = new URL(url);
       const timeout = customTimeout ?? defaultTimeout;
 
+      requestStartedAtMs = Date.now();
       response = await fetch(url, {
         ...options,
         signal: AbortSignal.timeout(timeout),
@@ -97,11 +99,17 @@ function createRequestFunction(defaultTimeout: number) {
     ) as Raw<T>;
 
     if (!response.ok) {
-      throw new NetworkResponseError(urlObject, response, data);
+      throw new NetworkResponseError(
+        urlObject,
+        response,
+        data,
+        requestStartedAtMs,
+      );
     }
 
     return {
       status: response.status,
+      requestStartedAtMs,
       data,
     };
   };

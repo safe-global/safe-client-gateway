@@ -20,6 +20,7 @@ import { NetworkResponseError } from '#/datasources/network/entities/network.err
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getMalformedSignature } from '#/domain/common/utils/__tests__/signatures.builder';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
@@ -1436,6 +1437,53 @@ describe('Messages controller', () => {
         },
       );
 
+      it('should return 422 for a malformed signature', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with(
+                'signature',
+                getMalformedSignature('Insufficient length for dynamic part'),
+              )
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            message: 'Invalid signature',
+            statusCode: 422,
+          });
+
+        expect(networkService.post).not.toHaveBeenCalled();
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
+
       it('should disable eth_sign', async () => {
         const defaultConfiguration = configuration();
         const testConfiguration = (): ReturnType<typeof configuration> => {
@@ -1929,6 +1977,60 @@ describe('Messages controller', () => {
           expect(loggingService.error).not.toHaveBeenCalled();
         },
       );
+
+      it('should return 422 for a malformed signature', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}/`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with(
+                'signature',
+                getMalformedSignature('Insufficient length for dynamic part'),
+              )
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            message: 'Invalid signature',
+            statusCode: 422,
+          });
+
+        expect(networkService.post).not.toHaveBeenCalled();
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
 
       it('should disable eth_sign', async () => {
         const defaultConfiguration = configuration();

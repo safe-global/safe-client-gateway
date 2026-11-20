@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import {
+  authPayloadIdBuilder,
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -28,10 +29,13 @@ describe('AuthPayload entity', () => {
       });
 
       it('should return false if `chainId` does not match `AuthPayload[chain_id]`', () => {
-        const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-        const chainId = faker.string.numeric({
-          exclude: [authPayloadDto.chain_id],
-        });
+        const [payloadChainId, chainId] = faker.helpers.uniqueArray(
+          authPayloadIdBuilder,
+          2,
+        );
+        const authPayloadDto = siweAuthPayloadDtoBuilder()
+          .with('chain_id', payloadChainId)
+          .build();
         const authPayload = new AuthPayload(authPayloadDto);
 
         const result = authPayload.isForChain(chainId);
@@ -391,6 +395,16 @@ describe('AuthPayload entity', () => {
 
   describe('hasFreshMfa', () => {
     const nowSeconds = (): number => Math.floor(Date.now() / 1_000);
+
+    // The test and `hasFreshMfa` must read the same second.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(faker.date.recent());
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
     const oidcPayload = (mfaVerifiedAt: number | undefined): AuthPayload =>
       new AuthPayload(

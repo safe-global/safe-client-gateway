@@ -4,7 +4,10 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import {
+  chainBuilder,
+  otherChainIdBuilder,
+} from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { EarnRepository } from '#/modules/earn/domain/earn.repository';
 import { defiMorphoExtraRewardBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
 import { defiVaultStakeBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
@@ -205,10 +208,7 @@ describe('VaultTransactionMapper', () => {
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'active')
-        .with(
-          'chain_id',
-          Number(faker.string.numeric({ exclude: [chain.chainId] })),
-        )
+        .with('chain_id', Number(otherChainIdBuilder(chain.chainId)))
         .build();
       mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
@@ -383,10 +383,7 @@ describe('VaultTransactionMapper', () => {
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'active')
-        .with(
-          'chain_id',
-          Number(faker.string.numeric({ exclude: [chain.chainId] })),
-        )
+        .with('chain_id', Number(otherChainIdBuilder(chain.chainId)))
         .build();
 
       mockEarnRepository.getDeployment.mockResolvedValue(deployment);

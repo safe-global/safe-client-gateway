@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 export type NetworkError = NetworkResponseError | NetworkRequestError;
 
 /**
@@ -11,6 +13,7 @@ export class NetworkResponseError extends Error {
     readonly url: URL,
     readonly response: Response,
     readonly data?: unknown,
+    readonly requestStartedAtMs?: number,
   ) {
     super();
   }

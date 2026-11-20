@@ -7,7 +7,51 @@ import {
   type PrivateKeyAccount,
 } from 'viem';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
-import { DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH } from '#/domain/common/utils/signatures';
+import {
+  DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
+  R_OR_S_HEX_LENGTH,
+} from '#/domain/common/utils/signatures';
+
+export const MALFORMED_SIGNATURE_ERRORS = [
+  'Insufficient length for static part',
+  'Insufficient length for dynamic part length field',
+  'Insufficient length for dynamic part',
+  'Could not recover address',
+] as const;
+
+/**
+ * Builds a signature that passes SignatureSchema but makes SafeSignature
+ * throw the given error when parsing it or recovering its owner
+ */
+export function getMalformedSignature(
+  error: (typeof MALFORMED_SIGNATURE_ERRORS)[number],
+): Hex {
+  const randomHex = (length: number): string => {
+    return faker.string.hexadecimal({ length, casing: 'lower', prefix: '' });
+  };
+  const s = randomHex(R_OR_S_HEX_LENGTH);
+  const eoaV = faker.helpers.arrayElement(['1b', '1c']);
+  switch (error) {
+    case 'Insufficient length for static part': {
+      const trailingBytes = faker.number.int({ min: 1, max: 64 });
+      return `0x${randomHex(R_OR_S_HEX_LENGTH)}${s}${eoaV}${randomHex(trailingBytes * 2)}`;
+    }
+    case 'Insufficient length for dynamic part length field': {
+      return `0x${randomHex(R_OR_S_HEX_LENGTH)}${s}00`;
+    }
+    case 'Insufficient length for dynamic part': {
+      const byteLength = faker.number.int({ min: 2, max: 10 });
+      const lengthField = byteLength
+        .toString(16)
+        .padStart(DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH, '0');
+      return `0x${randomHex(R_OR_S_HEX_LENGTH)}${s}00${lengthField}${randomHex((byteLength - 1) * 2)}`;
+    }
+    case 'Could not recover address': {
+      // r above the secp256k1 curve order cannot be recovered
+      return `0x${'f'.repeat(R_OR_S_HEX_LENGTH)}${s}${eoaV}`;
+    }
+  }
+}
 
 export async function getSignature(args: {
   signer: PrivateKeyAccount;

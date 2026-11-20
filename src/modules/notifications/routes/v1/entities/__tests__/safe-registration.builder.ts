@@ -5,7 +5,7 @@ import { getAddress } from 'viem';
 import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
 import { safeRegistrationSignatureBuilder } from '#/modules/notifications/routes/v1/entities/__tests__/create-signature.builder';
-import type { SafeRegistration } from '#/modules/notifications/routes/v1/entities/safe-registration.entity';
+import type { SafeRegistration } from '#/modules/notifications/routes/v1/entities/safe-registration.dto.entity';
 
 export async function safeRegistrationBuilder(args: {
   signaturePrefix: string;

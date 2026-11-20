@@ -26,6 +26,7 @@ import { NetworkService } from '#/datasources/network/network.service.interface'
 import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
 import { TxAuthNetworkModule } from '#/datasources/network/tx-auth.network.module';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getMalformedSignature } from '#/domain/common/utils/__tests__/signatures.builder';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 import {
@@ -597,6 +598,60 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         expect(loggingService.error).not.toHaveBeenCalled();
       },
     );
+
+    it('should return 422 for a malformed signature', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('isExecuted', false)
+        .buildWithConfirmations({
+          signers: [signer],
+          chainId: chain.chainId,
+          safe,
+        });
+      const addConfirmationDto = addConfirmationDtoBuilder()
+        .with(
+          'signature',
+          getMalformedSignature('Insufficient length for dynamic part'),
+        )
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
+        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}/`;
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(transaction)),
+              status: 200,
+            });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
+        )
+        .send(addConfirmationDto)
+        .expect(422)
+        .expect({
+          message: 'Invalid signature',
+          statusCode: 422,
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+      expect(loggingService.error).not.toHaveBeenCalled();
+    });
 
     it('should throw if eth_sign is disabled', async () => {
       const defaultConfiguration = configuration();

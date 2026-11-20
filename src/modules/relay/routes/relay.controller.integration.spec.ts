@@ -4,7 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress, type Hex } from 'viem';
+import { getAddress, type Hex, size, slice } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
@@ -3130,6 +3130,58 @@ describe('Relay controller', () => {
     });
   });
 
+  describe('Undecodable calldata', () => {
+    it('should return 422 creating an official Safe with an undecodable initializer', async () => {
+      const chainId = faker.helpers.arrayElement(
+        supportedChainIds.filter((candidate) =>
+          SAFE_VERSIONS[candidate].some((version) =>
+            PROXY_FACTORY_VERSIONS[candidate].includes(version),
+          ),
+        ),
+      );
+      const version = faker.helpers.arrayElement(
+        SAFE_VERSIONS[chainId].filter((candidate) =>
+          PROXY_FACTORY_VERSIONS[chainId].includes(candidate),
+        ),
+      );
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
+      const data = createProxyWithNonceEncoder()
+        .with(
+          'singleton',
+          faker.helpers.arrayElement(
+            getSafeSingletonDeployments({ version, chainId }),
+          ),
+        )
+        .with('initializer', '0x00000000')
+        .encode();
+      const to = faker.helpers.arrayElement(
+        getProxyFactoryDeployments({ version, chainId }),
+      );
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(422)
+        .expect({
+          message:
+            'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+          statusCode: 422,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Gas payment options', () => {
     // Version supported by all contracts
     const version = '1.3.0';
@@ -3375,6 +3427,93 @@ describe('Relay controller', () => {
       expect(networkService.post).not.toHaveBeenCalledWith(
         expect.objectContaining({ url: `${relayUrl}/safe-transactions` }),
       );
+    });
+
+    it('should return 422 for a MultiSend cut after a refunding execTransaction, before choosing a gas payment option', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
+      const to = getAddress(
+        faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        ),
+      );
+      const transaction = {
+        operation: 0,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: BigInt(0),
+        data: execTransactionEncoder()
+          .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+          .encode(),
+      };
+      const first = multiSendTransactionsEncoder([transaction]);
+      // Cut inside the second transaction's header
+      const transactions = slice(
+        multiSendTransactionsEncoder([transaction, transaction]),
+        0,
+        size(first) + faker.number.int({ min: 1, max: 84 }),
+      );
+      const data = multiSendEncoder()
+        .with('transactions', transactions)
+        .encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(422)
+        .expect({
+          message:
+            'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+          statusCode: 422,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 422 for an empty MultiSend batch on a PAY_FROM_SAFE-only chain', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with(
+          'relayer',
+          relayerBuilder()
+            .with('type', RelayerType.RELAY_FEE)
+            .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+            .build(),
+        )
+        .build();
+      const to = getAddress(
+        faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        ),
+      );
+      const data = multiSendEncoder().with('transactions', '0x').encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(422)
+        .expect({
+          message:
+            'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+          statusCode: 422,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
     });
 
     describe('with no free option listed', () => {

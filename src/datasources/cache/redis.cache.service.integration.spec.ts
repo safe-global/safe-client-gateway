@@ -32,8 +32,11 @@ describe('RedisCacheService', () => {
   const keyPrefix = '';
   let redisClient: RedisClientType;
 
+  // Not 0: `flushDb` would wipe other specs' keys.
+  const redisDatabase = 15;
+
   beforeAll(async () => {
-    redisClient = await redisClientFactory();
+    redisClient = await redisClientFactory({ database: redisDatabase });
   });
 
   afterAll(async () => {
@@ -43,7 +46,7 @@ describe('RedisCacheService', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     await redisClient.flushDb();
-    defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
+    defaultExpirationTimeInSeconds = faker.number.int({ min: 60, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });
     maxTtlDeviated =
       MAX_TTL - (MAX_TTL * defaultExpirationDeviatePercent) / 100;
@@ -192,6 +195,80 @@ describe('RedisCacheService', () => {
     expect(secondResult).toBe(0);
   });
 
+  it('a queued invalidation cannot overwrite a newer marker when it resumes', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
+    );
+    const olderTime = faker.date.recent().getTime();
+    const newerTime = olderTime + faker.number.int({ min: 1, max: 1000 });
+    const markerKey = `invalidationTimeMs:${cacheDir.key}`;
+    const resume = Promise.withResolvers<void>();
+    const pipeline = redisClient.multi();
+    const execute = pipeline.execAsPipeline.bind(pipeline);
+    vi.spyOn(pipeline, 'execAsPipeline').mockImplementationOnce(async () => {
+      await resume.promise;
+      return execute();
+    });
+    const multi = vi.spyOn(redisClient, 'multi').mockReturnValueOnce(pipeline);
+    const now = vi.spyOn(Date, 'now').mockReturnValue(olderTime);
+    const queuedInvalidation = redisCacheService.deleteByKey(cacheDir.key);
+
+    let deadline: number;
+    try {
+      now.mockReturnValue(newerTime);
+      await redisCacheService.deleteByKey(cacheDir.key);
+      expect(await redisCacheService.getInvalidationTimeMs(cacheDir.key)).toBe(
+        newerTime,
+      );
+      await redisClient.expire(
+        markerKey,
+        Math.floor(defaultExpirationTimeInSeconds / 2),
+      );
+      deadline = await redisClient.pExpireTime(markerKey);
+      await redisClient.hSet(cacheDir.key, cacheDir.field, fakeJson());
+    } finally {
+      resume.resolve();
+      try {
+        await queuedInvalidation;
+      } finally {
+        now.mockRestore();
+        multi.mockRestore();
+      }
+    }
+
+    expect(await redisCacheService.getInvalidationTimeMs(cacheDir.key)).toBe(
+      newerTime,
+    );
+    expect(await redisClient.exists(cacheDir.key)).toBe(0);
+    expect(await redisClient.pExpireTime(markerKey)).toBe(deadline);
+  });
+
+  it('a newer invalidation renews the marker for the full configured TTL', async () => {
+    const key = faker.string.alphanumeric();
+    const invalidationKey = `invalidationTimeMs:${key}`;
+    await redisClient.hSet(
+      invalidationKey,
+      '',
+      faker.date.recent().getTime().toString(),
+    );
+    const shorterTtlSeconds = Math.floor(defaultExpirationTimeInSeconds / 2);
+    await redisClient.expire(invalidationKey, shorterTtlSeconds);
+    const startTime = Date.now();
+
+    await redisCacheService.deleteByKey(key);
+
+    expect(
+      await redisCacheService.getInvalidationTimeMs(key),
+    ).toBeGreaterThanOrEqual(startTime);
+    const ttl = await redisClient.pTTL(invalidationKey);
+    const fullTtlMs = defaultExpirationTimeInSeconds * 1000;
+    expect(ttl).toBeGreaterThanOrEqual(
+      fullTtlMs - (Date.now() - startTime) - 1,
+    );
+    expect(ttl).toBeLessThanOrEqual(fullTtlMs);
+  });
+
   it('Setting a field rethrows the Redis error and unlinks the key when the write is refused', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
@@ -230,13 +307,79 @@ describe('RedisCacheService', () => {
     expect(await redisClient.pTTL(invalidationKey)).toBeGreaterThan(0);
   });
 
+  it('fills a cache entry and sets its expiry when no invalidation marker exists', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
+    );
+    const value = fakeJson();
+    const start = Date.now();
+
+    expect(
+      await redisCacheService.getInvalidationTimeMs(cacheDir.key),
+    ).toBeNull();
+    expect(
+      await redisCacheService.hSetIfFresh(
+        cacheDir,
+        value,
+        defaultExpirationTimeInSeconds,
+        start,
+      ),
+    ).toBe(true);
+    expect(await redisCacheService.hGet(cacheDir)).toBe(value);
+    expect(await redisClient.ttl(cacheDir.key)).toBeGreaterThan(0);
+  });
+
+  it('conditionally fills a cache entry and preserves its existing expiry', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.alphanumeric(),
+    );
+    const ttl = defaultExpirationTimeInSeconds;
+    const start = Date.now();
+    const value = fakeJson();
+
+    await redisCacheService.deleteByKey(cacheDir.key);
+    expect(
+      await redisCacheService.hSetIfFresh(cacheDir, value, ttl, start),
+    ).toBe(false);
+    expect(await redisCacheService.hGet(cacheDir)).toBeNull();
+
+    const marker = await redisCacheService.getInvalidationTimeMs(cacheDir.key);
+    expect(marker).not.toBeNull();
+    expect(
+      await redisCacheService.hSetIfFresh(cacheDir, value, ttl, Number(marker)),
+    ).toBe(false);
+    expect(await redisCacheService.hGet(cacheDir)).toBeNull();
+
+    const freshStart = Number(marker) + 1;
+    expect(
+      await redisCacheService.hSetIfFresh(cacheDir, value, ttl, freshStart),
+    ).toBe(true);
+    expect(await redisCacheService.hGet(cacheDir)).toBe(value);
+
+    const deadline = await redisClient.pExpireTime(cacheDir.key);
+    expect(deadline).toBeGreaterThan(start);
+    const replacement = fakeJson();
+    expect(
+      await redisCacheService.hSetIfFresh(
+        cacheDir,
+        replacement,
+        ttl,
+        freshStart,
+      ),
+    ).toBe(true);
+    expect(await redisCacheService.hGet(cacheDir)).toBe(replacement);
+    expect(await redisClient.pExpireTime(cacheDir.key)).toBe(deadline);
+  });
+
   it('When Module gets destroyed, redis connection is closed', async () => {
     await redisCacheService.onModuleDestroy();
 
     // Connection is closed, this is expected to throw an error
     await expect(redisCacheService.ping()).rejects.toThrow();
     // Connection is reopened after this test execution
-    redisClient = await redisClientFactory();
+    redisClient = await redisClientFactory({ database: redisDatabase });
   });
 
   it('creates a missing key and increments its value', async () => {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ConsumeMessage } from 'amqplib';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -25,11 +26,14 @@ import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tes
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
 import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
 import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-config-updated.builder';
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
+import { SafeConfigOwnerChanges } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { QueuesRepository } from '#/modules/queues/domain/queues-repository';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository';
 import type { StakingRepository } from '#/modules/staking/domain/staking.repository';
@@ -83,6 +87,8 @@ const mockSafeRepository = vi.mocked({
   clearSafe: vi.fn(),
   clearIsSafe: vi.fn(),
   clearSpaceTransactionQueues: vi.fn(),
+  clearSafesByOwner: vi.fn(),
+  getSafe: vi.fn(),
 } as MockedObject<SafeRepository>);
 
 const mockStakingRepository = vi.mocked({
@@ -208,6 +214,7 @@ describe('HooksRepository (Unit)', () => {
 
     it('should clear the Safe on SAFE_CREATED so a Space queue loads it', async () => {
       const event = safeCreatedEventBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
 
       await buildEventCacheHelper().onEventClearCache(event);
 
@@ -584,6 +591,100 @@ describe('HooksRepository (Unit)', () => {
       expect(
         mockCounterfactualSafesRepository.markAsDeployed,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Safes of an owner', () => {
+    it.each(SafeConfigOwnerChanges)(
+      'should clear the Safes of the owner on a %s change',
+      async (change) => {
+        const event = safeConfigUpdatedEventBuilder()
+          .with('change', change)
+          .build();
+
+        await buildEventCacheHelper().onEventClearCache(event);
+
+        expect(
+          mockSafeRepository.clearSafesByOwner,
+        ).toHaveBeenCalledExactlyOnceWith({
+          chainId: event.chainId,
+          ownerAddress: event.data.owner,
+        });
+      },
+    );
+
+    it.each([
+      'CHANGED_THRESHOLD',
+      'ENABLED_MODULE',
+      'DISABLED_MODULE',
+      'CHANGED_GUARD',
+      'CHANGED_MODULE_GUARD',
+      'CHANGED_FALLBACK_HANDLER',
+      'CHANGED_MASTER_COPY',
+    ])(
+      'should not clear the Safes of any owner on a %s change',
+      async (change) => {
+        const event = safeConfigUpdatedEventBuilder()
+          .with('change', change)
+          .build();
+
+        await buildEventCacheHelper().onEventClearCache(event);
+
+        expect(mockSafeRepository.clearSafesByOwner).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should clear the Safes of every owner of a created Safe after clearing the Safe', async () => {
+      const event = safeCreatedEventBuilder().build();
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          faker.helpers.multiple(
+            () => getAddress(faker.finance.ethereumAddress()),
+            { count: { min: 1, max: 5 } },
+          ),
+        )
+        .build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+      await buildEventCacheHelper().onEventClearCache(event);
+
+      expect(mockSafeRepository.clearSafe).toHaveBeenCalledBefore(
+        mockSafeRepository.getSafe,
+      );
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledExactlyOnceWith(event);
+      expect(mockSafeRepository.clearSafesByOwner).toHaveBeenCalledTimes(
+        safe.owners.length,
+      );
+      for (const ownerAddress of safe.owners) {
+        expect(mockSafeRepository.clearSafesByOwner).toHaveBeenCalledWith({
+          chainId: event.chainId,
+          ownerAddress,
+        });
+      }
+    });
+
+    it('should log, clear the Safe again and clear the rest if reading the created Safe fails', async () => {
+      const event = safeCreatedEventBuilder().build();
+      const error = new Error(faker.lorem.sentence());
+      mockSafeRepository.getSafe.mockRejectedValue(error);
+
+      await buildEventCacheHelper().onEventClearCache(event);
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith({
+        message: 'Failed to clear the Safes of the owners of a created Safe',
+        chainId: event.chainId,
+        address: event.address,
+        error: error.message,
+      });
+      expect(mockSafeRepository.clearSafe).toHaveBeenCalledTimes(2);
+      expect(mockSafeRepository.clearSafe).toHaveBeenNthCalledWith(2, event);
+      expect(mockSafeRepository.clearSafesByOwner).not.toHaveBeenCalled();
+      expect(mockSafeRepository.clearIsSafe).toHaveBeenCalledWith(event);
+      expect(mockZerionCache.invalidate).toHaveBeenCalledWith(
+        event.address,
+        event.type,
+      );
     });
   });
 

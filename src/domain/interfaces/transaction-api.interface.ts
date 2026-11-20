@@ -207,13 +207,13 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<Token>>>;
 
-  getSafesByOwner(ownerAddress: Address): Promise<Raw<SafeList>>;
-
   getSafesByOwnerV2(args: {
     ownerAddress: Address;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<SafeV2>>>;
+
+  clearSafesByOwner(ownerAddress: Address): Promise<void>;
 
   getEstimation(args: {
     address: Address;
