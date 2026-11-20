@@ -22,6 +22,7 @@ import {
   type AuthPayloadDto,
 } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthService } from '#/modules/auth/routes/auth.service';
+import { MIN_TOKEN_LIFETIME_SECONDS } from '#/modules/auth/utils/token-expiration.utils';
 import { siweMessageBuilder } from '#/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { ISiweRepository } from '#/modules/siwe/domain/siwe.repository.interface';
 import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
@@ -277,7 +278,7 @@ describe('AuthService', () => {
       siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
 
       await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
-        new UnauthorizedException('Message has expired'),
+        new UnauthorizedException('Invalid message'),
       );
 
       expect(
@@ -286,37 +287,77 @@ describe('AuthService', () => {
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException when expirationTime is less than two whole seconds ahead', async () => {
-      const startOfSecond = Math.floor(now.getTime() / 1_000) * 1_000;
-      const siweMessage = siweMessageBuilder()
-        .with('expirationTime', new Date(startOfSecond + 1_999))
-        .build();
+    describe('minimum token lifetime', () => {
+      // A sub-second clock means the floored exp falls short of the minimum by a fraction
+      const setSubSecondNow = (): void => {
+        const startOfSecond = Math.floor(now.getTime() / 1_000) * 1_000;
+        now = new Date(startOfSecond + faker.number.int({ min: 1, max: 999 }));
+        vi.setSystemTime(now);
+      };
+      const getEarliestAcceptedExpiry = (): number => {
+        const minimumInMs = MIN_TOKEN_LIFETIME_SECONDS * 1_000;
+        return Math.ceil((now.getTime() + minimumInMs) / 1_000) * 1_000;
+      };
 
-      siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+      it('should throw UnauthorizedException when expirationTime leaves less than the minimum', async () => {
+        setSubSecondNow();
+        const siweMessage = siweMessageBuilder()
+          .with('expirationTime', new Date(getEarliestAcceptedExpiry() - 1))
+          .build();
 
-      await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
-        new UnauthorizedException('Message has expired'),
-      );
+        siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(
+          siweMessage,
+        );
 
-      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+        await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
+          new UnauthorizedException('Invalid message'),
+        );
+
+        expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+      });
+
+      it('should sign a token when expirationTime leaves the minimum', async () => {
+        setSubSecondNow();
+        const expirationTime = new Date(getEarliestAcceptedExpiry());
+        const siweMessage = siweMessageBuilder()
+          .with('expirationTime', expirationTime)
+          .build();
+        const expectedToken = faker.string.alphanumeric(32);
+
+        siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(
+          siweMessage,
+        );
+        authRepositoryMock.signToken.mockReturnValue(expectedToken);
+
+        await expect(target.authenticateWithSiwe(siweArgs)).resolves.toEqual({
+          accessToken: expectedToken,
+        });
+        expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ exp: expirationTime }),
+        );
+      });
     });
 
-    it('should sign a token when expirationTime is two whole seconds ahead', async () => {
-      const startOfSecond = Math.floor(now.getTime() / 1_000) * 1_000;
-      const expirationTime = new Date(startOfSecond + 2_000);
+    it('should keep notBefore as nbf when it is in the past', async () => {
+      const notBefore = new Date(
+        now.getTime() - faker.number.int({ min: 1_000, max: 30_000 }),
+      );
       const siweMessage = siweMessageBuilder()
-        .with('expirationTime', expirationTime)
+        .with('notBefore', notBefore)
+        .with('expirationTime', new Date(now.getTime() + 30 * 60 * 1_000))
         .build();
 
       siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
-      authRepositoryMock.signToken.mockReturnValue('token');
+      authRepositoryMock.signToken.mockReturnValue(
+        faker.string.alphanumeric(32),
+      );
 
-      await expect(target.authenticateWithSiwe(siweArgs)).resolves.toEqual({
-        accessToken: 'token',
-      });
+      await target.authenticateWithSiwe(siweArgs);
+
       expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ exp: expirationTime }),
+        expect.objectContaining({ nbf: notBefore }),
       );
     });
 

@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { JwtPayloadWithClaims } from '#/datasources/jwt/jwt-claims.entity';
-import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
 import { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
 import {
@@ -25,6 +19,7 @@ import {
 } from '#/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
+  assertMinimumTokenLifetime,
   getMaxExpirationTime,
 } from '#/modules/auth/utils/token-expiration.utils';
 import { ISiweRepository } from '#/modules/siwe/domain/siwe.repository.interface';
@@ -76,11 +71,9 @@ export class AuthService {
     );
 
     if (expirationTime) {
-      // The SiWE check tolerates clock skew, but the token's exp (whole seconds)
-      // must be 2+ seconds ahead to verify and to give the cookie a non-zero Max-Age
-      if (toSecondsTimestamp(expirationTime) <= toSecondsTimestamp(now) + 1) {
-        throw new UnauthorizedException('Message has expired');
-      }
+      // The SiWE schema tolerates clock skew on expiry and is shared with wallet
+      // linking, so the floor needed to issue a usable token is checked here
+      assertMinimumTokenLifetime(expirationTime, now);
       assertExpirationTime(
         expirationTime,
         maxExpirationTime,
