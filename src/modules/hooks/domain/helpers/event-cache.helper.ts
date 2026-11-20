@@ -15,6 +15,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
 import { IBlockchainRepository } from '#/modules/blockchain/domain/blockchain.repository.interface';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
@@ -28,6 +29,7 @@ import {
   ConfigEventType,
   TransactionEventType,
 } from '#/modules/hooks/routes/entities/event-type.entity';
+import { SafeConfigOwnerChanges } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
@@ -111,7 +113,8 @@ export class EventCacheHelper {
     [TransactionEventType.MESSAGE_CONFIRMATION]:
       this.onTransactionEventMessageConfirmation.bind(this),
     [TransactionEventType.REORG_DETECTED]: () => [],
-    [TransactionEventType.SAFE_CONFIG_UPDATED]: () => [],
+    [TransactionEventType.SAFE_CONFIG_UPDATED]:
+      this.onTransactionEventSafeConfigUpdated.bind(this),
     [TransactionEventType.SAFE_CREATED]:
       this.onTransactionEventSafeCreated.bind(this),
     [TransactionEventType.NEW_DELEGATE]:
@@ -690,8 +693,50 @@ export class EventCacheHelper {
     // its cached 404 would keep it unavailable in the queue of a Space.
     return [
       this.safeRepository.clearIsSafe(event),
-      this.safeRepository.clearSafe(event),
+      this.clearSafeAndSafesOfOwners(event),
       this.zerionCache.invalidate(event.address, event.type),
+    ];
+  }
+
+  // The event carries no owners, so they are read from the Safe once its cached 404 is gone
+  private async clearSafeAndSafesOfOwners(
+    event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
+  ): Promise<void> {
+    await this.safeRepository.clearSafe(event);
+    try {
+      const safe = await this.safeRepository.getSafe(event);
+      await Promise.all(
+        safe.owners.map((ownerAddress) =>
+          this.safeRepository.clearSafesByOwner({
+            chainId: event.chainId,
+            ownerAddress,
+          }),
+        ),
+      );
+    } catch (error) {
+      this.loggingService.warn({
+        message: 'Failed to clear the Safes of the owners of a created Safe',
+        chainId: event.chainId,
+        address: event.address,
+        error: asError(error).message,
+      });
+      // The failed read may have cached a 404 for the Safe
+      await this.safeRepository.clearSafe(event);
+    }
+  }
+
+  private onTransactionEventSafeConfigUpdated(
+    event: Extract<Event, { type: TransactionEventType.SAFE_CONFIG_UPDATED }>,
+  ): Array<Promise<void>> {
+    // Only an owner change adds the Safe to or removes it from the Safes of an owner
+    if (!(SafeConfigOwnerChanges.includes(event.change) && event.data.owner)) {
+      return [];
+    }
+    return [
+      this.safeRepository.clearSafesByOwner({
+        chainId: event.chainId,
+        ownerAddress: event.data.owner,
+      }),
     ];
   }
 

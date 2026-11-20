@@ -339,11 +339,13 @@ export class TransactionsController {
     description: 'Transaction details with updated confirmation status',
   })
   @ApiBadRequestResponse({
-    description:
-      'Invalid signature or confirmation already exists for this owner',
+    description: 'Confirmation already exists for this owner',
   })
   @ApiNotFoundResponse({
     description: 'Transaction not found',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId, safeTxHash, request body or signature',
   })
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
@@ -776,7 +778,10 @@ export class TransactionsController {
     description: 'Transaction proposed successfully',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid transaction data or signature',
+    description: 'Invalid transaction data',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId, safeAddress, request body or signature',
   })
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeAddress/propose')

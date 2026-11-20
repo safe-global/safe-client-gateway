@@ -13,6 +13,13 @@ export interface ICacheService {
     expireDeviatePercent?: number,
   ): Promise<void>;
 
+  hSetIfFresh(
+    cacheDir: CacheDir,
+    value: string,
+    expireTimeSeconds: number,
+    requestStartTimeMs: number,
+  ): Promise<boolean>;
+
   hGet(cacheDir: CacheDir): Promise<string | null>;
 
   deleteByKey(key: string): Promise<number>;

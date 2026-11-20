@@ -9,7 +9,11 @@ import type { IConfigurationService } from '#/config/configuration.service.inter
 import configuration from '#/config/entities/__tests__/configuration';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
-import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
+import {
+  getMalformedSignature,
+  getSignature,
+  MALFORMED_SIGNATURE_ERRORS,
+} from '#/domain/common/utils/__tests__/signatures.builder';
 import { getSafeTxHash } from '#/domain/common/utils/safe';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -1235,7 +1239,7 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).rejects.toThrow(new Error('Invalid hex bytes length'));
+      ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -1287,7 +1291,7 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).rejects.toThrow(new Error('Invalid signature length'));
+      ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -1344,7 +1348,43 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal, transaction }),
-        ).rejects.toThrow(new Error('Could not recover address'));
+        ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(MALFORMED_SIGNATURE_ERRORS)(
+      'should throw a 422 for a malformed signature (%s)',
+      async (error) => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
+          .buildWithConfirmations({ chainId, signers: [signer], safe });
+        const proposal = proposeTransactionDtoBuilder()
+          .with('to', transaction.to)
+          .with('value', transaction.value)
+          .with('data', transaction.data)
+          .with('nonce', transaction.nonce.toString())
+          .with('operation', transaction.operation)
+          .with('safeTxGas', transaction.safeTxGas!.toString())
+          .with('baseGas', transaction.baseGas!.toString())
+          .with('gasPrice', transaction.gasPrice as string)
+          .with('gasToken', transaction.gasToken as Address)
+          .with('refundReceiver', transaction.refundReceiver)
+          .with('safeTxHash', transaction.safeTxHash)
+          .with('sender', signer.address)
+          .with('signature', getMalformedSignature(error))
+          .build();
+
+        await expect(
+          target.verifyProposal({ chainId, safe, proposal, transaction }),
+        ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
@@ -1957,7 +1997,7 @@ describe('TransactionVerifierHelper', () => {
             }),
           ),
         });
-      }).toThrow(new Error('Invalid hex bytes length'));
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -2001,7 +2041,7 @@ describe('TransactionVerifierHelper', () => {
             }),
           ),
         });
-      }).toThrow(new Error('Invalid signature length'));
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -2049,7 +2089,33 @@ describe('TransactionVerifierHelper', () => {
             transaction,
             signature: invalidSignature,
           });
-        }).toThrow(new Error('Could not recover address'));
+        }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(MALFORMED_SIGNATURE_ERRORS)(
+      'should throw a 422 for a malformed signature (%s)',
+      async (error) => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .with('nonce', safe.nonce)
+          .buildWithConfirmations({ chainId, signers: [signer], safe });
+
+        expect(() => {
+          return target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: getMalformedSignature(error),
+          });
+        }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },

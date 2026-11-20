@@ -9,6 +9,10 @@ import type { IConfigurationService } from '#/config/configuration.service.inter
 import configuration from '#/config/entities/__tests__/configuration';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import {
+  getMalformedSignature,
+  MALFORMED_SIGNATURE_ERRORS,
+} from '#/domain/common/utils/__tests__/signatures.builder';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
 import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
@@ -214,7 +218,7 @@ describe('MessageVerifierHelper', () => {
           message: message.message,
           signature: message.confirmations[0].signature,
         });
-      }).toThrow(new Error('Invalid hex bytes length'));
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -254,7 +258,7 @@ describe('MessageVerifierHelper', () => {
           message: message.message,
           signature: message.confirmations[0].signature,
         });
-      }).toThrow(new Error('Invalid signature length'));
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -300,7 +304,31 @@ describe('MessageVerifierHelper', () => {
             messageHash: message.messageHash,
             signature: invalidSignature,
           });
-        }).toThrow('Could not recover address');
+        }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(MALFORMED_SIGNATURE_ERRORS)(
+      'should throw a 422 for a malformed signature (%s)',
+      async (error) => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({ chainId, signers: [signer], safe });
+
+        expect(() => {
+          return target.verifyCreation({
+            chainId,
+            safe,
+            message: message.message,
+            signature: getMalformedSignature(error),
+          });
+        }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
@@ -570,7 +598,7 @@ describe('MessageVerifierHelper', () => {
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
         });
-      }).toThrow(new Error('Invalid hex bytes length'));
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -611,7 +639,7 @@ describe('MessageVerifierHelper', () => {
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
         });
-      }).toThrow(new Error('Invalid signature length'));
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -657,7 +685,32 @@ describe('MessageVerifierHelper', () => {
             messageHash: message.messageHash,
             signature: invalidSignature,
           });
-        }).toThrow('Could not recover address');
+        }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(MALFORMED_SIGNATURE_ERRORS)(
+      'should throw a 422 for a malformed signature (%s)',
+      async (error) => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({ chainId, signers: [signer], safe });
+
+        expect(() => {
+          return target.verifyUpdate({
+            chainId,
+            safe,
+            message: message.message,
+            messageHash: message.messageHash,
+            signature: getMalformedSignature(error),
+          });
+        }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },

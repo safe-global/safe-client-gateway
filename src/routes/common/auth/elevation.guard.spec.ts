@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
@@ -39,6 +40,10 @@ describe('ElevationGuard', () => {
   const siwePayload = (): AuthPayloadDto => siweAuthPayloadDtoBuilder().build();
 
   beforeEach(() => {
+    // The test and the guard must read the same second.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(faker.date.recent());
+
     const configurationService = new FakeConfigurationService();
     configurationService.set('features.mfaStepUp', true);
     configurationService.set(
@@ -46,6 +51,10 @@ describe('ElevationGuard', () => {
       ELEVATION_WINDOW_SECONDS,
     );
     target = new ElevationGuard(configurationService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('when features.mfaStepUp is off', () => {

@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import { balancesProviderBuilder } from '#/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { beaconChainExplorerUriTemplateBuilder } from '#/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { blockExplorerUriTemplateBuilder } from '#/modules/chains/domain/entities/__tests__/block-explorer-uri-template.builder';
@@ -16,9 +17,21 @@ import { rpcUriBuilder } from '#/modules/chains/domain/entities/__tests__/rpc-ur
 import { themeBuilder } from '#/modules/chains/domain/entities/__tests__/theme.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 
+export function chainIdBuilder(): string {
+  return faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }).toString();
+}
+
+export function otherChainIdBuilder(chainId: string): string {
+  let otherChainId = chainIdBuilder();
+  while (otherChainId === chainId) {
+    otherChainId = chainIdBuilder();
+  }
+  return otherChainId;
+}
+
 export function chainBuilder(): IBuilder<Chain> {
   return new Builder<Chain>()
-    .with('chainId', faker.string.numeric())
+    .with('chainId', chainIdBuilder())
     .with('chainName', faker.company.name())
     .with('description', faker.word.words())
     .with('chainLogoUri', faker.internet.url({ appendSlash: false }))

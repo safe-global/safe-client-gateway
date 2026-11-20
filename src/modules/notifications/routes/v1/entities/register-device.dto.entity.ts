@@ -6,25 +6,46 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import type { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
-import { SafeRegistration } from '#/modules/notifications/routes/v1/entities/safe-registration.entity';
+import { z } from 'zod';
+import { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
+import {
+  SafeRegistration,
+  SafeRegistrationSchema,
+} from '#/modules/notifications/routes/v1/entities/safe-registration.dto.entity';
+import { NonNegativeNumericStringSchema } from '#/validation/entities/schemas/non-negative-numeric-string.schema';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
+
+export const RegisterDeviceDtoSchema = z.object({
+  uuid: UuidSchema.nullish(),
+  cloudMessagingToken: z.string(),
+  // Never read by the gateway, so not required
+  buildNumber: z.string().optional(),
+  bundle: z.string().optional(),
+  deviceType: z.enum(DeviceType),
+  version: z.string().optional(),
+  // Integer seconds: parseInt of other numeric forms (e.g. "Infinity") skips the expiry check
+  timestamp: NonNegativeNumericStringSchema.nullish(),
+  safeRegistrations: z.array(SafeRegistrationSchema),
+});
 
 @ApiExtraModels(SafeRegistration)
-export class RegisterDeviceDto {
+export class RegisterDeviceDto
+  implements z.infer<typeof RegisterDeviceDtoSchema>
+{
   @ApiPropertyOptional({ type: String, nullable: true })
-  uuid?: UUID;
+  uuid?: UUID | null;
   @ApiProperty()
   cloudMessagingToken!: string;
-  @ApiProperty()
-  buildNumber!: string;
-  @ApiProperty()
-  bundle!: string;
+  @ApiPropertyOptional()
+  buildNumber?: string;
+  @ApiPropertyOptional()
+  bundle?: string;
   @ApiProperty()
   deviceType!: DeviceType;
-  @ApiProperty()
-  version!: string;
+  @ApiPropertyOptional()
+  version?: string;
   @ApiPropertyOptional({ type: String, nullable: true })
-  timestamp?: string;
+  timestamp?: string | null;
   @ApiProperty({
     type: 'array',
     items: { $ref: getSchemaPath(SafeRegistration) },

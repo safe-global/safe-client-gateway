@@ -18,7 +18,10 @@ import configuration from '#/config/entities/__tests__/configuration';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
-import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
+import {
+  getMalformedSignature,
+  getSignature,
+} from '#/domain/common/utils/__tests__/signatures.builder';
 import { getSafeTxHash } from '#/domain/common/utils/safe';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
@@ -1279,6 +1282,72 @@ describe('Propose transaction - Transactions Controller', () => {
         expect(loggingService.error).not.toHaveBeenCalled();
       },
     );
+
+    it('should return 422 for a malformed signature', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice as string)
+        .with('gasToken', transaction.gasToken as Address)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', signer.address)
+        .with(
+          'signature',
+          getMalformedSignature('Insufficient length for dynamic part'),
+        )
+        .build();
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/`;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(transaction)),
+              status: 200,
+            });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${safe.address}/propose`,
+        )
+        .send(proposeTransactionDto)
+        .expect(422)
+        .expect({
+          message: 'Invalid signature',
+          statusCode: 422,
+        });
+
+      expect(networkService.post).not.toHaveBeenCalled();
+      expect(loggingService.error).not.toHaveBeenCalled();
+    });
 
     it('should throw if eth_sign is disabled', async () => {
       const defaultConfiguration = configuration();

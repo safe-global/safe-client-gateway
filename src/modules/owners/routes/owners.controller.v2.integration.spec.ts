@@ -29,7 +29,24 @@ import {
   creationTransactionBuilder,
   toJson,
 } from '#/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import { safeV2Builder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '#/validation/entities/raw.entity';
+
+function ownerPage(addresses: Array<string>) {
+  return rawify(
+    pageBuilder()
+      .with('count', addresses.length)
+      .with('next', null)
+      .with('previous', null)
+      .with(
+        'results',
+        addresses.map((address) =>
+          safeV2Builder().with('address', getAddress(address)).build(),
+        ),
+      )
+      .build(),
+  );
+}
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -106,16 +123,16 @@ describe('Owners Controller (Unit)', () => {
           }
 
           // ValidationPipe checksums ownerAddress param
-          case `${chain1.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+          case `${chain1.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
-              data: rawify({ safes: safesOnChain1 }),
+              data: ownerPage(safesOnChain1),
               status: 200,
             });
           }
 
-          case `${chain2.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+          case `${chain2.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
-              data: rawify({ safes: safesOnChain2 }),
+              data: ownerPage(safesOnChain2),
               status: 200,
             });
           }
@@ -197,20 +214,20 @@ describe('Owners Controller (Unit)', () => {
         // ValidationPipe checksums ownerAddress param
         if (
           url ===
-          `${chain1.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`
+          `${chain1.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`
         ) {
           return Promise.resolve({
-            data: rawify({ safes: safesOnChain1 }),
+            data: ownerPage(safesOnChain1),
             status: 200,
           });
         }
 
         if (
           url ===
-          `${chain2.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`
+          `${chain2.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`
         ) {
           return Promise.resolve({
-            data: rawify({ safes: safesOnChain2 }),
+            data: ownerPage(safesOnChain2),
             status: 200,
           });
         }
@@ -266,13 +283,13 @@ describe('Owners Controller (Unit)', () => {
             });
           }
           // ValidationPipe checksums ownerAddress param
-          case `${chain1.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+          case `${chain1.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
-              data: rawify({ safes: safesOnChain1 }),
+              data: ownerPage(safesOnChain1),
               status: 200,
             });
           }
-          case `${chain2.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+          case `${chain2.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.reject(new Error('Test error'));
           }
           default: {
@@ -328,26 +345,31 @@ describe('Owners Controller (Unit)', () => {
       });
     });
 
-    it('Failure: data validation fails', async () => {
+    it('returns null for a chain with a malformed TXS owner page', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
-
       const chainId = faker.string.numeric();
-
       const chain = chainBuilder().with('chainId', chainId).build();
+      const ownersUrl = `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`;
 
-      const safesOnChain = [
-        faker.finance.ethereumAddress(),
-        faker.number.int(),
-        faker.finance.ethereumAddress(),
-      ];
+      const malformedOwnerPage = pageBuilder()
+        .with('count', 1)
+        .with('next', null)
+        .with('previous', null)
+        .with('results', [{ address: faker.number.int() }])
+        .build();
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains`: {
             return Promise.resolve({
-              data: rawify({
-                results: [chain],
-              }),
+              data: rawify(
+                pageBuilder()
+                  .with('count', 1)
+                  .with('next', null)
+                  .with('previous', null)
+                  .with('results', [chain])
+                  .build(),
+              ),
               status: 200,
             });
           }
@@ -359,9 +381,9 @@ describe('Owners Controller (Unit)', () => {
             });
           }
 
-          case `${chain.transactionService}/api/v1/owners/${ownerAddress}/safes/`: {
+          case ownersUrl: {
             return Promise.resolve({
-              data: rawify({ safes: safesOnChain }),
+              data: rawify(malformedOwnerPage),
               status: 200,
             });
           }
@@ -374,8 +396,11 @@ describe('Owners Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v2/owners/${ownerAddress}/safes`)
-        .expect(502)
-        .expect({ statusCode: 502, message: 'Bad gateway' });
+        .expect(200)
+        .expect({ [chainId]: null });
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({ url: ownersUrl }),
+      );
     });
 
     it('should filter out poisoned addresses', async () => {
@@ -417,15 +442,13 @@ describe('Owners Controller (Unit)', () => {
             });
           }
 
-          case `${chain.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+          case `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
-              data: rawify({
-                safes: [
-                  getAddress(legitimateAddress),
-                  getAddress(poisonedAddress),
-                  getAddress(unrelatedAddress),
-                ],
-              }),
+              data: ownerPage([
+                legitimateAddress,
+                poisonedAddress,
+                unrelatedAddress,
+              ]),
               status: 200,
             });
           }
@@ -491,11 +514,9 @@ describe('Owners Controller (Unit)', () => {
             });
           }
 
-          case `${chain.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+          case `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`: {
             return Promise.resolve({
-              data: rawify({
-                safes: [getAddress(address1), getAddress(address2)],
-              }),
+              data: ownerPage([address1, address2]),
               status: 200,
             });
           }
