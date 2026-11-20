@@ -16,6 +16,8 @@ import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breake
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -44,23 +46,25 @@ describe('Owners Controller (Unit)', () => {
   });
 
   describe('GET safes by owner address', () => {
-    it(`Success`, async () => {
+    it('returns the first TXS v2 page as the legacy address list', async () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const transactionApiSafeListResponse = {
-        safes: [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ],
-      };
+      const safes = Array.from(
+        { length: SAFE_TRANSACTION_SERVICE_MAX_LIMIT },
+        () => ({ address: faker.finance.ethereumAddress() }),
+      );
+      const page = pageBuilder()
+        .with('count', safes.length + 1)
+        .with('previous', null)
+        .with('results', safes)
+        .build();
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainResponse),
         status: 200,
       });
       networkService.get.mockResolvedValueOnce({
-        data: rawify(transactionApiSafeListResponse),
+        data: rawify(page),
         status: 200,
       });
 
@@ -69,10 +73,18 @@ describe('Owners Controller (Unit)', () => {
         .expect(200)
         .expect({
           // Validation schema checksums addresses
-          safes: transactionApiSafeListResponse.safes.map((safe) =>
-            getAddress(safe),
-          ),
+          safes: safes.map(({ address }) => getAddress(address)),
         });
+
+      expect(networkService.get).toHaveBeenCalledTimes(2);
+      expect(networkService.get).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          url: `${chainResponse.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`,
+          networkRequest: expect.objectContaining({
+            params: { limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT, offset: 0 },
+          }),
+        }),
+      );
     });
 
     it.each([
@@ -138,7 +150,7 @@ describe('Owners Controller (Unit)', () => {
       const error = new NetworkResponseError(
         new URL(
           // ValidationPipe checksums ownerAddress param
-          `${chainResponse.transactionService}/v1/chains/${chainId}/owners/${getAddress(ownerAddress)}/safes`,
+          `${chainResponse.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`,
         ),
         {
           status: 500,
@@ -160,9 +172,10 @@ describe('Owners Controller (Unit)', () => {
       });
       expect(networkService.get).toHaveBeenCalledWith({
         // ValidationPipe checksums ownerAddress param
-        url: `${chainResponse.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`,
+        url: `${chainResponse.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`,
         data: undefined,
         networkRequest: {
+          params: { limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT, offset: 0 },
           timeout: expect.any(Number),
           circuitBreaker: {
             key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
@@ -175,19 +188,15 @@ describe('Owners Controller (Unit)', () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
       const chainResponse = chainBuilder().with('chainId', chainId).build();
-      const transactionApiSafeListResponse = {
-        safes: [
-          faker.finance.ethereumAddress(),
-          faker.number.int(),
-          faker.finance.ethereumAddress(),
-        ],
-      };
+      const page = pageBuilder()
+        .with('results', [{ address: faker.number.int() }])
+        .build();
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainResponse),
         status: 200,
       });
       networkService.get.mockResolvedValueOnce({
-        data: rawify(transactionApiSafeListResponse),
+        data: rawify(page),
         status: 200,
       });
 

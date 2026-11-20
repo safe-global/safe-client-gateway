@@ -207,8 +207,6 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<Token>>>;
 
-  getSafesByOwner(ownerAddress: Address): Promise<Raw<SafeList>>;
-
   getSafesByOwnerV2(args: {
     ownerAddress: Address;
     limit?: number;

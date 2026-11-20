@@ -975,30 +975,6 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getSafesByOwner(ownerAddress: Address): Promise<Raw<SafeList>> {
-    try {
-      const cacheDir = CacheRouter.getSafesByOwnerCacheDir({
-        chainId: this.chainId,
-        ownerAddress,
-      });
-      const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
-      return await this.dataSource.get<SafeList>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.ownersExpirationTimeSeconds,
-        networkRequest: {
-          timeout: this.ownersTimeout,
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
-          },
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
   // Events clear the cache only when the owners change, not when the nonce or other fields of the Safes do
   async getSafesByOwnerV2(args: {
     ownerAddress: Address;
@@ -1035,13 +1011,12 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async clearSafesByOwner(ownerAddress: Address): Promise<void> {
-    const args = { chainId: this.chainId, ownerAddress };
-    await Promise.all([
-      this.cacheService.deleteByKey(CacheRouter.getSafesByOwnerCacheKey(args)),
-      this.cacheService.deleteByKey(
-        CacheRouter.getSafesByOwnerV2CacheKey(args),
-      ),
-    ]);
+    await this.cacheService.deleteByKey(
+      CacheRouter.getSafesByOwnerV2CacheKey({
+        chainId: this.chainId,
+        ownerAddress,
+      }),
+    );
   }
 
   async getEstimation(args: {

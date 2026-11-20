@@ -20,6 +20,8 @@ import { CacheService } from '#/datasources/cache/cache.service.interface';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { IBalancesApiManager } from '#/domain/interfaces/balances-api.manager.interface';
 import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
 import { IStakingApiManager } from '#/domain/interfaces/staking-api.manager.interface';
@@ -36,6 +38,7 @@ import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests
 import { SafeConfigOwnerChanges } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { stakeBuilder } from '#/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { rawify } from '#/validation/entities/raw.entity';
@@ -1609,9 +1612,11 @@ describe('Hook Events for Cache', () => {
         throw new Error('The builder must set an owner');
       }
       const cacheDirs = [
-        CacheRouter.getSafesByOwnerCacheDir({
+        CacheRouter.getSafesByOwnerV2CacheDir({
           chainId: event.chainId,
           ownerAddress,
+          limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+          offset: 0,
         }),
         CacheRouter.getSafesByOwnerV2CacheDir({
           chainId: event.chainId,
@@ -1669,48 +1674,72 @@ describe('Hook Events for Cache', () => {
     },
   );
 
-  it('SAFE_CREATED clears the Safes of every owner of the Safe', async () => {
+  it('SAFE_CREATED refreshes the cached legacy owner list from TXS v2', async () => {
     const chain = chainBuilder().build();
     const event = safeCreatedEventBuilder()
       .with('chainId', chain.chainId)
       .build();
     const safe = safeBuilder().with('address', event.address).build();
-    const cacheDirs = safe.owners.flatMap((ownerAddress) => [
-      CacheRouter.getSafesByOwnerCacheDir({
-        chainId: event.chainId,
-        ownerAddress,
-      }),
-      CacheRouter.getSafesByOwnerV2CacheDir({
-        chainId: event.chainId,
-        ownerAddress,
-        limit: faker.number.int({ min: 1 }),
-        offset: faker.number.int(),
-      }),
-    ]);
+    const [ownerAddress] = safe.owners;
+    const owner = { chainId: chain.chainId, ownerAddress };
+    const cacheDir = CacheRouter.getSafesByOwnerV2CacheDir({
+      ...owner,
+      limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+      offset: 0,
+    });
+    const ownersUrl = `${chain.transactionService}/api/v2/owners/${ownerAddress}/safes/`;
+    const repository = app.get<ISafeRepository>(ISafeRepository);
+    let indexed = false;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${event.address}/`:
           return Promise.resolve({ data: rawify(safe), status: 200 });
+        case ownersUrl:
+          return Promise.resolve({
+            data: rawify(
+              pageBuilder()
+                .with('count', indexed ? 1 : 0)
+                .with('next', null)
+                .with('previous', null)
+                .with('results', indexed ? [{ address: safe.address }] : [])
+                .build(),
+            ),
+            status: 200,
+          });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    for (const cacheDir of cacheDirs) {
-      await fakeCacheService.hSet(
-        cacheDir,
-        faker.string.alpha(),
-        faker.number.int({ min: 1 }),
-      );
-    }
+    await expect(repository.getSafesByOwner(owner)).resolves.toEqual({
+      safes: [],
+    });
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.not.toBeNull();
+    indexed = true;
+    await expect(repository.getSafesByOwner(owner)).resolves.toEqual({
+      safes: [],
+    });
 
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    for (const cacheDir of cacheDirs) {
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
-    }
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+    const invalidatedAt = await fakeCacheService.getInvalidationTimeMs(
+      cacheDir.key,
+    );
+    expect(invalidatedAt).toEqual(expect.any(Number));
+    // Cache fills in the same millisecond as an invalidation are skipped.
+    await expect.poll(Date.now).toBeGreaterThan(invalidatedAt ?? 0);
+
+    const fresh = { safes: [safe.address] };
+    await expect(repository.getSafesByOwner(owner)).resolves.toEqual(fresh);
+    await expect(repository.getSafesByOwner(owner)).resolves.toEqual(fresh);
+    expect(
+      networkService.get.mock.calls.filter(
+        ([request]) => request.url === ownersUrl,
+      ),
+    ).toHaveLength(2);
   });
 
   it.each(

@@ -2297,77 +2297,6 @@ describe('TransactionApi', () => {
     });
   });
 
-  describe('getSafesByOwner', () => {
-    it('should return retrieved safe', async () => {
-      const owner = getAddress(faker.finance.ethereumAddress());
-      const safeList = {
-        safes: [
-          faker.finance.ethereumAddress(),
-          faker.finance.ethereumAddress(),
-        ],
-      };
-      const getSafesByOwnerUrl = `${baseUrl}/api/v1/owners/${owner}/safes/`;
-      const cacheDir = new CacheDir(`${chainId}_owner_safes_${owner}`, '');
-      mockDataSource.get.mockResolvedValueOnce(rawify(safeList));
-
-      const actual = await service.getSafesByOwner(owner);
-
-      expect(actual).toBe(safeList);
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getSafesByOwnerUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: ownersTtlSeconds,
-        networkRequest: {
-          timeout: ownersTimeout,
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
-          },
-        },
-      });
-    });
-
-    const errorMessage = faker.word.words();
-    it.each([
-      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
-      ['standard', new Error(errorMessage)],
-    ])(`should forward a %s error`, async (_, error) => {
-      const owner = getAddress(faker.finance.ethereumAddress());
-      const getSafesByOwnerUrl = `${baseUrl}/api/v1/owners/${owner}/safes/`;
-      const statusCode = errorStatusCodeExcluding(
-        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-      );
-      const expected = new DataSourceError(errorMessage, statusCode);
-      const cacheDir = new CacheDir(`${chainId}_owner_safes_${owner}`, '');
-      mockDataSource.get.mockRejectedValueOnce(
-        new NetworkResponseError(
-          new URL(getSafesByOwnerUrl),
-          {
-            status: statusCode,
-          } as Response,
-          error,
-        ),
-      );
-
-      await expect(service.getSafesByOwner(owner)).rejects.toThrow(expected);
-
-      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir,
-        url: getSafesByOwnerUrl,
-        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
-        expireTimeSeconds: ownersTtlSeconds,
-        networkRequest: {
-          timeout: ownersTimeout,
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
-          },
-        },
-      });
-    });
-  });
-
   describe('getSafesByOwnerV2', () => {
     it('should return paginated safes with valid response', async () => {
       const owner = getAddress(faker.finance.ethereumAddress());
@@ -2525,15 +2454,12 @@ describe('TransactionApi', () => {
   });
 
   describe('clearSafesByOwner', () => {
-    it('should clear the v1 and v2 Safes of the owner', async () => {
+    it('should clear every cached page of the owner’s Safes', async () => {
       const ownerAddress = getAddress(faker.finance.ethereumAddress());
 
       await service.clearSafesByOwner(ownerAddress);
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(2);
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
-        `${chainId}_owner_safes_${ownerAddress}`,
-      );
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_owner_safes_v2_${ownerAddress}`,
       );
