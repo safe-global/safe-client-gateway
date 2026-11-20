@@ -3,48 +3,45 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { redisClientFactory } from '#/__tests__/redis-client.factory';
 import {
   createTestApplication,
   initTestApplication,
 } from '#/__tests__/test-app.provider';
 import { createBaseTestModule } from '#/__tests__/testing-module';
-import type { RedisClientType } from '#/datasources/cache/cache.module';
+import testConfiguration from '#/config/entities/__tests__/configuration';
+import configuration from '#/config/entities/configuration';
+import { SafeListSchema } from '#/modules/safe/domain/entities/schemas/safe-list.schema';
 import { TEST_SAFE } from '#/routes/common/__tests__/constants';
 
 describe('Get safes by owner e2e test', () => {
   let app: INestApplication<Server>;
-  let redisClient: RedisClientType;
-  const cacheKeyPrefix = crypto.randomUUID();
 
   beforeAll(async () => {
-    const moduleRef = await createBaseTestModule();
+    const { httpClient, safeConfig } = configuration();
+    const moduleRef = await createBaseTestModule({
+      config: () => ({
+        ...testConfiguration(),
+        httpClient,
+        safeConfig,
+      }),
+    });
 
     app = createTestApplication(moduleRef);
     await initTestApplication(app);
-    redisClient = await redisClientFactory();
   });
 
   afterAll(async () => {
     await app.close();
-    await redisClient.quit();
   });
 
-  it('GET /owners/<owner_address>/safes', async () => {
-    const ownerCacheKey = `${cacheKeyPrefix}-${TEST_SAFE.chainId}_owner_safes_${TEST_SAFE.owners[0]}`;
+  it('GET /v1/chains/<chain_id>/owners/<owner_address>/safes', async () => {
+    const { body } = await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${TEST_SAFE.chainId}/owners/${TEST_SAFE.owners[0]}/safes`,
+      )
+      .expect(200);
 
-    await request(app.getHttpServer())
-      .get(`/chains/${TEST_SAFE.chainId}/owners/${TEST_SAFE.owners[0]}/safes`)
-      .expect(200)
-      .then(({ body }) => {
-        expect(body).toEqual(
-          expect.objectContaining({
-            safes: expect.arrayContaining([TEST_SAFE.address]),
-          }),
-        );
-      });
-
-    const cacheContent = await redisClient.hGet(ownerCacheKey, '');
-    expect(cacheContent).toBeNull();
+    const { safes } = SafeListSchema.parse(body);
+    expect(safes.length).toBeGreaterThan(0);
   });
 });

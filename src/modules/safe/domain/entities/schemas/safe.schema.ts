@@ -29,3 +29,7 @@ export const SafeSchemaV2 = SafeBaseSchema.extend({
 });
 
 export const SafePageV2Schema = buildPageSchema(SafeSchemaV2);
+
+export const SafeAddressPageV2Schema = buildPageSchema(
+  SafeSchemaV2.pick({ address: true }),
+);

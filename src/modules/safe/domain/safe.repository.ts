@@ -32,6 +32,7 @@ import { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
 import { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { CreationTransactionSchema } from '#/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
+  SafeAddressPageV2Schema,
   SafePageV2Schema,
   SafeSchema,
 } from '#/modules/safe/domain/entities/schemas/safe.schema';
@@ -917,11 +918,14 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const safeList = await transactionService.getSafesByOwner(
-      args.ownerAddress,
-    );
-
-    return SafeListSchema.parse(safeList);
+    // Preserve the legacy one-page limit using the TXS route without a page cache.
+    const page = await transactionService.getSafesByOwnerV2({
+      ownerAddress: args.ownerAddress,
+      limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+      offset: 0,
+    });
+    const { results } = SafeAddressPageV2Schema.parse(page);
+    return { safes: results.map((safe) => safe.address) };
   }
 
   async getSafesByOwnerV2(args: {
