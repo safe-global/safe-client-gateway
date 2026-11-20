@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type postgres from 'postgres';
 import request from 'supertest';
 import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
@@ -95,6 +98,20 @@ describe('Space Policies Controller', () => {
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
   let indexerBaseUri: string;
+
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
+  const testDbFactory = new TestDbFactory();
+  let testDatabase: postgres.Sql;
+
+  beforeAll(async () => {
+    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
+  });
+
+  afterAll(async () => {
+    if (testDatabase) {
+      await testDbFactory.destroyTestDatabase(testDatabase);
+    }
+  });
 
   const chain = chainBuilder().with('chainId', SEPOLIA_CHAIN_ID).build();
   const polygonChain = chainBuilder().with('chainId', POLYGON_CHAIN_ID).build();
@@ -327,6 +344,16 @@ describe('Space Policies Controller', () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      db: {
+        ...defaultConfiguration.db,
+        connection: {
+          ...defaultConfiguration.db.connection,
+          postgres: {
+            ...defaultConfiguration.db.connection.postgres,
+            database: testDatabaseName,
+          },
+        },
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,

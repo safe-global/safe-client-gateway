@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type postgres from 'postgres';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
@@ -33,12 +36,27 @@ describe('SurveysController', () => {
   let jwtService: IJwtService;
   let postgresDatabaseService: PostgresDatabaseService;
 
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
+  const testDbFactory = new TestDbFactory();
+  let testDatabase: postgres.Sql;
+
   beforeAll(async () => {
     vi.resetAllMocks();
+    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      db: {
+        ...defaultConfiguration.db,
+        connection: {
+          ...defaultConfiguration.db.connection,
+          postgres: {
+            ...defaultConfiguration.db.connection.postgres,
+            database: testDatabaseName,
+          },
+        },
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -65,7 +83,13 @@ describe('SurveysController', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
+    try {
+      await app?.close();
+    } finally {
+      if (testDatabase) {
+        await testDbFactory.destroyTestDatabase(testDatabase);
+      }
+    }
   });
 
   /**
