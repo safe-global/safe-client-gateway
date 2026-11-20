@@ -20,6 +20,7 @@ import {
 import {
   assertExpirationTime,
   assertMinimumTokenLifetime,
+  assertValidityWindow,
   getMaxExpirationTime,
 } from '#/modules/auth/utils/token-expiration.utils';
 import { ISiweRepository } from '#/modules/siwe/domain/siwe.repository.interface';
@@ -71,8 +72,9 @@ export class AuthService {
     );
 
     if (expirationTime) {
-      // The SiWE schema tolerates clock skew on expiry and is shared with wallet
-      // linking, so the floor needed to issue a usable token is checked here
+      // The SiWE schema checks each bound on its own, tolerates clock skew and is
+      // shared with wallet linking, so what a usable token needs is checked here
+      assertValidityWindow(notBefore, expirationTime);
       assertMinimumTokenLifetime(expirationTime, now);
       assertExpirationTime(
         expirationTime,
@@ -83,6 +85,12 @@ export class AuthService {
 
     const userId =
       await this.usersRepository.findOrCreateByWalletAddress(address);
+
+    if (expirationTime) {
+      // A slow wallet lookup can use up the remaining lifetime
+      assertMinimumTokenLifetime(expirationTime, new Date());
+    }
+
     const accessToken = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Siwe,

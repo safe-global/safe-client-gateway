@@ -597,6 +597,58 @@ describe('AuthController', () => {
         });
     });
 
+    it('should not verify a signer if the expirationTime is not after notBefore', async () => {
+      // A wide skew lets notBefore sit far enough ahead that an expiry before it
+      // still passes the minimum lifetime, so only the window check rejects it
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        auth: {
+          ...defaultConfiguration.auth,
+          clockSkewSeconds: faker.number.int({ min: 10, max: 30 }),
+          maxValidityPeriodSeconds: faker.number.int({
+            min: 60,
+            max: 60 * 1_000,
+          }),
+        },
+        features: {
+          ...defaultConfiguration.features,
+          auth: true,
+        },
+      });
+      await initApp(testConfiguration);
+
+      const signer = privateKeyToAccount(generatePrivateKey());
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const notBefore = new Date(Date.now() + clockSkewInMs);
+      const expirationTime = new Date(
+        notBefore.getTime() - faker.number.int({ min: 0, max: 5_000 }),
+      );
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonceResponse.body.nonce)
+          .with('notBefore', notBefore)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({ message });
+
+      const response = await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({ message, signature });
+
+      expect(response.status).toBe(401);
+      expect(response.headers['set-cookie']).toBeUndefined();
+      expect(response.body).toStrictEqual({
+        error: 'Unauthorized',
+        message: 'Invalid message',
+        statusCode: 401,
+      });
+    });
+
     it('should get the max expirationTime if not specified on the SiWE message', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
       vi.setSystemTime(0);

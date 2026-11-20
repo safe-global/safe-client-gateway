@@ -22,6 +22,16 @@ export function assertExpirationTime(
   }
 }
 
+// A message that expires before it becomes valid has no usable window
+export function assertValidityWindow(
+  notBefore: Date | undefined,
+  expirationTime: Date,
+): void {
+  if (notBefore && expirationTime.getTime() <= notBefore.getTime()) {
+    throw new UnauthorizedException('Invalid message');
+  }
+}
+
 // Same 401 as an expired message rejected by the SiWE schema
 export function assertMinimumTokenLifetime(
   expirationTime: Date,

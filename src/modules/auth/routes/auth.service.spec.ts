@@ -337,6 +337,33 @@ describe('AuthService', () => {
           expect.objectContaining({ exp: expirationTime }),
         );
       });
+
+      it('should throw UnauthorizedException when the wallet lookup uses up the minimum', async () => {
+        const siweMessage = siweMessageBuilder()
+          .with('expirationTime', new Date(getEarliestAcceptedExpiry()))
+          .build();
+        // The earliest accepted expiry leaves less than a second of slack
+        const lookupDurationInMs = faker.number.int({ min: 1_000, max: 5_000 });
+
+        siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(
+          siweMessage,
+        );
+        usersRepositoryMock.findOrCreateByWalletAddress.mockImplementation(
+          () => {
+            vi.setSystemTime(now.getTime() + lookupDurationInMs);
+            return Promise.resolve(userId);
+          },
+        );
+
+        await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
+          new UnauthorizedException('Invalid message'),
+        );
+
+        expect(
+          usersRepositoryMock.findOrCreateByWalletAddress,
+        ).toHaveBeenCalledWith(siweMessage.address);
+        expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+      });
     });
 
     it('should keep notBefore as nbf when it is in the past', async () => {
@@ -384,6 +411,31 @@ describe('AuthService', () => {
           nbf: now,
         }),
       );
+    });
+
+    it('should throw UnauthorizedException when expirationTime is not after notBefore', async () => {
+      const notBefore = new Date(
+        now.getTime() + faker.number.int({ min: 10_000, max: 30_000 }),
+      );
+      // Far enough ahead to pass the minimum lifetime on its own
+      const expirationTime = new Date(
+        notBefore.getTime() - faker.number.int({ min: 0, max: 5_000 }),
+      );
+      const siweMessage = siweMessageBuilder()
+        .with('notBefore', notBefore)
+        .with('expirationTime', expirationTime)
+        .build();
+
+      siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
+
+      await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
+        new UnauthorizedException('Invalid message'),
+      );
+
+      expect(
+        usersRepositoryMock.findOrCreateByWalletAddress,
+      ).not.toHaveBeenCalled();
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
     it('should propagate errors from findOrCreateByWalletAddress', async () => {
