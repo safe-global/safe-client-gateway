@@ -679,9 +679,9 @@ export default () => ({
     prettyColorize: process.env.LOG_PRETTY_COLORIZE?.toLowerCase() === 'true',
   },
   owners: {
-    // SAFE_CONFIG_UPDATED and SAFE_CREATED events clear it; the TTL bounds what they miss, such as a reorg
+    // The TXS v1 page cache can refill this cache with stale data after an owner invalidation.
     ownersTtlSeconds: Number.parseInt(
-      process.env.OWNERS_TTL_SECONDS ?? `${60}`,
+      process.env.OWNERS_TTL_SECONDS ?? `${0}`,
       10,
     ),
   },
