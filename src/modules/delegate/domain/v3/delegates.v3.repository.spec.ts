@@ -181,14 +181,16 @@ describe('DelegatesV3Repository', () => {
         const safe = getAddress(faker.finance.ethereumAddress());
         const delegate = getAddress(faker.finance.ethereumAddress());
         const delegator = getAddress(faker.finance.ethereumAddress());
+        const created = faker.date.recent().toISOString();
+        const modified = faker.date.recent().toISOString();
         const queueDelegate = {
           delegate,
           delegator,
           chainId,
           safe,
           label: null,
-          created: faker.date.recent().toISOString(),
-          modified: faker.date.recent().toISOString(),
+          created,
+          modified,
         };
         const page = pageBuilder<SafeQueueDelegate>()
           .with('results', [queueDelegate as unknown as SafeQueueDelegate])
@@ -216,6 +218,8 @@ describe('DelegatesV3Repository', () => {
             delegator,
             // null label from the queue is normalized to an empty string
             label: '',
+            created: new Date(created),
+            modified: new Date(modified),
           },
         ]);
       });
@@ -267,6 +271,8 @@ describe('DelegatesV3Repository', () => {
             delegate: delegate.delegate,
             delegator: delegate.delegator,
             label: delegate.label,
+            created: delegate.created,
+            modified: delegate.modified,
           })),
         );
       });

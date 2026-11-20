@@ -123,6 +123,8 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
             delegate: d.delegate,
             delegator: d.delegator,
             label: d.label ?? '',
+            created: d.created.toISOString(),
+            modified: d.modified.toISOString(),
           })),
         });
 
@@ -175,6 +177,8 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
             delegate: d.delegate,
             delegator: d.delegator,
             label: d.label,
+            created: d.created.toISOString(),
+            modified: d.modified.toISOString(),
           })),
         });
     });
@@ -205,6 +209,8 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
             delegate: d.delegate,
             delegator: d.delegator,
             label: d.label,
+            created: d.created.toISOString(),
+            modified: d.modified.toISOString(),
           })),
         });
 

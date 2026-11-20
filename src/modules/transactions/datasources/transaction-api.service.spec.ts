@@ -626,7 +626,10 @@ describe('TransactionApi', () => {
             key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
           },
           params: {
-            ...delegate,
+            safe: delegate.safe,
+            delegate: delegate.delegate,
+            delegator: delegate.delegator,
+            label: delegate.label,
             limit,
             offset,
           },
@@ -680,7 +683,10 @@ describe('TransactionApi', () => {
             key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
           },
           params: {
-            ...delegate,
+            safe: delegate.safe,
+            delegate: delegate.delegate,
+            delegator: delegate.delegator,
+            label: delegate.label,
             limit,
             offset,
           },
@@ -709,7 +715,10 @@ describe('TransactionApi', () => {
       expect(networkService.post).toHaveBeenCalledWith({
         url: postDelegateUrl,
         data: {
-          ...delegate,
+          safe: delegate.safe,
+          delegate: delegate.delegate,
+          delegator: delegate.delegator,
+          label: delegate.label,
           signature,
         },
       });
@@ -749,7 +758,10 @@ describe('TransactionApi', () => {
       expect(networkService.post).toHaveBeenCalledWith({
         url: postDelegateUrl,
         data: {
-          ...delegate,
+          safe: delegate.safe,
+          delegate: delegate.delegate,
+          delegator: delegate.delegator,
+          label: delegate.label,
           signature,
         },
       });
