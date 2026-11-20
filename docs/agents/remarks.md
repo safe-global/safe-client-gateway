@@ -183,6 +183,17 @@ await expect(service.mintToken()).rejects.toThrow(new UnauthorizedException('Inv
 **Spotted in:** #3157 ("dont hurt to have but also not sure we really need these tests :) they dont bring much value", "dont trust everything claude says :)").
 **Status:** active
 
+### R-032: Test file suffix that doesn't match the layer it runs in
+
+**Pattern:** a `*.spec.ts` that boots a controller's Nest module, or a `*.e2e-spec.ts` whose upstream calls are all mocked — including new coverage added only as e2e.
+
+**Why it's bad:** #3107's and #3393's e2e specs would never have run on a PR, and #2884's module-booting suite sat in the unit project. Nothing failed; the coverage just wasn't where the reader thought it was.
+
+**Corrected form:** #3393 renamed `policies.e2e-spec.ts` to `policies.integration.spec.ts`, #3107 renamed its controller spec "from e2e to integration so CI picks it up", and #2884's `owners.controller.v3.spec.ts` landed as `owners.controller.v3.integration.spec.ts`.
+
+**Spotted in:** #2884 ("I would suggest to rename owners.controller.v3.spec.ts to be owners.controller.v3.integration.spec.ts as it is not unit but rather integration test suite"), #3107 ("becuase it is e2e test (and not integration) it wil not be run as part of CI but only on demand"), #3393 ("I think this test is more of an integration than e2e as you are mocking network calls").
+**Status:** active — `testing.md`'s "Test taxonomy" rule owns this.
+
 ## Types
 
 ### R-009: `unknown` in a public signature where a generic belongs
@@ -214,10 +225,10 @@ async post<T>(url: string, body: object): Promise<Raw<T>>;
 ```ts
 // Don't
 @ApiProperty({ nullable: true })
-safe?: `0x${string}` | null;
+safe?: Address | null;
 // Do — pick the one the schema allows, and annotate it accordingly
 @ApiPropertyOptional({ type: String })
-safe?: `0x${string}`;
+safe?: Address;
 // Do — a key that is always present but may be null
 @ApiProperty({ type: Relayer, nullable: true })
 relayer: Relayer | null;
@@ -257,6 +268,24 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 **Spotted in:** #3228 (the `SubscriptionStatus` suggestion, "maybe we could set them as `const` to avoid using literals?"), #2854 ("Can we make it an actual enum instead of hard coding it?", "it should be an actual enum and reused in multiple places"), #3564 ("We should read from the `Operation` enum."), #3619 ("dynamically derive the disallowed names from DISALLOWED_TAG_NAMES here and all other descriptions").
 **Status:** active
+
+### R-033: `string` where the project already has the type
+
+**Pattern:** an address, chain id or UUID typed `string`, or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
+
+**Why it's bad:** #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction` field by field, and #3531's member `address` was a plain `string` beside typed siblings.
+
+**Corrected form:**
+
+```ts
+// Don't
+export type SafeRef = { chainId: string; address: Address };
+// Do
+export type SafeRef = z.infer<typeof SafeRefSchema>;
+```
+
+**Spotted in:** #3531 ("Should we use Address from viem instead of string here?", then "This could also use Address from viem" and "Same here :)" on two more files), #3391 ("Nit: Would be nice to infer the type from the global `ChainIdSchema`.", "Nit: Same here, we could infer the type from `AddressSchema`"), #3392 ("Nit: Can we read it from the schemas?"), #3564 ("Why are we not using the current types we have? We have Safe TX type."), #3117 (a suggestion replacing `uuid: string` with `uuid: UUID`).
+**Status:** active — `best-practices.md`'s "The project's type, not `string`" rule owns this, with `api-dtos-and-validation.md`'s "Domain types from Zod" rule for the `z.infer` side.
 
 ## Structure
 
@@ -350,6 +379,24 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 **Spotted in:** #3245 ("shouldnt this be a FF like the rest?"), #3157 ("it kind of doesnt go very well with other FF defined here… just calling it `Zerion` would be confusing, what about `zerionBalances`"), #3447 ("The flag comment needs an owner and a removal condition").
 **Status:** active — see `configuration-and-flags.md`.
 
+### R-035: One concept under two names
+
+**Pattern:** a product alias beside the module's own name (`Copilot*` flags, guards and errors inside `safe-shield`), a stored value spelled differently from the config-service flag that gates the same feature, or env vars for one resource under two prefixes.
+
+**Why it's bad:** every `Copilot*` name in #3454 matched every other, so the second name for Safe Shield only showed against the rest of the module; #3613's stored value and #3565's env vars split the same way.
+
+**Corrected form:**
+
+```ts
+// Don't — in safe-shield
+copilotCoreDisabled: process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'true',
+// Do
+safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
+```
+
+**Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`").
+**Status:** active — `module-structure.md`'s "One name per concept" rule owns this.
+
 ## Caching and upstream calls
 
 ### R-020: Bypassing `NetworkService` for an upstream call
@@ -395,6 +442,24 @@ await Promise.allSettled([
 
 **Spotted in:** #3223 ("Should we also use Promise.allSettled here? To make sure all caches are being cleared."), #3223 ("And why don't we re-use `this.clearMultisigTransactions` here?").
 **Status:** active
+
+### R-036: A cached value whose shape or meaning changes under the same key
+
+**Pattern:** a diff that changes a cached schema (a new required key, a `.nullable()` that still requires the key) or what a cached entry means, while the `CacheRouter` key stays the same.
+
+**Why it's bad:** in #3437 old entries would have failed quota checks, Safe-seat checks included, until they expired; #3447's 24h chain list would have kept routing opBNB to Zerion after deploy.
+
+**Corrected form:** a new key; a cache read by hand may instead treat an unreadable entry as a miss.
+
+```ts
+// Don't
+private static readonly ZERION_CHAINS_KEY = 'zerion_chains'; // now only indexed chains
+// Do
+private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
+```
+
+**Spotted in:** #3437 ("Should we handle existing cached grants before making counter mandatory?"), #3447 ("Change the chain-list cache field (`zerion_chains`, 24h). Otherwise the old list keeps serving opBNB after deploy.").
+**Status:** active — `caching-and-performance.md`'s "A changed cached shape or meaning gets a new key" rule owns this.
 
 ## Logging and errors
 
@@ -487,6 +552,17 @@ await Promise.allSettled([
 
 **Spotted in:** #3294 ("it is better to pin against a hash").
 **Status:** active
+
+### R-034: A removal that leaves its dependents behind
+
+**Pattern:** a diff removing a feature, endpoint or env-driven path that keeps its env vars in `.env.sample.json` or `.devcontainer/docker-compose.yml`, or leaves sibling endpoints of the same deprecated family, and the code only they call, in place.
+
+**Why it's bad:** #3105 would have left three relay variables documented in `.env.sample.json` and the devcontainer after the code stopped reading them, and #3225 first removed one deprecated `/raw` route while its two siblings, and the code only they called, stayed.
+
+**Corrected form:** #3105 deleted the entries from both files; #3225 removed all three `/raw` routes down to the datasource.
+
+**Spotted in:** #3105 ("There are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml"), #3225 ("Let's remove all `/raw` endpoints in this PR.").
+**Status:** active — `commits-and-prs.md`'s "A removal takes what only it used" rule owns this.
 
 ## Authorization
 

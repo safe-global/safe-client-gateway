@@ -44,7 +44,7 @@ This mirror is distinct from the narrower `FakeConfigurationService` (`src/confi
 
 **Canonical example:** `.husky/pre-commit` runs `yarn run env:validate:silent` before `lint`/`format`, and `.github/workflows/_ci-node.yml` runs the same `env:validate:silent` step, so an undocumented var fails at commit time and again in CI if the hook was ever bypassed.
 
-An entry that lingers in `.env.sample.json` after its variable leaves the code only warns (`extraInJson`) and exits zero; deleting the stale entry is good hygiene, not something either check enforces.
+An entry that lingers in `.env.sample.json` after its variable leaves the code only warns (`extraInJson`) and exits zero; neither check enforces deleting it, but `commits-and-prs.md`'s "A removal takes what only it used" rule requires it.
 
 ### Feature flags
 

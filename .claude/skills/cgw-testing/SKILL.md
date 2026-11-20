@@ -20,4 +20,4 @@ Two rules that break things immediately if missed:
 
 2. **Test data comes from builders + faker.** No literal fixtures. Enum members, taxonomy strings, and assertion-boundary values are the exception.
 
-Also load **cgw-remarks** when writing specs — R-001 through R-008 are the eight test remarks this repo raises most often (redundant `as unknown` casts, `as never`, mocking config instead of `FakeConfigurationService`, literal test data, `.mock.calls` assertions, bare `rejects.toThrow()`).
+Also load **cgw-remarks** when writing specs — R-001 through R-008 and R-032 are the test remarks this repo raises most often (redundant `as unknown` casts, `as never`, mocking config instead of `FakeConfigurationService`, literal test data, `.mock.calls` assertions, bare `rejects.toThrow()`, a file suffix that doesn't match the layer the test runs in).

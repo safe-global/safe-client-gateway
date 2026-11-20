@@ -26,6 +26,34 @@ The key/TTL/clear pieces of this recipe are each covered in more depth in the ru
 
 The mechanism's own internal bookkeeping is the one exception: `CacheFirstDataSource` and `RedisCacheService` each build their own `invalidationTimeMs:<key>` marker directly, since that marker belongs to the cache mechanism itself and not to a feature datasource's key space.
 
+### A changed cached shape or meaning gets a new key
+
+**Rule:** When a change alters the schema of a cached value — a new required key, or a `.nullable()` field that still requires the key to be present — or what a cached entry means, change its key in `CacheRouter` in the same PR. A cache read by hand rather than through `CacheFirstDataSource` may instead treat an entry it can't parse as a miss; through `CacheFirstDataSource` there is no such option, so the key must change.
+
+**Why:** entries the previous version wrote stay under the old key for the whole TTL, and during a rolling deploy older instances keep writing them while the new ones read. Through `CacheFirstDataSource` the repository's `Schema.parse()` throws on such an entry, so every read fails until it expires; a changed meaning fails nothing and silently serves the old answer for a full TTL. Neither shows in the diff that causes it — the code and its tests only ever see entries the new version wrote.
+
+**Canonical example:** `CacheRouter.ZERION_CHAINS_KEY` in `src/datasources/cache/cache.router.ts` became `'zerion_indexed_chains'` when the cached list changed from all chains to indexed chains only. For a hand-read cache, `EntitlementsService.readCachedGrants` in `src/modules/entitlements/routes/entitlements.service.ts` returns `null` for an entry `CachedGrantsSchema` rejects, and the caller recomputes:
+
+```ts
+// Meaning changed: a new key
+private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
+
+// Shape changed, read by hand: an unreadable entry is a miss
+private readCachedGrants(
+  spaceId: Space['id'],
+  cached: string,
+): Record<string, FeatureGrant> | null {
+  try {
+    return CachedGrantsSchema.parse(JSON.parse(cached));
+  } catch (error) {
+    this.loggingService.warn(
+      `Unreadable cached entitlements for space ${spaceId}, recomputing: ${asError(error).message}`,
+    );
+    return null;
+  }
+}
+```
+
 ### No literal TTLs
 
 **Rule:** Every cache TTL comes from `expirationTimeInSeconds.*` in `src/config/entities/configuration.ts`, never a number literal at the call site; negative caching via `notFoundExpireTimeSeconds` is mandatory on every cached read, not an optional extra reserved for high-traffic endpoints.

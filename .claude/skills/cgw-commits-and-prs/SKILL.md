@@ -1,6 +1,6 @@
 ---
 name: cgw-commits-and-prs
-description: Use when writing a commit message, a PR title, or a PR body in safe-client-gateway, or when deciding whether a change is too large for one PR. Covers the Conventional Commits shape this repo uses, the nine allowed types and when each applies, module-name scopes, the fact that main is squash-merged so the PR title becomes the permanent commit subject, the required PR body sections (Summary, Changes), how to split an oversized change, and issue linking. Triggers on "commit message", "commit this", "PR title", "PR description", "open a PR", "split this PR", "is this too big".
+description: Use when writing a commit message, a PR title, or a PR body in safe-client-gateway, or when deciding whether a change is too large for one PR. Covers the Conventional Commits shape this repo uses, the nine allowed types and when each applies, module-name scopes, the fact that main is squash-merged so the PR title becomes the permanent commit subject, the required PR body sections (Summary, Changes), how to split an oversized change, removing what only a removed path used, and issue linking. Triggers on "commit message", "commit this", "PR title", "PR description", "open a PR", "split this PR", "is this too big".
 ---
 
 # CGW Commits and Pull Requests

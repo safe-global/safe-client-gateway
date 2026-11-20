@@ -15,4 +15,4 @@ Three non-negotiables from [AGENTS.md](../../../AGENTS.md) live here:
 
 Perf PRs follow their own protocol: small, single-concern, and measured. A 19-file perf refactor here (#2926) was reverted the same day (#3034) because the one bad change could not be separated from the good ones.
 
-Also load **cgw-remarks** — R-020 (bypassing `NetworkService`), R-021 (cache write with no invalidation), and R-022 (sequential or partial cache clears) are the recurring shapes.
+Also load **cgw-remarks** — R-020 (bypassing `NetworkService`), R-021 (cache write with no invalidation), R-022 (sequential or partial cache clears), and R-036 (a cached value whose shape or meaning changes under the same key) are the recurring shapes.
