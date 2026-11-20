@@ -537,6 +537,11 @@ export default () => ({
     // Hides every SafePolicyGuard policy from the active and pending policy
     // endpoints while the guard flow is unreleased.
     guardPolicies: process.env.FF_GUARD_POLICIES?.toLowerCase() === 'true',
+    // Owner: Security Hub token approvals (WA-4142). Gates the token
+    // approvals endpoint while its history scan cost is validated against the
+    // Transaction Service. Remove the flag once the wallet reads approvals
+    // from this endpoint in production.
+    tokenApprovals: process.env.FF_TOKEN_APPROVALS?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -879,6 +884,37 @@ export default () => ({
       ),
     },
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
+  },
+  tokenApprovals: {
+    history: {
+      /** Pages (of 200 transactions) read per history list before the scan stops. */
+      maxPages: Number.parseInt(
+        process.env.TOKEN_APPROVALS_HISTORY_MAX_PAGES ?? `${25}`,
+        10,
+      ),
+      /** History pages requested from the Transaction Service at the same time. */
+      concurrency: Number.parseInt(
+        process.env.TOKEN_APPROVALS_HISTORY_CONCURRENCY ?? `${4}`,
+        10,
+      ),
+    },
+    receipts: {
+      /** Transaction receipts requested from the RPC at the same time. */
+      concurrency: Number.parseInt(
+        process.env.TOKEN_APPROVALS_RECEIPTS_CONCURRENCY ?? `${20}`,
+        10,
+      ),
+    },
+    rateLimit: {
+      max: Number.parseInt(
+        process.env.TOKEN_APPROVALS_RATE_LIMIT_MAX ?? `${30}`,
+        10,
+      ),
+      windowSeconds: Number.parseInt(
+        process.env.TOKEN_APPROVALS_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+        10,
+      ),
+    },
   },
   policies: {
     /** How many delayed configuration requests CGW stores per Safe and Space. */
