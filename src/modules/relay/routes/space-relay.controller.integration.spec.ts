@@ -26,7 +26,11 @@ import type { INetworkService } from '#/datasources/network/network.service.inte
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
-import { getSignerFactoryDeployments } from '#/domain/common/utils/deployments';
+import {
+  getProxyFactoryDeployments,
+  getSafeSingletonDeployments,
+  getSignerFactoryDeployments,
+} from '#/domain/common/utils/deployments';
 import { execTransactionFromModuleEncoder } from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
@@ -46,6 +50,7 @@ import { FeatureType } from '#/modules/entitlements/domain/entities/feature.enti
 import { QUOTA_EXCEEDED_ERROR_CODE } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
 import { SpaceRelayController } from '#/modules/relay/routes/space-relay.controller';
@@ -424,6 +429,34 @@ describe('SpaceRelayController', () => {
     await relay({ spaceId, accessToken, ...signerDeployment() }).expect(201);
 
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
+  });
+
+  it('should answer 422 for a Safe creation whose initializer does not decode', async () => {
+    const { accessToken, spaceId } = await createSpaceForSigner();
+    const version = '1.3.0';
+    mockNetwork({});
+    const data = createProxyWithNonceEncoder()
+      .with(
+        'singleton',
+        faker.helpers.arrayElement(
+          getSafeSingletonDeployments({ version, chainId: CHAIN_ID }),
+        ),
+      )
+      .with('initializer', '0x00000000')
+      .encode();
+    const to = faker.helpers.arrayElement(
+      getProxyFactoryDeployments({ version, chainId: CHAIN_ID }),
+    );
+
+    await relay({ spaceId, accessToken, to, data })
+      .expect(HttpStatus.UNPROCESSABLE_ENTITY)
+      .expect({
+        message:
+          'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
   it('should answer 503 for a malformed relay reply and give the unit back', async () => {
