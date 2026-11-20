@@ -37,7 +37,10 @@ import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/_
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import { SafeConfigOwnerChanges } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
-import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import {
+  safeBuilder,
+  safeV2Builder,
+} from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { stakeBuilder } from '#/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
@@ -1680,6 +1683,7 @@ describe('Hook Events for Cache', () => {
       .with('chainId', chain.chainId)
       .build();
     const safe = safeBuilder().with('address', event.address).build();
+    const indexedSafe = safeV2Builder().with('address', safe.address).build();
     const [ownerAddress] = safe.owners;
     const owner = { chainId: chain.chainId, ownerAddress };
     const cacheDir = CacheRouter.getSafesByOwnerV2CacheDir({
@@ -1703,7 +1707,7 @@ describe('Hook Events for Cache', () => {
                 .with('count', indexed ? 1 : 0)
                 .with('next', null)
                 .with('previous', null)
-                .with('results', indexed ? [{ address: safe.address }] : [])
+                .with('results', indexed ? [indexedSafe] : [])
                 .build(),
             ),
             status: 200,

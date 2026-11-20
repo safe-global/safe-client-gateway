@@ -29,9 +29,10 @@ import {
   creationTransactionBuilder,
   toJson,
 } from '#/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import { safeV2Builder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
-function ownerPage(addresses: Array<string | number>) {
+function ownerPage(addresses: Array<string>) {
   return rawify(
     pageBuilder()
       .with('count', addresses.length)
@@ -39,7 +40,9 @@ function ownerPage(addresses: Array<string | number>) {
       .with('previous', null)
       .with(
         'results',
-        addresses.map((address) => ({ address })),
+        addresses.map((address) =>
+          safeV2Builder().with('address', getAddress(address)).build(),
+        ),
       )
       .build(),
   );
@@ -349,11 +352,9 @@ describe('Owners Controller (Unit)', () => {
 
       const chain = chainBuilder().with('chainId', chainId).build();
 
-      const safesOnChain = [
-        faker.finance.ethereumAddress(),
-        faker.number.int(),
-        faker.finance.ethereumAddress(),
-      ];
+      const malformedOwnerPage = pageBuilder()
+        .with('results', [{ address: faker.number.int() }])
+        .build();
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -375,7 +376,7 @@ describe('Owners Controller (Unit)', () => {
 
           case `${chain.transactionService}/api/v2/owners/${ownerAddress}/safes/`: {
             return Promise.resolve({
-              data: ownerPage(safesOnChain),
+              data: rawify(malformedOwnerPage),
               status: 200,
             });
           }

@@ -19,6 +19,7 @@ import { NetworkService } from '#/datasources/network/network.service.interface'
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { safeV2Builder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Owners Controller (Unit)', () => {
@@ -52,7 +53,7 @@ describe('Owners Controller (Unit)', () => {
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       const safes = Array.from(
         { length: SAFE_TRANSACTION_SERVICE_MAX_LIMIT },
-        () => ({ address: faker.finance.ethereumAddress() }),
+        () => safeV2Builder().build(),
       );
       const page = pageBuilder()
         .with('count', safes.length + 1)
