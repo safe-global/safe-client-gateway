@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Module } from '@nestjs/common';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import type { KnownOrder } from '#/modules/swaps/domain/entities/order.entity';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import { SwapOrderTransactionInfo } from '#/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
@@ -9,6 +11,7 @@ import {
   SwapAppsHelperModule,
 } from '#/modules/transactions/routes/helpers/swap-apps.helper';
 import {
+  type SwapOrderCalls,
   SwapOrderHelper,
   SwapOrderHelperModule,
 } from '#/modules/transactions/routes/helpers/swap-order.helper';
@@ -23,10 +26,10 @@ export class SwapOrderMapper {
 
   async mapSwapOrder(
     chainId: string,
-    transaction: { data: Address },
+    orderCalls: SwapOrderCalls,
   ): Promise<SwapOrderTransactionInfo> {
     const orderUid: Address | null =
-      this.gpv2Decoder.getOrderUidFromSetPreSignature(transaction.data);
+      this.gpv2Decoder.getOrderUidFromSetPreSignature(orderCalls.preSignature);
     if (!orderUid) {
       throw new Error('Order UID not found in transaction data');
     }
@@ -46,6 +49,8 @@ export class SwapOrderMapper {
         chainId,
       }),
     ]);
+
+    this.assertCallsMatchOrder({ orderCalls, order, sellToken });
 
     return new SwapOrderTransactionInfo({
       uid: order.uid,
@@ -87,6 +92,36 @@ export class SwapOrderMapper {
       owner: order.owner,
       fullAppData: order.fullAppData,
     });
+  }
+
+  /**
+   * Checks the approvals and wraps batched with the presignature against the order:
+   * they must be for its sell token, and wraps only of a trusted token.
+   * The wrapped amount is not checked, as it may differ from the order's sell amount.
+   */
+  private assertCallsMatchOrder(args: {
+    orderCalls: SwapOrderCalls;
+    order: KnownOrder;
+    sellToken: Token;
+  }): void {
+    const { orderCalls, order, sellToken } = args;
+    const isSellToken = (token: Address): boolean =>
+      isAddressEqual(token, order.sellToken);
+
+    if (!orderCalls.approvedTokens.every(isSellToken)) {
+      throw new Error('Approval is not for the order sell token');
+    }
+
+    if (orderCalls.wrappedTokens.length === 0) {
+      return;
+    }
+
+    const isOrderWrap =
+      sellToken.trusted && orderCalls.wrappedTokens.every(isSellToken);
+
+    if (!isOrderWrap) {
+      throw new Error('Wrap does not match the order sell token');
+    }
   }
 }
 

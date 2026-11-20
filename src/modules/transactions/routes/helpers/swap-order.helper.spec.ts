@@ -1,12 +1,36 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress, type Hex } from 'viem';
-import type { Mocked, MockedObject } from 'vitest';
+import {
+  type Address,
+  concat,
+  encodeFunctionData,
+  encodePacked,
+  getAddress,
+  type Hex,
+  keccak256,
+  parseAbi,
+  toBytes,
+} from 'viem';
+import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
+import type { ILoggingService } from '#/logging/logging.interface';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
-import type { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import {
+  erc20ApproveEncoder,
+  erc20TransferEncoder,
+} from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { setPreSignatureEncoder } from '#/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
+import { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { orderBuilder } from '#/modules/swaps/domain/entities/__tests__/order.builder';
 import {
   OrderKind,
@@ -15,8 +39,8 @@ import {
 import type { SwapsRepository } from '#/modules/swaps/domain/swaps.repository';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { GPv2OrderHelper } from '#/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { SwapOrderHelper } from '#/modules/transactions/routes/helpers/swap-order.helper';
-import type { TransactionFinder } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 const swapsRepository = {
   getOrder: vi.fn(),
@@ -39,8 +63,11 @@ const configurationService = {
 } as MockedObject<IConfigurationService>;
 const configurationServiceMock = vi.mocked(configurationService);
 
-const transactionFinder = {} as Mocked<TransactionFinder>;
-const transactionFinderMock = vi.mocked(transactionFinder);
+const loggingService = {
+  debug: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
+const multiSendDecoder = new MultiSendDecoder(loggingService);
 
 const chainsRepository = {
   getChain: vi.fn(),
@@ -61,7 +88,7 @@ describe('Swap Order Helper tests', () => {
     });
 
     target = new SwapOrderHelper(
-      transactionFinderMock,
+      multiSendDecoder,
       gpv2DecoderMock,
       tokenRepositoryMock,
       swapsRepositoryMock,
@@ -221,5 +248,214 @@ describe('Swap Order Helper tests', () => {
       type: 'NATIVE_TOKEN',
       trusted: true,
     });
+  });
+});
+
+describe('SwapOrderHelper.findSwapOrder', () => {
+  const chainId = '11155111';
+  const officialMultiSend = faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId }),
+  );
+  const fakeConfigurationService = new FakeConfigurationService();
+  fakeConfigurationService.set('swaps.explorerBaseUri', faker.internet.url());
+  const target = new SwapOrderHelper(
+    multiSendDecoder,
+    new GPv2Decoder(loggingService),
+    tokenRepositoryMock,
+    swapsRepositoryMock,
+    fakeConfigurationService,
+    chainsRepositoryMock,
+  );
+
+  const randomAddress = (): Address =>
+    getAddress(faker.finance.ethereumAddress());
+  const orderUid = (owner: Address): Hex =>
+    encodePacked(
+      ['bytes32', 'address', 'uint32'],
+      [
+        keccak256(toBytes(faker.string.hexadecimal({ length: 64 }))),
+        owner,
+        faker.number.int({ min: 1, max: 2 ** 32 - 1 }),
+      ],
+    );
+
+  type Call = {
+    operation: number;
+    to: Address;
+    value: bigint;
+    data: Hex;
+  };
+
+  const safeAddress = randomAddress();
+  const presign = (overrides: Partial<Call> = {}, signed = true): Call => ({
+    operation: Operation.CALL,
+    to: GPv2OrderHelper.SettlementContractAddress,
+    value: BigInt(0),
+    data: setPreSignatureEncoder()
+      .with('orderUid', orderUid(safeAddress))
+      .with('signed', signed)
+      .encode(),
+    ...overrides,
+  });
+  const approve = (
+    spender: Address = GPv2OrderHelper.VaultRelayerAddress,
+  ): Call => ({
+    operation: Operation.CALL,
+    to: randomAddress(),
+    value: BigInt(0),
+    data: erc20ApproveEncoder().with('spender', spender).encode(),
+  });
+  const wrap = (): Call => ({
+    operation: Operation.CALL,
+    to: randomAddress(),
+    value: faker.number.bigInt({ min: 1, max: 10n ** 18n }),
+    data: encodeFunctionData({
+      abi: parseAbi(['function deposit() payable']),
+      functionName: 'deposit',
+    }),
+  });
+  const nativeTransfer = (): Call => ({
+    operation: Operation.CALL,
+    to: randomAddress(),
+    value: faker.number.bigInt({ min: 1, max: 10n ** 18n }),
+    data: '0x',
+  });
+  const tokenTransfer = (): Call => ({
+    operation: Operation.CALL,
+    to: randomAddress(),
+    value: BigInt(0),
+    data: erc20TransferEncoder().encode(),
+  });
+
+  const single = (call: Call) => ({
+    chainId,
+    safeAddress,
+    transaction: {
+      to: call.to,
+      value: call.value.toString(),
+      data: call.data,
+      operation: call.operation,
+    },
+  });
+  const batch = (
+    calls: Array<Call>,
+    overrides: { to?: Address; operation?: Operation } = {},
+  ) => ({
+    chainId,
+    safeAddress,
+    transaction: {
+      to: overrides.to ?? officialMultiSend,
+      value: '0',
+      data: multiSendEncoder()
+        .with('transactions', multiSendTransactionsEncoder(calls))
+        .encode(),
+      operation: overrides.operation ?? Operation.DELEGATE,
+    },
+  });
+
+  it('finds a presignature of an order owned by the Safe', () => {
+    const call = presign();
+
+    expect(target.findSwapOrder(single(call))).toStrictEqual({
+      preSignature: call.data,
+      approvedTokens: [],
+      wrappedTokens: [],
+    });
+  });
+
+  it('finds a batch of wrap, approval to the VaultRelayer and presignature', () => {
+    const wrapCall = wrap();
+    const approveCall = approve();
+    const presignCall = presign();
+
+    expect(
+      target.findSwapOrder(batch([wrapCall, approveCall, presignCall])),
+    ).toStrictEqual({
+      preSignature: presignCall.data,
+      approvedTokens: [approveCall.to],
+      wrappedTokens: [wrapCall.to],
+    });
+  });
+
+  it('ignores a transaction without a presignature', () => {
+    expect(target.findSwapOrder(single(tokenTransfer()))).toBeNull();
+  });
+
+  it.each([
+    ['a native transfer', nativeTransfer],
+    ['a token transfer', tokenTransfer],
+    ['an approval to another spender', () => approve(randomAddress())],
+    ['a second presignature', () => presign()],
+  ])('ignores a batch that also contains %s', (_, other) => {
+    expect(target.findSwapOrder(batch([other(), presign()]))).toBeNull();
+  });
+
+  it('ignores a presignature sent to an address other than the Settlement contract', () => {
+    expect(
+      target.findSwapOrder(single(presign({ to: randomAddress() }))),
+    ).toBeNull();
+  });
+
+  it('ignores a presignature that sends value', () => {
+    expect(
+      target.findSwapOrder(
+        single(presign({ value: faker.number.bigInt({ min: 1 }) })),
+      ),
+    ).toBeNull();
+  });
+
+  it('ignores a presignature made with a delegate call', () => {
+    expect(
+      target.findSwapOrder(batch([presign({ operation: Operation.DELEGATE })])),
+    ).toBeNull();
+  });
+
+  it('ignores a cancelled presignature', () => {
+    expect(target.findSwapOrder(single(presign({}, false)))).toBeNull();
+  });
+
+  it('ignores a presignature of an order owned by another address', () => {
+    const call = presign({
+      data: setPreSignatureEncoder()
+        .with('orderUid', orderUid(randomAddress()))
+        .with('signed', true)
+        .encode(),
+    });
+
+    expect(target.findSwapOrder(single(call))).toBeNull();
+  });
+
+  it('ignores a batch whose last entry is truncated', () => {
+    const truncatedEntry = encodePacked(
+      ['uint8', 'address', 'uint256'],
+      [Operation.CALL, randomAddress(), faker.number.bigInt({ min: 1 })],
+    );
+    const args = batch([presign()]);
+    const transactions = concat([
+      multiSendTransactionsEncoder([presign()]),
+      truncatedEntry,
+    ]);
+
+    expect(
+      target.findSwapOrder({
+        ...args,
+        transaction: {
+          ...args.transaction,
+          data: multiSendEncoder().with('transactions', transactions).encode(),
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it('ignores a batch sent to an unofficial MultiSend', () => {
+    expect(
+      target.findSwapOrder(batch([presign()], { to: randomAddress() })),
+    ).toBeNull();
+  });
+
+  it('ignores a batch that is not delegate called', () => {
+    expect(
+      target.findSwapOrder(batch([presign()], { operation: Operation.CALL })),
+    ).toBeNull();
   });
 });

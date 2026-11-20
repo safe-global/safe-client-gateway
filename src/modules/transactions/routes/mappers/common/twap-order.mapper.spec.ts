@@ -53,7 +53,7 @@ describe('TwapOrderMapper', () => {
   const gpv2Decoder = new GPv2Decoder(mockLoggingService);
   const allowedApps = new Set<string>();
   const swapOrderHelper = new SwapOrderHelper(
-    transactionFinder,
+    multiSendDecoder,
     gpv2Decoder,
     mockTokenRepository,
     mockSwapsRepository,
