@@ -7,6 +7,7 @@ import {
   Controller,
   Delete,
   HttpCode,
+  HttpStatus,
   Inject,
   Param,
   Post,
@@ -19,6 +20,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import {
@@ -27,11 +29,15 @@ import {
   recoverMessageAddress,
   toBytes,
 } from 'viem';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
 import { NotificationType } from '#/modules/notifications/domain/v2/entities/notification.entity';
-import { RegisterDeviceDto } from '#/modules/notifications/routes/v1/entities/register-device.dto.entity';
+import {
+  RegisterDeviceDto,
+  RegisterDeviceDtoSchema,
+} from '#/modules/notifications/routes/v1/entities/register-device.dto.entity';
 import type { UpsertSubscriptionsSafesDto } from '#/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '#/modules/notifications/routes/v2/notifications.service';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
@@ -62,12 +68,16 @@ export class NotificationsController {
     description: 'Device registered successfully for notifications',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid device data, expired timestamp, or invalid signature',
+    description: 'Expired timestamp',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid device data or malformed signature',
   })
   @Post('register/notifications')
   @HttpCode(200)
   async registerDevice(
-    @Body() registerDeviceDto: RegisterDeviceDto,
+    @Body(new ValidationPipe(RegisterDeviceDtoSchema))
+    registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
     if (registerDeviceDto.timestamp) {
       this.validateTimestamp(Number.parseInt(registerDeviceDto.timestamp, 10));
@@ -79,7 +89,7 @@ export class NotificationsController {
     const deleteAllDeviceOwners =
       registerDeviceDto.deviceType !== DeviceType.Web;
 
-    if (deleteAllDeviceOwners && registerDeviceDto.uuid !== undefined) {
+    if (deleteAllDeviceOwners && registerDeviceDto.uuid) {
       // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
       // Instead, they resend the updated list of owners without the key they want to delete.
       // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
@@ -135,7 +145,7 @@ export class NotificationsController {
           const uniqueSafeAddresses = new Set(safeV1Registration.safes);
           for (const safeAddresses of uniqueSafeAddresses) {
             safeV2.upsertSubscriptionsDto.safes.push({
-              address: safeAddresses as Address,
+              address: safeAddresses,
               chainId: safeV1Registration.chainId,
               notificationTypes: Object.values(NotificationType),
             });
@@ -196,18 +206,26 @@ export class NotificationsController {
     /**
      * @todo Explore the feasibility of using a unified method to recover signatures for both web and other clients.
      */
-    if (args.registerDeviceDto.deviceType === DeviceType.Web) {
-      return await recoverMessageAddress({
-        message: {
-          raw: this.messageToRecover(args),
-        },
+    try {
+      if (args.registerDeviceDto.deviceType === DeviceType.Web) {
+        return await recoverMessageAddress({
+          message: {
+            raw: this.messageToRecover(args),
+          },
+          signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
+        });
+      }
+      return await recoverAddress({
+        hash: this.messageToRecover(args),
         signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
       });
+    } catch {
+      // Recovery throws on malformed signatures (length, v, r/s), a client error
+      throw new HttpExceptionNoLog(
+        'Invalid signature',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
-    return await recoverAddress({
-      hash: this.messageToRecover(args),
-      signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
-    });
   }
 
   @ApiOperation({

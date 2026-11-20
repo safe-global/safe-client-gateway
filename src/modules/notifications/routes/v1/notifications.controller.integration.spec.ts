@@ -4,7 +4,14 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import { type INestApplication, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import {
+  type Address,
+  getAddress,
+  keccak256,
+  numberToHex,
+  toBytes,
+} from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -16,6 +23,7 @@ import configuration from '#/config/entities/__tests__/configuration';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
 import { createV2RegisterDtoBuilder } from '#/modules/notifications/routes/v1/entities/__tests__/create-registration-v2.dto.builder';
@@ -260,6 +268,198 @@ describe('Notifications Controller', () => {
         );
       expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
         safeRegistrationsWithSafe.length,
+      );
+    });
+
+    const buildUnsignedInputDto = async (args: {
+      deviceType: DeviceType;
+      signatures: Array<string>;
+    }): Promise<RegisterDeviceDto> => {
+      const registerDeviceDto = await buildInputDto(1);
+      registerDeviceDto.deviceType = args.deviceType;
+      registerDeviceDto.safeRegistrations[0].safes = [
+        getAddress(faker.finance.ethereumAddress()),
+      ];
+      registerDeviceDto.safeRegistrations[0].signatures = args.signatures;
+      return registerDeviceDto;
+    };
+
+    it.each([[[]], [['']]])(
+      'Should accept a registration without signatures (%j)',
+      async (signatures) => {
+        const registerDeviceDto = await buildUnsignedInputDto({
+          deviceType: faker.helpers.enumValue(DeviceType),
+          signatures,
+        });
+
+        await request(app.getHttpServer())
+          .post('/v1/register/notifications')
+          .send(registerDeviceDto)
+          .expect(200);
+
+        expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it.each([DeviceType.Android, DeviceType.Ios])(
+      'Should delete the previous owners of a %s device',
+      async (deviceType) => {
+        const registerDeviceDto = await buildUnsignedInputDto({
+          deviceType,
+          signatures: [],
+        });
+
+        await request(app.getHttpServer())
+          .post('/v1/register/notifications')
+          .send(registerDeviceDto)
+          .expect(200);
+
+        expect(notificationServiceV2.deleteDevice).toHaveBeenCalledTimes(1);
+        expect(notificationServiceV2.deleteDevice).toHaveBeenCalledWith(
+          registerDeviceDto.uuid,
+        );
+      },
+    );
+
+    it('Should keep the previous owners of a WEB device', async () => {
+      const registerDeviceDto = await buildUnsignedInputDto({
+        deviceType: DeviceType.Web,
+        signatures: [],
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(200);
+
+      expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+    });
+
+    it.each([null, undefined])(
+      'Should not delete a device when uuid is %s',
+      async (uuid) => {
+        const registerDeviceDto = await buildUnsignedInputDto({
+          deviceType: faker.helpers.arrayElement([
+            DeviceType.Android,
+            DeviceType.Ios,
+          ]),
+          signatures: [],
+        });
+        registerDeviceDto.uuid = uuid;
+
+        await request(app.getHttpServer())
+          .post('/v1/register/notifications')
+          .send(registerDeviceDto)
+          .expect(200);
+
+        expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+        expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+          1,
+        );
+      },
+    );
+
+    it('Should recover the signer over lowercase safe addresses as sent', async () => {
+      const signer = privateKeyToAccount(generatePrivateKey());
+      const safe: Address = `0x${faker.string.hexadecimal({ length: 40, casing: 'lower', prefix: '' })}`;
+      const registerDeviceDto = await buildInputDto(1);
+      registerDeviceDto.deviceType = DeviceType.Web;
+      registerDeviceDto.safeRegistrations[0].safes = [safe];
+      registerDeviceDto.safeRegistrations[0].signatures = [
+        await signer.signMessage({
+          message: {
+            raw: keccak256(
+              toBytes(
+                `gnosis-safe${registerDeviceDto.timestamp}${registerDeviceDto.uuid}${registerDeviceDto.cloudMessagingToken}${safe}`,
+              ),
+            ),
+          },
+        }),
+      ];
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(200);
+
+      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authPayload: expect.objectContaining({
+            signer_address: signer.address,
+          }),
+          upsertSubscriptionsDto: expect.objectContaining({
+            safes: [expect.objectContaining({ address: safe })],
+          }),
+        }),
+      );
+    });
+
+    it('Should return 422 if safeRegistrations is missing', async () => {
+      const registerDeviceDto = await buildInputDto();
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send({ ...registerDeviceDto, safeRegistrations: undefined })
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'array',
+          path: ['safeRegistrations'],
+          message: 'Invalid input: expected array, received undefined',
+        });
+
+      expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
+    });
+
+    describe.each(Object.values(DeviceType))('for %s devices', (deviceType) => {
+      // A signature is r (32 bytes) | s (32 bytes) | v; 66 = "0x" + r
+      const withR = (signature: string, r: number): string =>
+        `${numberToHex(r, { size: 32 })}${signature.slice(66)}`;
+
+      it.each([
+        [
+          'of invalid length',
+          (signature: string): string => signature.slice(0, -2),
+        ],
+        [
+          'with an invalid v',
+          (signature: string): string => `${signature.slice(0, -2)}05`,
+        ],
+        ['with a zero r', (signature: string): string => withR(signature, 0)],
+        // No point on secp256k1 has x = 5
+        [
+          'with an r off the curve',
+          (signature: string): string => withR(signature, 5),
+        ],
+      ])(
+        'Should return 422 for a signature %s',
+        async (_, malformSignature) => {
+          const registerDeviceDto = await buildInputDto(1);
+          registerDeviceDto.deviceType = deviceType;
+          const [safeRegistration] = registerDeviceDto.safeRegistrations;
+          safeRegistration.safes = [
+            getAddress(faker.finance.ethereumAddress()),
+          ];
+          safeRegistration.signatures = [
+            malformSignature(safeRegistration.signatures[0]),
+          ];
+
+          await request(app.getHttpServer())
+            .post('/v1/register/notifications')
+            .send(registerDeviceDto)
+            .expect({
+              statusCode: 422,
+              message: 'Invalid signature',
+            });
+
+          expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
+          expect(
+            notificationServiceV2.upsertSubscriptions,
+          ).not.toHaveBeenCalled();
+        },
       );
     });
   });
