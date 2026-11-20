@@ -127,15 +127,17 @@ export class LimitAddressesMapper {
       ) {
         throw new UnofficialProxyFactoryError();
       }
+      const owners =
+        this.relayTransactionHelper.getOwnersFromCreateProxyWithNonce(
+          args.data,
+        );
+      if (!owners) {
+        // The initializer is not a decodable setup call.
+        throw new InvalidTransferError();
+      }
       // Owners of safe-to-be-created will be limited; the Safe does not exist
       // yet, so there is none to attribute the call to.
-      return {
-        safe: null,
-        addresses:
-          this.relayTransactionHelper.getOwnersFromCreateProxyWithNonce(
-            args.data,
-          ),
-      };
+      return { safe: null, addresses: owners };
     }
 
     // Calldata matches createSigner on an official SafeWebAuthnSignerFactory.

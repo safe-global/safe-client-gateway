@@ -6,7 +6,11 @@ import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SafeSignature } from '#/domain/common/entities/safe-signature';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
-import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
+import {
+  getMalformedSignature,
+  getSignature,
+  MALFORMED_SIGNATURE_ERRORS,
+} from '#/domain/common/utils/__tests__/signatures.builder';
 import {
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
   SIGNATURE_HEX_LENGTH,
@@ -145,6 +149,19 @@ describe('SafeSignature', () => {
         }),
     ).toThrow('Concatenated signatures are not supported');
   });
+
+  it.each(MALFORMED_SIGNATURE_ERRORS)(
+    'should throw "%s" for the matching malformed signature',
+    (error) => {
+      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
+
+      expect(
+        () =>
+          new SafeSignature({ signature: getMalformedSignature(error), hash })
+            .owner,
+      ).toThrow(new Error(error));
+    },
+  );
 
   it('should return the r value', () => {
     const signature = getNonContractSignature();

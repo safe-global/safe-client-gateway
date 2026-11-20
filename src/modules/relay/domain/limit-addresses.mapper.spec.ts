@@ -54,6 +54,8 @@ import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/
 import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '#/modules/relay/domain/errors/invalid-multisend.error';
+import { InvalidTransferError } from '#/modules/relay/domain/errors/invalid-transfer.error';
 import { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
 import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -84,6 +86,7 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
 
 const mockLoggingService = {
   warn: vi.fn(),
+  debug: vi.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockSafeRepository = vi.mocked({
@@ -1796,6 +1799,85 @@ describe('LimitAddressesMapper', () => {
 
       expect(resolved.safe).toBeNull();
       expect(resolved.addresses).toHaveLength(1);
+    });
+
+    describe('undecodable calldata', () => {
+      const version = faker.helpers.arrayElement(
+        SAFE_VERSIONS[chainId].filter((candidate) =>
+          PROXY_FACTORY_VERSIONS[chainId].includes(candidate),
+        ),
+      );
+
+      it('should reject a Safe creation whose initializer does not decode as an invalid transfer', async () => {
+        const data = createProxyWithNonceEncoder()
+          .with(
+            'singleton',
+            faker.helpers.arrayElement(
+              getSafeSingletonDeployments({ version, chainId }),
+            ),
+          )
+          .with('initializer', '0x00000000')
+          .encode();
+
+        await expect(
+          target.resolveTarget({
+            version,
+            chainId,
+            data,
+            to: faker.helpers.arrayElement(
+              getProxyFactoryDeployments({ version, chainId }),
+            ),
+          }),
+        ).rejects.toThrow(InvalidTransferError);
+      });
+
+      it('should reject a MultiSend with an empty batch as an invalid multiSend', async () => {
+        const multiSendVersion = faker.helpers.arrayElement(
+          MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+        );
+
+        await expect(
+          target.resolveTarget({
+            version: multiSendVersion,
+            chainId,
+            data: multiSendEncoder().with('transactions', '0x').encode(),
+            to: faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version: multiSendVersion,
+                chainId,
+              }),
+            ),
+          }),
+        ).rejects.toThrow(InvalidMultiSendError);
+      });
+
+      it('should reject a recovery with an empty batch as an invalid transfer', async () => {
+        const multiSendVersion = faker.helpers.arrayElement(
+          MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+        );
+        const data = execTransactionFromModuleEncoder()
+          .with(
+            'to',
+            faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version: multiSendVersion,
+                chainId,
+              }),
+            ),
+          )
+          .with('data', multiSendEncoder().with('transactions', '0x').encode())
+          .encode();
+
+        await expect(
+          target.resolveTarget({
+            version: multiSendVersion,
+            chainId,
+            data,
+            to: getAddress(faker.finance.ethereumAddress()),
+          }),
+        ).rejects.toThrow(InvalidTransferError);
+        expect(mockSafeRepository.getSafesByModule).not.toHaveBeenCalled();
+      });
     });
   });
 });

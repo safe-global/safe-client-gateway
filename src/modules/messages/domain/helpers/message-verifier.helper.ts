@@ -5,9 +5,9 @@ import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { LogSource } from '#/domain/common/entities/log-source.entity';
 import { LogType } from '#/domain/common/entities/log-type.entity';
-import { SafeSignature } from '#/domain/common/entities/safe-signature';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { getSafeSignature } from '#/domain/common/utils/client-signature';
 import { getSafeMessageMessageHash } from '#/domain/common/utils/safe';
 import {
   type ILoggingService,
@@ -142,9 +142,10 @@ export class MessageVerifierHelper {
     signature: Hex;
     source: LogSource;
   }): void {
-    const signature = new SafeSignature({
+    const signature = getSafeSignature({
       hash: args.messageHash,
       signature: args.signature,
+      code: MessageVerifierHelper.StatusCode,
     });
 
     if (
