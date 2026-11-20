@@ -155,10 +155,10 @@ export class MessagesController {
       'Message accepted. The Transaction Service indexes messages asynchronously, so the message may not be immediately retrievable — poll GET /v1/chains/{chainId}/messages/{messageHash}.',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid message format or signature',
+    description: 'Invalid message format',
   })
   @ApiUnprocessableEntityResponse({
-    description: 'Invalid chainId, safeAddress or request body',
+    description: 'Invalid chainId, safeAddress, request body or signature',
   })
   @HttpCode(202)
   @Post('chains/:chainId/safes/:safeAddress/messages')
@@ -203,10 +203,10 @@ export class MessagesController {
     description: 'Message not found',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid signature or signer not authorized',
+    description: 'Rejected by the Transaction Service',
   })
   @ApiUnprocessableEntityResponse({
-    description: 'Invalid chainId, messageHash or request body',
+    description: 'Invalid chainId, messageHash, request body or signature',
   })
   @HttpCode(200)
   @Post('chains/:chainId/messages/:messageHash/signatures')
