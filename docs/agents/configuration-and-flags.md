@@ -46,6 +46,14 @@ This mirror is distinct from the narrower `FakeConfigurationService` (`src/confi
 
 An entry that lingers in `.env.sample.json` after its variable leaves the code only warns (`extraInJson`) and exits zero; neither check enforces deleting it, but `commits-and-prs.md`'s "A removal takes what only it used" rule requires it.
 
+### Environment-specific values and tunables come from config
+
+**Rule:** A value that differs between environments (a URL, a host) and a tunable an operator may need to change without a release (a timeout, TTL, poll interval, batch size, queue attempts or retention) are read from configuration, with today's value as the default; only the fixed part stays a constant. A tunable that is unsafe outside a range still goes to config, with the range enforced in `RootConfigurationSchema` so a bad value fails at boot. A value stays a named constant when it is part of the published API contract, or has one right value in every environment.
+
+**Why:** an environment-specific literal can only be right in one environment, and a tunable in code takes a release to change. A contract value behind an env var would make the published spec, and the clients generated from it, vary by deployment.
+
+**Canonical example:** `src/modules/spaces/routes/members/space-invite-email.service.ts` builds the invite link from `safeWebApp.baseUri` plus the constant `SPACE_INVITE_PATH`. `RootConfigurationSchema` bounds `SAFENET_CHECKS_QUEUE_ATTEMPTS` to 1…10 and both Safenet retention ages to at least `SAFENET_CHECKS_MIN_RETENTION_SECONDS`. `MAX_TOKEN_ADDRESSES` in `src/modules/tokens/routes/entities/token-addresses.dto.entity.ts` stays a constant because the Swagger descriptions, and the wallet client generated from them, carry the number.
+
 ### Feature flags
 
 **Rule:** A feature flag's environment variable carries the `FF_` prefix and is read via the `features.*` namespace; a new flag's mapping in `configuration.ts` carries a comment naming an owner and the condition under which the flag comes out.

@@ -14,6 +14,8 @@ This guide sets the conventions for HTTP inputs and outputs in CGW: validating a
 
 **Canonical example:** `src/modules/contracts/routes/contracts.controller.ts`'s `getContract` pipes both route params in place — `@Param('chainId', new ValidationPipe(NumericStringSchema))` (a pre-`ChainIdSchema` pipe, showing the mechanics) and `@Param('contractAddress', new ValidationPipe(AddressSchema))`. `ChainIdSchema`'s own refinement is exercised as a field in `src/modules/counterfactual-safes/routes/entities/counterfactual-safe.dto.entity.ts`'s `CounterfactualSafeSchema` (`chainId: ChainIdSchema`), rather than that DTO reaching for the bare `NumericStringSchema`.
 
+The pipe is the one place a route input's format is checked: a datasource or repository does not re-check it, or check it instead. `src/modules/messages/routes/messages.controller.ts` pipes `chainId` with `ChainIdSchema`, and `ConfigApi.getChain` (`src/datasources/config-api/config-api.service.ts`) takes it as given.
+
 The shared folder's full primitive catalog — `AddressSchema`, `HexSchema`, `UuidSchema`, `RedirectUrlSchema`, and `NumericStringSchema` itself — is inventoried in `docs/agents/ARCHITECTURE.md`'s Validation model section; a new generic primitive is added there, not next to whichever module happens to need it first.
 
 ### DTO pairing

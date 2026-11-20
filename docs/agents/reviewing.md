@@ -44,6 +44,7 @@ These checks are independent of Part 1 and of each other: passing one never excu
   - At a per-task checkpoint before any PR exists, this item is not-yet-checkable rather than failed — it is evaluated at PR time.
 - [ ] No speculative abstractions, unused exports, or dead code introduced (YAGNI).
   - An interface with a single implementation that isn't a standard Symbol-DI seam (this repo's one-interface/one-implementation-per-datasource pattern), an export nothing imports, and a config flag with no reader are each their own finding.
+  - So are a union variant every reader handles exactly like another (a `degraded` result that falls through to the same path as a missing key) and a field added to a returned shape that no consumer acts on.
   - A helper generalized (parameterized, exported, or made reusable) beyond what its one call site actually needs, or an abstraction built for an anticipated future need, is a finding on the same basis as literal dead code.
   - An artifact whose reader or writer lands in a later PR of a declared series is staged delivery, not speculation — but only when the PR description itself declares the series and states which follow-up consumes it (e.g. a data-model PR shipping its whole schema in one migration so follow-ups never alter the tables). An undeclared "we'll use it later" is still a finding.
 - [ ] Pre-commit checklist commands (`yarn format`, `yarn lint --fix`, `yarn typecheck`, `yarn test`) ran clean — evidence, not assertion.
