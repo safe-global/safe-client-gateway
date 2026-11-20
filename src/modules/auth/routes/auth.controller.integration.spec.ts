@@ -597,7 +597,7 @@ describe('AuthController', () => {
         });
     });
 
-    it('should not verify a signer if the expirationTime is not after notBefore', async () => {
+    it('should not verify a signer if the expirationTime equals notBefore', async () => {
       // A wide skew lets notBefore sit far enough ahead that an expiry before it
       // still passes the minimum lifetime, so only the window check rejects it
       const defaultConfiguration = configuration();
@@ -623,9 +623,7 @@ describe('AuthController', () => {
         '/v1/auth/nonce',
       );
       const notBefore = new Date(Date.now() + clockSkewInMs);
-      const expirationTime = new Date(
-        notBefore.getTime() - faker.number.int({ min: 0, max: 5_000 }),
-      );
+      const expirationTime = new Date(notBefore);
       const message = createSiweMessage(
         siweMessageBuilder()
           .with('address', signer.address)
