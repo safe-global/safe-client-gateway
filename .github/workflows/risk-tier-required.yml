@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# The organization ruleset selects this file on protected main by identity.
+# The local reusable workflow comes from the same commit as this caller.
+name: Required risk tier policy
+on:
+  pull_request_target:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  policy:
+    uses: ./.github/workflows/risk-tier.yml

@@ -1,0 +1,129 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# The protected ruleset workflow calls this evaluator at its own revision.
+# Ordinary PR and review runs refresh the status checks on edits and dismissals.
+# See docs/agents/risk-tiers.md for the bootstrap and native review rules.
+name: Risk tier
+
+on:
+  workflow_call:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  # Re-count approvals whenever a review is submitted, edited or dismissed.
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+
+jobs:
+  compute:
+    name: Compute risk tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tier: ${{ steps.tier.outputs.tier }}
+      allows: ${{ steps.tier.outputs.allows }}
+      approvals_required: ${{ steps.tier.outputs.approvals_required }}
+      approvals_count: ${{ steps.tier.outputs.approvals_count }}
+      approvals_ok: ${{ steps.tier.outputs.approvals_ok }}
+    steps:
+      - name: Check out the tier map and script from the base commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .nvmrc
+            docs/agents/risk-tiers.md
+            scripts/risk-tier.ts
+            scripts/risk-tier-inputs.sh
+
+      - name: Require the trusted policy on the base
+        run: |
+          for file in docs/agents/risk-tiers.md scripts/risk-tier.ts scripts/risk-tier-inputs.sh; do
+            if [ ! -f "base/$file" ]; then
+              echo "::error::Missing base policy. Two independent maintainers must review the bootstrap."
+              exit 1
+            fi
+          done
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: base/.nvmrc
+          package-manager-cache: false
+
+      - name: Read current PR evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash base/scripts/risk-tier-inputs.sh
+
+      - name: Compute and check the tier
+        id: tier
+        run: |
+          PR_BODY="$(jq -r '.body // ""' "$RUNNER_TEMP/pr.json")"
+          PR_AUTHOR_ID="$(jq -er '.user.id' "$RUNNER_TEMP/pr.json")"
+          export PR_BODY PR_AUTHOR_ID
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON base/scripts/risk-tier.ts \
+            --map base/docs/agents/risk-tiers.md \
+            --files "$RUNNER_TEMP/changed-files.ndjson" \
+            --reviews "$RUNNER_TEMP/reviews.ndjson" \
+            --commit-authors "$RUNNER_TEMP/commit-authors.txt" \
+            --maintainers "$RUNNER_TEMP/maintainers.txt"
+
+  # Shows the tier in the PR's checks list through this job's name, e.g.
+  # "Tier 1 — two human maintainer approvals required". A job name may use
+  # `needs` outputs, so this costs no write permission: no label, no comment.
+  # The name changes with the tier, so never make THIS job a required check;
+  # require "Compute risk tier", whose name is stable.
+  report:
+    name: Tier ${{ needs.compute.outputs.tier }} — ${{ needs.compute.outputs.allows }}
+    needs: compute
+    # Runs even when `compute` failed on a missing or understated tier line,
+    # so the computed tier is still shown.
+    if: always() && needs.compute.outputs.tier != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Report the tier
+        env:
+          TIER: ${{ needs.compute.outputs.tier }}
+          ALLOWS: ${{ needs.compute.outputs.allows }}
+        run: echo "Risk tier $TIER — $ALLOWS (docs/agents/risk-tiers.md)"
+
+  # The approval gate. Its name is stable, so it can be a required check. It
+  # counts approvals for the current PR head.
+  approvals:
+    name: Risk tier approvals
+    needs: compute
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Check human approvals for the tier
+        env:
+          TIER: ${{ needs.compute.outputs.tier }}
+          REQUIRED: ${{ needs.compute.outputs.approvals_required }}
+          COUNT: ${{ needs.compute.outputs.approvals_count }}
+          COMPUTE: ${{ needs.compute.result }}
+          OK: ${{ needs.compute.outputs.approvals_ok }}
+        run: |
+          if [ "$COMPUTE" != "success" ]; then
+            echo "::error::Risk tier evidence is missing or invalid."
+            exit 1
+          fi
+          if [ "$OK" = "true" ]; then
+            echo "Tier $TIER: $COUNT of $REQUIRED required human approvals."
+          else
+            echo "::error title=Risk tier approvals::Tier $TIER needs $REQUIRED human maintainer approvals; it has $COUNT. The PR author, commit authors and bots do not count (docs/agents/risk-tiers.md)."
+            exit 1
+          fi
