@@ -108,7 +108,9 @@ describe('Space Policies Controller', () => {
   });
 
   afterAll(async () => {
-    await testDbFactory.destroyTestDatabase(testDatabase);
+    if (testDatabase) {
+      await testDbFactory.destroyTestDatabase(testDatabase);
+    }
   });
 
   const chain = chainBuilder().with('chainId', SEPOLIA_CHAIN_ID).build();

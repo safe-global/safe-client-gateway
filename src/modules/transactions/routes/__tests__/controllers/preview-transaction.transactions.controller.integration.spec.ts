@@ -46,7 +46,9 @@ describe('Preview transaction - Transactions Controller', () => {
   });
 
   afterAll(async () => {
-    await testDbFactory.destroyTestDatabase(testDatabase);
+    if (testDatabase) {
+      await testDbFactory.destroyTestDatabase(testDatabase);
+    }
   });
 
   beforeEach(async () => {
