@@ -7,6 +7,7 @@ import { LogType } from '#/domain/common/entities/log-type.entity';
 import { SafeSignature } from '#/domain/common/entities/safe-signature';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { getSafeSignature } from '#/domain/common/utils/client-signature';
 import {
   type BaseMultisigTransaction,
   getBaseMultisigTransaction,
@@ -321,13 +322,19 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    const signaturesByType = parseSignaturesByType(args.proposal.signature);
+    let signaturesByType: Array<Hex>;
+    try {
+      signaturesByType = parseSignaturesByType(args.proposal.signature);
+    } catch {
+      throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
+    }
     const signatures: Array<SafeSignature> = [];
 
     for (const signatureByType of signaturesByType) {
-      const signature = new SafeSignature({
+      const signature = getSafeSignature({
         hash: args.proposal.safeTxHash,
         signature: signatureByType,
+        code: args.code,
       });
 
       const isExisting = args.transaction?.confirmations?.some(
@@ -397,9 +404,10 @@ export class TransactionVerifierHelper {
     signature: Hex;
     code: HttpStatus;
   }): void {
-    const signature = new SafeSignature({
+    const signature = getSafeSignature({
       signature: args.signature,
       hash: args.transaction.safeTxHash,
+      code: args.code,
     });
 
     if (
