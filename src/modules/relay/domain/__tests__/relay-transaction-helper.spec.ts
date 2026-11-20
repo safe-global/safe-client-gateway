@@ -8,6 +8,7 @@ import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
 } from '#/__tests__/deployments.helper';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -124,6 +125,11 @@ describe('RelayTransactionHelper', () => {
       expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
         false,
       );
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+        type: LogType.TxRelayEligibility,
+        message: 'ERC-20 call does not decode',
+        error: expect.any(String),
+      });
     });
 
     it('should return false for an ERC-20 transfer back to the Safe itself', () => {
@@ -559,6 +565,36 @@ describe('RelayTransactionHelper', () => {
       const data = erc20TransferEncoder().encode();
 
       expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+
+    it('should throw InvalidMultiSendError for a batch cut after a refunding execTransaction', () => {
+      const transaction = {
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: BigInt(0),
+        data: execTransactionEncoder()
+          .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+          .encode(),
+        operation: 0,
+      };
+      const first = multiSendTransactionsEncoder([transaction]);
+      const transactions = multiSendTransactionsEncoder([
+        transaction,
+        transaction,
+      ]);
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          slice(
+            transactions,
+            0,
+            size(first) + faker.number.int({ min: 1, max: 84 }),
+          ),
+        )
+        .encode();
+
+      expect(() => helper.hasRefundingTransaction(data)).toThrow(
+        InvalidMultiSendError,
+      );
     });
   });
 
@@ -1019,6 +1055,8 @@ describe('RelayTransactionHelper', () => {
       expect(() => helper.getSafeAddressFromMultiSend(data)).toThrow(
         InvalidMultiSendError,
       );
+      // An empty batch decodes in full, so no decode failure is logged
+      expect(mockLoggingService.debug).not.toHaveBeenCalled();
     });
 
     it('should throw InvalidMultiSendError for a batch cut inside its first transaction header', () => {
@@ -1154,6 +1192,27 @@ describe('RelayTransactionHelper', () => {
         .encode();
 
       expect(helper.getOwnersFromCreateProxyWithNonce(data)).toBeNull();
+    });
+
+    it('should log the decoder error class, not the calldata, when the initializer does not decode', () => {
+      const data = createProxyWithNonceEncoder()
+        .with(
+          'initializer',
+          slice(
+            setupEncoder().encode(),
+            0,
+            faker.number.int({ min: 4, max: 35 }),
+          ),
+        )
+        .encode();
+
+      helper.getOwnersFromCreateProxyWithNonce(data);
+
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
+        type: LogType.TxRelayEligibility,
+        message: 'Safe creation does not decode',
+        error: expect.any(String),
+      });
     });
   });
 });

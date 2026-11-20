@@ -2,7 +2,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import {
-  concat,
+  BaseError,
+  concatHex,
   encodeAbiParameters,
   encodePacked,
   getAddress,
@@ -160,7 +161,7 @@ export class RelayTransactionHelper {
     try {
       return this.erc20Decoder.decodeFunctionData({ data });
     } catch (error) {
-      this.loggingService.debug(`ERC-20 call does not decode: ${error}`);
+      this.logDecodeFailure('ERC-20 call does not decode', error);
       return null;
     }
   }
@@ -337,7 +338,7 @@ export class RelayTransactionHelper {
 
       return decodedSafe.args[0];
     } catch (error) {
-      this.loggingService.debug(`Safe creation does not decode: ${error}`);
+      this.logDecodeFailure('Safe creation does not decode', error);
       return null;
     }
   }
@@ -459,7 +460,7 @@ export class RelayTransactionHelper {
     const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
     try {
       const [batch] = this.multiSendDecoder.decodeFunctionData({ data }).args;
-      const reencoded = concat(
+      const reencoded = concatHex(
         transactions.map((transaction) =>
           encodePacked(
             ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
@@ -476,11 +477,20 @@ export class RelayTransactionHelper {
       if (reencoded.toLowerCase() === batch.toLowerCase()) {
         return transactions;
       }
-      this.loggingService.debug('MultiSend batch decodes only in part');
+      this.logDecodeFailure('MultiSend batch decodes only in part');
     } catch (error) {
-      this.loggingService.debug(`MultiSend batch does not decode: ${error}`);
+      this.logDecodeFailure('MultiSend batch does not decode', error);
     }
     return null;
+  }
+
+  /** Logs the viem error class only: its message can include the calldata. */
+  private logDecodeFailure(message: string, error?: unknown): void {
+    this.loggingService.debug({
+      type: LogType.TxRelayEligibility,
+      message,
+      error: error instanceof BaseError ? error.name : undefined,
+    });
   }
 
   /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */
@@ -489,14 +499,21 @@ export class RelayTransactionHelper {
     return decoded !== null && decoded.gasPrice > BigInt(0);
   }
 
-  /** Whether the calldata, or any transaction inside its MultiSend, is a refunding execTransaction. */
+  /**
+   * Whether the calldata, or any transaction inside its MultiSend, is a
+   * refunding execTransaction. Throws for a batch that does not decode in full.
+   */
   hasRefundingTransaction(data: Hex): boolean {
     if (!this.isMultiSend(data)) {
       return this.isRefundingExecTransaction(data);
     }
-    return this.multiSendDecoder
-      .mapMultiSendTransactions(data)
-      .some((transaction) => this.isRefundingExecTransaction(transaction.data));
+    const transactions = this.decodeCompleteMultiSend(data);
+    if (!transactions) {
+      throw new InvalidMultiSendError();
+    }
+    return transactions.some((transaction) =>
+      this.isRefundingExecTransaction(transaction.data),
+    );
   }
 
   /**

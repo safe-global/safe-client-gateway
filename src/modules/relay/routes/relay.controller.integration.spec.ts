@@ -4,7 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress, type Hex } from 'viem';
+import { getAddress, type Hex, size, slice } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
@@ -3427,6 +3427,55 @@ describe('Relay controller', () => {
       expect(networkService.post).not.toHaveBeenCalledWith(
         expect.objectContaining({ url: `${relayUrl}/safe-transactions` }),
       );
+    });
+
+    it('should return 422 for a MultiSend cut after a refunding execTransaction, before choosing a gas payment option', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
+      const to = getAddress(
+        faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        ),
+      );
+      const transaction = {
+        operation: 0,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: BigInt(0),
+        data: execTransactionEncoder()
+          .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+          .encode(),
+      };
+      const first = multiSendTransactionsEncoder([transaction]);
+      // Cut inside the second transaction's header
+      const transactions = slice(
+        multiSendTransactionsEncoder([transaction, transaction]),
+        0,
+        size(first) + faker.number.int({ min: 1, max: 84 }),
+      );
+      const data = multiSendEncoder()
+        .with('transactions', transactions)
+        .encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(422)
+        .expect({
+          message:
+            'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+          statusCode: 422,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
     });
 
     describe('with no free option listed', () => {
