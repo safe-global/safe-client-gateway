@@ -501,14 +501,15 @@ export class RelayTransactionHelper {
 
   /**
    * Whether the calldata, or any transaction inside its MultiSend, is a
-   * refunding execTransaction. Throws for a batch that does not decode in full.
+   * refunding execTransaction. Throws for a batch that is empty or does not
+   * decode in full.
    */
   hasRefundingTransaction(data: Hex): boolean {
     if (!this.isMultiSend(data)) {
       return this.isRefundingExecTransaction(data);
     }
     const transactions = this.decodeCompleteMultiSend(data);
-    if (!transactions) {
+    if (!transactions || transactions.length === 0) {
       throw new InvalidMultiSendError();
     }
     return transactions.some((transaction) =>

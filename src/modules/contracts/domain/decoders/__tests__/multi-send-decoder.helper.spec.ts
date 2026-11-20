@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, slice } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
@@ -115,6 +115,22 @@ describe('MultiSendDecoder', () => {
         '0x8d80ff0a00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000014d6c123eb801f385f401825e5e6f61bd5b2d44caf000000000000000000000000';
 
       expect(target.mapMultiSendTransactions(data)).toStrictEqual([]);
+    });
+
+    it('logs the error class, not the calldata, when the call does not decode', () => {
+      // Selector, then less than the offset and length words
+      const data = slice(
+        multiSendEncoder().encode(),
+        0,
+        4 + faker.number.int({ min: 1, max: 63 }),
+      );
+
+      expect(target.mapMultiSendTransactions(data)).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith({
+        message: 'Error decoding MultiSend transaction',
+        error: expect.any(String),
+      });
     });
   });
 

@@ -3478,6 +3478,44 @@ describe('Relay controller', () => {
       expect(networkService.post).not.toHaveBeenCalled();
     });
 
+    it('should return 422 for an empty MultiSend batch on a PAY_FROM_SAFE-only chain', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with(
+          'relayer',
+          relayerBuilder()
+            .with('type', RelayerType.RELAY_FEE)
+            .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+            .build(),
+        )
+        .build();
+      const to = getAddress(
+        faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        ),
+      );
+      const data = multiSendEncoder().with('transactions', '0x').encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(422)
+        .expect({
+          message:
+            'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
+          statusCode: 422,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
     describe('with no free option listed', () => {
       let chain: Chain;
 

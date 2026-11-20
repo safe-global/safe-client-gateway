@@ -83,7 +83,11 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
         });
       }
     } catch (e) {
-      this.loggingService.warn(`Error decoding MultiSend transaction: ${e}`);
+      // The error class only: a viem error message can include the calldata
+      this.loggingService.warn({
+        message: 'Error decoding MultiSend transaction',
+        error: e instanceof Error ? e.name : undefined,
+      });
     }
 
     return mapped;

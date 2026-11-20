@@ -596,6 +596,14 @@ describe('RelayTransactionHelper', () => {
         InvalidMultiSendError,
       );
     });
+
+    it('should throw InvalidMultiSendError for an empty batch', () => {
+      const data = multiSendEncoder().with('transactions', '0x').encode();
+
+      expect(() => helper.hasRefundingTransaction(data)).toThrow(
+        InvalidMultiSendError,
+      );
+    });
   });
 
   describe('isOwnerManagementTransaction', () => {
