@@ -345,14 +345,16 @@ describe('Owners Controller (Unit)', () => {
       });
     });
 
-    it('Failure: data validation fails', async () => {
+    it('returns null for a chain with a malformed TXS owner page', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
-
       const chainId = faker.string.numeric();
-
       const chain = chainBuilder().with('chainId', chainId).build();
+      const ownersUrl = `${chain.transactionService}/api/v2/owners/${getAddress(ownerAddress)}/safes/`;
 
       const malformedOwnerPage = pageBuilder()
+        .with('count', 1)
+        .with('next', null)
+        .with('previous', null)
         .with('results', [{ address: faker.number.int() }])
         .build();
 
@@ -360,9 +362,14 @@ describe('Owners Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains`: {
             return Promise.resolve({
-              data: rawify({
-                results: [chain],
-              }),
+              data: rawify(
+                pageBuilder()
+                  .with('count', 1)
+                  .with('next', null)
+                  .with('previous', null)
+                  .with('results', [chain])
+                  .build(),
+              ),
               status: 200,
             });
           }
@@ -374,7 +381,7 @@ describe('Owners Controller (Unit)', () => {
             });
           }
 
-          case `${chain.transactionService}/api/v2/owners/${ownerAddress}/safes/`: {
+          case ownersUrl: {
             return Promise.resolve({
               data: rawify(malformedOwnerPage),
               status: 200,
@@ -389,8 +396,11 @@ describe('Owners Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v2/owners/${ownerAddress}/safes`)
-        .expect(502)
-        .expect({ statusCode: 502, message: 'Bad gateway' });
+        .expect(200)
+        .expect({ [chainId]: null });
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({ url: ownersUrl }),
+      );
     });
 
     it('should filter out poisoned addresses', async () => {
