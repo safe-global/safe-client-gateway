@@ -203,7 +203,7 @@ export class MessagesController {
     description: 'Message not found',
   })
   @ApiBadRequestResponse({
-    description: 'Rejected by the Transaction Service',
+    description: 'Rejected by the upstream service',
   })
   @ApiUnprocessableEntityResponse({
     description: 'Invalid chainId, messageHash, request body or signature',
