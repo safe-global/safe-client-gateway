@@ -3,7 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { ConflictException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
+import { DataSource, type QueryRunner } from 'typeorm';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import configuration from '#/config/entities/__tests__/configuration';
@@ -28,7 +28,6 @@ import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db
 import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 
-const LOCK_WAIT_TIMEOUT_MS = 2_000;
 const LOCK_POLL_INTERVAL_MS = 10;
 
 const mockLoggingService = {
@@ -180,13 +179,30 @@ describe('UsersRepository concurrency', () => {
     return result.identifiers[0].id as Member['id'];
   };
 
-  // Proves the call under test is blocked, without a fixed sleep.
-  const waitForBlockedQuery = async (): Promise<void> => {
-    const deadline = Date.now() + LOCK_WAIT_TIMEOUT_MS;
-    while (Date.now() < deadline) {
+  // Throws if `call` settles or the test aborts before it waits on `holder`'s lock.
+  const waitUntilBlockedBy = async (
+    holder: QueryRunner,
+    call: Promise<unknown>,
+    signal: AbortSignal,
+  ): Promise<void> => {
+    const [{ pid }]: Array<{ pid: number }> = await holder.query(
+      'SELECT pg_backend_pid() AS pid',
+    );
+    let settled = false;
+    call.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      },
+    );
+    while (!settled) {
+      signal.throwIfAborted();
       const rows: Array<{ count: number }> = await dataSource.query(
         `SELECT count(*)::int AS count FROM pg_stat_activity
-         WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+         WHERE $1 = ANY(pg_blocking_pids(pid))`,
+        [pid],
       );
       if (rows[0].count > 0) {
         return;
@@ -195,10 +211,12 @@ describe('UsersRepository concurrency', () => {
         setTimeout(resolve, LOCK_POLL_INTERVAL_MS),
       );
     }
-    throw new Error('No query blocked on a lock.');
+    throw new Error('The call finished without waiting on the lock.');
   };
 
-  it('waits for an in-flight admin change before deciding', async () => {
+  it('waits for an in-flight admin change before deciding', async ({
+    signal,
+  }) => {
     const userId = await insertUser();
     const coAdminUserId = await insertUser();
     const spaceId = await insertSpace();
@@ -224,7 +242,7 @@ describe('UsersRepository concurrency', () => {
       await queryRunner.manager.delete(Member, coAdminMemberId);
 
       deletion = usersRepository.delete(authPayload);
-      await waitForBlockedQuery();
+      await waitUntilBlockedBy(queryRunner, deletion, signal);
 
       await queryRunner.commitTransaction();
     } finally {
@@ -244,7 +262,9 @@ describe('UsersRepository concurrency', () => {
     ).resolves.not.toBeNull();
   });
 
-  it('rejects a deletion that would orphan a concurrently created space', async () => {
+  it('rejects a deletion that would orphan a concurrently created space', async ({
+    signal,
+  }) => {
     const userId = await insertUser();
 
     const queryRunner = dataSource.createQueryRunner();
@@ -269,7 +289,7 @@ describe('UsersRepository concurrency', () => {
           siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
         ),
       );
-      await waitForBlockedQuery();
+      await waitUntilBlockedBy(queryRunner, deletion, signal);
 
       await queryRunner.commitTransaction();
     } finally {
@@ -288,7 +308,9 @@ describe('UsersRepository concurrency', () => {
     );
   });
 
-  it('makes a promotion wait for an in-flight account deletion', async () => {
+  it('makes a promotion wait for an in-flight account deletion', async ({
+    signal,
+  }) => {
     const userId = await insertUser();
     const adminUserId = await insertUser();
     const spaceId = await insertSpace();
@@ -319,7 +341,7 @@ describe('UsersRepository concurrency', () => {
         userId,
         role: 'ADMIN',
       });
-      await waitForBlockedQuery();
+      await waitUntilBlockedBy(queryRunner, promotion, signal);
 
       await queryRunner.commitTransaction();
     } finally {
@@ -332,7 +354,7 @@ describe('UsersRepository concurrency', () => {
     await promotion;
   });
 
-  it.each([
+  it.for([
     {
       name: 'demotion',
       act: (args: {
@@ -355,7 +377,7 @@ describe('UsersRepository concurrency', () => {
     },
   ])(
     'refuses a $name of the co-admin while the actor is leaving',
-    async ({ act }) => {
+    async ({ act }, { signal }) => {
       const actorUserId = await insertUser();
       const coAdminUserId = await insertUser();
       const spaceId = await insertSpace();
@@ -378,7 +400,7 @@ describe('UsersRepository concurrency', () => {
         await queryRunner.manager.delete(Member, actorMemberId);
 
         change = act({ actorUserId, userId: coAdminUserId, spaceId });
-        await waitForBlockedQuery();
+        await waitUntilBlockedBy(queryRunner, change, signal);
 
         await queryRunner.commitTransaction();
       } finally {
