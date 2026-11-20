@@ -109,7 +109,7 @@ describe('BlockchainApiManager', () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = vi.spyOn(global, 'fetch');
-      const chainId = toHex(chain.chainId);
+      const chainId = toHex(BigInt(chain.chainId));
       const rpcUrl = new URL(chain.rpcUri.value).toString();
 
       fetchSpy.mockImplementation((_: unknown) => {

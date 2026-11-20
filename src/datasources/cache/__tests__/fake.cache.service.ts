@@ -86,6 +86,29 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     return Promise.resolve();
   }
 
+  async hSetIfFresh(
+    cacheDir: CacheDir,
+    value: string,
+    expireTimeSeconds: number,
+    requestStartTimeMs: number,
+  ): Promise<boolean> {
+    const markerDir = FakeCacheService.invalidationTimeMsCacheDir(cacheDir.key);
+    const marker = (
+      this.cache[markerDir.key] as Record<string, string> | undefined
+    )?.[markerDir.field];
+    const invalidationTime = Number(marker);
+    if (
+      expireTimeSeconds <= 0 ||
+      (marker &&
+        (!Number.isInteger(invalidationTime) ||
+          invalidationTime >= requestStartTimeMs))
+    ) {
+      return false;
+    }
+    await this.hSet(cacheDir, value, expireTimeSeconds);
+    return true;
+  }
+
   increment(
     cacheKey: string,
     _expireTimeSeconds: number | undefined,

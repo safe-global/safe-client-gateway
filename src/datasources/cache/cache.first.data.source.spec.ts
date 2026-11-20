@@ -158,7 +158,7 @@ describe('CacheFirstDataSource', () => {
       async (_, expireTimeSeconds) => {
         const mockCache = vi.mocked({
           hGet: vi.fn(),
-          hSet: vi.fn(),
+          hSetIfFresh: vi.fn(),
         } as MockedObject<ICacheService>);
         cacheFirstDataSource = new CacheFirstDataSource(
           mockCache,
@@ -194,7 +194,7 @@ describe('CacheFirstDataSource', () => {
         expect(mockCache.hGet).not.toHaveBeenCalledWith(
           new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
         );
-        expect(mockCache.hSet).not.toHaveBeenCalled();
+        expect(mockCache.hSetIfFresh).not.toHaveBeenCalled();
       },
     );
 
@@ -289,7 +289,7 @@ describe('CacheFirstDataSource', () => {
     it('should cache not found errors with the default TTL', async () => {
       const mockCache = vi.mocked({
         hGet: vi.fn(),
-        hSet: vi.fn(),
+        hSetIfFresh: vi.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -323,17 +323,18 @@ describe('CacheFirstDataSource', () => {
         }),
       ).rejects.toThrow(NetworkResponseError);
 
-      expect(mockCache.hSet).toHaveBeenCalledWith(
+      expect(mockCache.hSetIfFresh).toHaveBeenCalledWith(
         cacheDir,
         expect.anything(),
         notFoundExpireTimeSeconds,
+        expect.any(Number),
       );
     });
 
     it('should cache not found errors with a specific TTL', async () => {
       const mockCache = vi.mocked({
         hGet: vi.fn(),
-        hSet: vi.fn(),
+        hSetIfFresh: vi.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -368,10 +369,11 @@ describe('CacheFirstDataSource', () => {
         }),
       ).rejects.toThrow(NetworkResponseError);
 
-      expect(mockCache.hSet).toHaveBeenCalledWith(
+      expect(mockCache.hSetIfFresh).toHaveBeenCalledWith(
         cacheDir,
         expect.anything(),
         notFoundExpireTimeSeconds,
+        expect.any(Number),
       );
     });
   });
@@ -490,7 +492,7 @@ describe('CacheFirstDataSource', () => {
       async (_, expireTimeSeconds) => {
         const mockCache = vi.mocked({
           hGet: vi.fn(),
-          hSet: vi.fn(),
+          hSetIfFresh: vi.fn(),
         } as MockedObject<ICacheService>);
         cacheFirstDataSource = new CacheFirstDataSource(
           mockCache,
@@ -528,7 +530,7 @@ describe('CacheFirstDataSource', () => {
         expect(mockCache.hGet).not.toHaveBeenCalledWith(
           new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
         );
-        expect(mockCache.hSet).not.toHaveBeenCalled();
+        expect(mockCache.hSetIfFresh).not.toHaveBeenCalled();
       },
     );
 
@@ -630,7 +632,7 @@ describe('CacheFirstDataSource', () => {
     it('should cache not found errors with the default TTL', async () => {
       const mockCache = vi.mocked({
         hGet: vi.fn(),
-        hSet: vi.fn(),
+        hSetIfFresh: vi.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -666,17 +668,18 @@ describe('CacheFirstDataSource', () => {
         }),
       ).rejects.toThrow(NetworkResponseError);
 
-      expect(mockCache.hSet).toHaveBeenCalledWith(
+      expect(mockCache.hSetIfFresh).toHaveBeenCalledWith(
         cacheDir,
         expect.anything(),
         notFoundExpireTimeSeconds,
+        expect.any(Number),
       );
     });
 
     it('should cache not found errors with a specific TTL', async () => {
       const mockCache = vi.mocked({
         hGet: vi.fn(),
-        hSet: vi.fn(),
+        hSetIfFresh: vi.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -713,10 +716,11 @@ describe('CacheFirstDataSource', () => {
         }),
       ).rejects.toThrow(NetworkResponseError);
 
-      expect(mockCache.hSet).toHaveBeenCalledWith(
+      expect(mockCache.hSetIfFresh).toHaveBeenCalledWith(
         cacheDir,
         expect.anything(),
         notFoundExpireTimeSeconds,
+        expect.any(Number),
       );
     });
   });

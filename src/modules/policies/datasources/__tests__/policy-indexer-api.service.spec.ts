@@ -468,6 +468,26 @@ describe('PolicyIndexerApi', () => {
       expect(mockCacheService.hSet).not.toHaveBeenCalled();
     });
 
+    it('should skip caching a shared response whose upstream fetch predates invalidation', async () => {
+      const safe = safeRef(SEPOLIA);
+      const rows = rawPolicyIndexerResponse({ _meta: [meta(SEPOLIA)] });
+      const invalidatedAtMs = Date.now() - 1_000;
+      mockCacheService.getInvalidationTimeMs.mockResolvedValue(invalidatedAtMs);
+      mockNetworkService.post.mockResolvedValue({
+        status: 200,
+        data: rawify({ data: rows }),
+        requestStartedAtMs: invalidatedAtMs - 1,
+      });
+
+      await expect(
+        target.getState({ safes: [safe], guardPolicyKinds }),
+      ).resolves.toStrictEqual(rows);
+      expect(mockCacheService.getInvalidationTimeMs).toHaveBeenCalledWith(
+        cacheKey(safe),
+      );
+      expect(mockCacheService.hSet).not.toHaveBeenCalled();
+    });
+
     it('should serve the fetched state of a safe cleared mid-fetch', async () => {
       // Only the write is skipped: the caller still gets what was fetched.
       const safe = safeRef(SEPOLIA);
