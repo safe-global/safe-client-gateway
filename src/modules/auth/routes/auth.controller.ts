@@ -120,7 +120,8 @@ export class AuthController {
     description: 'Invalid SiWE message format or signature verification failed',
   })
   @ApiUnauthorizedResponse({
-    description: 'Authentication failed - invalid or expired nonce',
+    description:
+      'Authentication failed - invalid or expired nonce, invalid signature, or "Invalid message" when the message has expired, expires too soon to issue a token, or expires at or before its notBefore',
   })
   @HttpCode(200)
   @Post('verify')
