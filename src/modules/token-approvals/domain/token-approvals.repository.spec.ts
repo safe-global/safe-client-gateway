@@ -12,6 +12,7 @@ import {
 } from '#/modules/token-approvals/domain/entities/__tests__/approval-log-encoder.builder';
 import { tokenSpenderBuilder } from '#/modules/token-approvals/domain/entities/__tests__/token-approval.builder';
 import { tokenApprovalsScanStateBuilder } from '#/modules/token-approvals/domain/entities/__tests__/token-approvals-scan-state.builder';
+import { RESCAN_BLOCKS } from '#/modules/token-approvals/domain/token-approvals.constants';
 import { TokenApprovalsRepository } from '#/modules/token-approvals/domain/token-approvals.repository';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -192,7 +193,7 @@ describe('Token approvals scan', () => {
   });
 
   it('should, when the provider rejects the whole range, read it in halves and report the list as complete', async () => {
-    const half = faker.number.int({ min: 1, max: 10_000_000 });
+    const half = faker.number.int({ min: RESCAN_BLOCKS, max: 10_000_000 });
     const head = 2 * half - 1;
     tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
       rawify(BigInt(head)),
@@ -229,7 +230,7 @@ describe('Token approvals scan', () => {
       safeAddress,
       state: {
         pairs: [],
-        lastScannedBlock: head,
+        lastScannedBlock: head - RESCAN_BLOCKS,
         rangeSize: half,
         hasDroppedPairs: false,
       },
@@ -243,7 +244,7 @@ describe('Token approvals scan', () => {
       loggingService,
       tokenApprovalsApi,
     );
-    const half = faker.number.int({ min: 1, max: 10_000_000 });
+    const half = faker.number.int({ min: RESCAN_BLOCKS, max: 10_000_000 });
     const head = 2 * half - 1;
     tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
       rawify(BigInt(head)),
@@ -312,7 +313,7 @@ describe('Token approvals scan', () => {
       loggingService,
       tokenApprovalsApi,
     );
-    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    const head = faker.number.int({ min: RESCAN_BLOCKS, max: 20_000_000 });
     const pairs = faker.helpers.multiple(() => tokenSpenderBuilder().build(), {
       count: maxPairs + 1,
     });
@@ -355,7 +356,7 @@ describe('Token approvals scan', () => {
       safeAddress,
       state: {
         pairs: keptPairs,
-        lastScannedBlock: head,
+        lastScannedBlock: head - RESCAN_BLOCKS,
         rangeSize: head + 1,
         hasDroppedPairs: true,
       },
@@ -363,7 +364,10 @@ describe('Token approvals scan', () => {
   });
 
   it('should, when a single block is rejected after earlier blocks were read, keep the progress and report the list as incomplete', async () => {
-    const lastScannedBlock = faker.number.int({ min: 1, max: 20_000_000 });
+    const lastScannedBlock = faker.number.int({
+      min: RESCAN_BLOCKS,
+      max: 20_000_000,
+    });
     const state = tokenApprovalsScanStateBuilder()
       .with('pairs', [])
       .with('lastScannedBlock', lastScannedBlock)
@@ -387,7 +391,7 @@ describe('Token approvals scan', () => {
       safeAddress,
       state: {
         pairs: [],
-        lastScannedBlock: lastScannedBlock + 1,
+        lastScannedBlock: lastScannedBlock + 2 - RESCAN_BLOCKS,
         rangeSize: 1,
         hasDroppedPairs: false,
       },
@@ -405,6 +409,63 @@ describe('Token approvals scan', () => {
     ).rejects.toThrow(error);
 
     expect(tokenApprovalsApi.setScanState).not.toHaveBeenCalled();
+  });
+
+  it('should, when the scan reaches the latest block, store the progress some blocks behind it so the next call reads those blocks again', async () => {
+    const lastScannedBlock = faker.number.int({
+      min: RESCAN_BLOCKS,
+      max: 20_000_000,
+    });
+    const rangeSize = faker.number.int({ min: 10, max: 10_000 });
+    const head =
+      lastScannedBlock + faker.number.int({ min: 1, max: rangeSize });
+    const state = tokenApprovalsScanStateBuilder()
+      .with('pairs', [])
+      .with('lastScannedBlock', lastScannedBlock)
+      .with('rangeSize', rangeSize)
+      .build();
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(rawify(state));
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(rawify([]));
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual.isComplete).toBe(true);
+    expect(tokenApprovalsApi.setScanState).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      safeAddress,
+      state: {
+        pairs: [],
+        lastScannedBlock: head - RESCAN_BLOCKS,
+        rangeSize: head - lastScannedBlock,
+        hasDroppedPairs: false,
+      },
+    });
+  });
+
+  it('should, when the latest block is closer to the first block than the blocks read again, store no progress', async () => {
+    const head = faker.number.int({ min: 0, max: RESCAN_BLOCKS - 1 });
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(rawify([]));
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual.isComplete).toBe(true);
+    expect(tokenApprovalsApi.setScanState).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      safeAddress,
+      state: {
+        pairs: [],
+        lastScannedBlock: null,
+        rangeSize: head + 1,
+        hasDroppedPairs: false,
+      },
+    });
   });
 
   it('should, when the stored scan state does not parse, scan from the first block', async () => {

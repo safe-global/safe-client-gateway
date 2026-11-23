@@ -26,6 +26,7 @@ import {
 import {
   ERC20_APPROVAL_DATA_BYTES,
   ERC20_APPROVAL_TOPIC_COUNT,
+  RESCAN_BLOCKS,
 } from '#/modules/token-approvals/domain/token-approvals.constants';
 import type { ITokenApprovalsRepository } from '#/modules/token-approvals/domain/token-approvals.repository.interface';
 import type { Raw } from '#/validation/entities/raw.entity';
@@ -62,7 +63,10 @@ export class TokenApprovalsRepository implements ITokenApprovalsRepository {
       head,
       state: storedState,
     });
-    await this.tokenApprovalsApi.setScanState({ ...args, state });
+    await this.tokenApprovalsApi.setScanState({
+      ...args,
+      state: { ...state, lastScannedBlock: this.storedProgress(state, head) },
+    });
     const approvals = await this.getLiveApprovals({
       ...args,
       pairs: state.pairs,
@@ -170,6 +174,17 @@ export class TokenApprovalsRepository implements ITokenApprovalsRepository {
     }
 
     return state;
+  }
+
+  private storedProgress(
+    state: TokenApprovalsScanState,
+    head: number,
+  ): number | null {
+    if (state.lastScannedBlock === null) {
+      return null;
+    }
+    const progress = Math.min(state.lastScannedBlock, head - RESCAN_BLOCKS);
+    return progress >= 0 ? progress : null;
   }
 
   private nextBlock(state: TokenApprovalsScanState): number {

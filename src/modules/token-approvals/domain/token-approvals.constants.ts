@@ -14,3 +14,6 @@ export const ERC20_APPROVAL_TOPIC_COUNT = 3;
 
 /** The approved `uint256` value. */
 export const ERC20_APPROVAL_DATA_BYTES = 32;
+
+/** The newest blocks can still be replaced, so every scan reads them again. */
+export const RESCAN_BLOCKS = 64;
