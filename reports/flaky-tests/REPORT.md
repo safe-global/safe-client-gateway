@@ -1,13 +1,13 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-11-23T13:55:51.155Z | Period: 2026-01-16 to 2026-11-23
+Generated: 2026-11-23T15:53:17.781Z | Period: 2026-01-16 to 2026-11-23
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| **Confidence flake rate <0.5%** (last 4 weeks) | **15%** (3 flaky / 404 commits) |
-| Total unique commits | 3768 |
+| **Confidence flake rate <0.5%** (last 4 weeks) | **15%** (3 flaky / 408 commits) |
+| Total unique commits | 3772 |
 | Flaky commits (pass + fail on same SHA) | 149 |
 | Flakiness rate | 4% |
 
@@ -69,13 +69,13 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | 2026-11-02 | 33 | 0 | 0% | 73% |
 | 2026-11-09 | 136 | 2 | 1.5% | 23% |
 | 2026-11-16 | 230 | 1 | 0.4% | 12% |
-| 2026-11-23 | 5 | 0 | 0% | 15% |
+| 2026-11-23 | 9 | 0 | 0% | 15% |
 
 </details>
 
 ## Clean Streak
 
-162 commits without a flake since the last flake — rate is below 1.9% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (438 to go).
+166 commits without a flake since the last flake — rate is below 1.8% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (434 to go).
 
 ## Flaky Test Leaderboard
 
@@ -87,7 +87,7 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) | 100% |
 | `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 12 | 2026-06-26 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 100% |
 | `src/datasources/cache/redis.cache.service.integration.spec.ts` | 11 | 2026-06-18 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) | 100% |
-| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Fixed | [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) | 53% |
+| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Fixed | [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) | 54% |
 | `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | 2026-09-11 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 92% |
 | `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | 2026-08-19 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 92% |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | 2026-10-09 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 92% |
@@ -106,15 +106,19 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 13% |
 | `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | 2026-01-29 | Removed from main | - | - |
 | `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | 2026-01-19 | Removed from main | - | - |
-| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 71% |
-| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 71% |
+| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 72% |
+| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 72% |
 | `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) | 78% |
-| `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 71% |
+| `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 72% |
 | `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fixed | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) | 7% |
 | `src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts` | 1 | 2026-11-17 | Fixed | [#3808](https://github.com/safe-global/safe-client-gateway/pull/3808) | 0% |
 
 ## Fix PRs
 
+- [#3818](https://github.com/safe-global/safe-client-gateway/pull/3818) - fix(relay): return 422 for relay calldata that does not decode (Merged)
+- [#3817](https://github.com/safe-global/safe-client-gateway/pull/3817) - fix(auth): return 401, not 500, for SiWE messages within clock skew (Merged)
+- [#3810](https://github.com/safe-global/safe-client-gateway/pull/3810) - fix(notifications): validate v1 device registration body (Merged)
+- [#3809](https://github.com/safe-global/safe-client-gateway/pull/3809) - fix: return 422 for malformed client signatures (Merged)
 - [#3814](https://github.com/safe-global/safe-client-gateway/pull/3814) - test: give the last four real-database specs their own database (Merged)
 - [#3813](https://github.com/safe-global/safe-client-gateway/pull/3813) - test(users): cancel lock polling when a test times out (Merged)
 - [#3824](https://github.com/safe-global/safe-client-gateway/pull/3824) - test(policies): fuzz the pending guard policy states (Open)
@@ -172,6 +176,10 @@ Merged PRs referencing WA-1753 that fix a latent flake before it showed up in CI
 |----|-------|--------|
 | [#3814](https://github.com/safe-global/safe-client-gateway/pull/3814) | test: give the last four real-database specs their own database | 2026-11-23 |
 | [#3813](https://github.com/safe-global/safe-client-gateway/pull/3813) | test(users): cancel lock polling when a test times out | 2026-11-23 |
+| [#3817](https://github.com/safe-global/safe-client-gateway/pull/3817) | fix(auth): return 401, not 500, for SiWE messages within clock skew | 2026-11-23 |
+| [#3809](https://github.com/safe-global/safe-client-gateway/pull/3809) | fix: return 422 for malformed client signatures | 2026-11-20 |
+| [#3818](https://github.com/safe-global/safe-client-gateway/pull/3818) | fix(relay): return 422 for relay calldata that does not decode | 2026-11-20 |
+| [#3810](https://github.com/safe-global/safe-client-gateway/pull/3810) | fix(notifications): validate v1 device registration body | 2026-11-20 |
 | [#3821](https://github.com/safe-global/safe-client-gateway/pull/3821) | test(hooks): match the Safe URL in the SAFE_CREATED cache spec | 2026-11-19 |
 | [#3816](https://github.com/safe-global/safe-client-gateway/pull/3816) | test(auth): draw auth payload IDs from a wide range | 2026-11-19 |
 | [#3815](https://github.com/safe-global/safe-client-gateway/pull/3815) | test: draw chain builder IDs from a wide range | 2026-11-19 |

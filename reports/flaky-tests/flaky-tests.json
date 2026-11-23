@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-23T13:55:51.154Z",
+  "generated_at": "2026-11-23T15:53:17.779Z",
   "summary": {
-    "total_commits": 3768,
+    "total_commits": 3772,
     "flaky_commits": 149,
     "flakiness_rate": 4,
     "period": {
@@ -283,10 +283,10 @@
     },
     {
       "week": "2026-11-23",
-      "commits": 5,
+      "commits": 9,
       "flaky": 0,
       "rate": 0,
-      "clean_tail": 5
+      "clean_tail": 9
     }
   ],
   "tests": [

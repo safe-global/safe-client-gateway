@@ -1,6 +1,81 @@
 {
-  "generated_at": "2026-11-23T13:55:51.154Z",
+  "generated_at": "2026-11-23T15:53:17.779Z",
   "prs": [
+    {
+      "number": 3818,
+      "title": "fix(relay): return 422 for relay calldata that does not decode",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3818",
+      "merged_at": "2026-11-20T16:22:53Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/contracts/domain/decoders/__tests__/multi-send-decoder.helper.spec.ts",
+        "src/modules/contracts/domain/decoders/multi-send-decoder.helper.spec.ts",
+        "src/modules/relay/domain/__tests__/relay-transaction-helper.spec.ts",
+        "src/modules/relay/domain/__tests__/relay.manager.spec.ts",
+        "src/modules/relay/domain/limit-addresses.mapper.spec.ts",
+        "src/modules/relay/domain/relay-transaction-helper.spec.ts",
+        "src/modules/relay/routes/relay.controller.integration.spec.ts",
+        "src/modules/relay/routes/space-relay.controller.integration.spec.ts",
+        "relay-transaction-helper.spec.ts",
+        "limit-addresses.mapper.spec.ts"
+      ],
+      "refs_ticket": true
+    },
+    {
+      "number": 3817,
+      "title": "fix(auth): return 401, not 500, for SiWE messages within clock skew",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3817",
+      "merged_at": "2026-11-23T13:16:37Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/domain/common/errors/http-exception-no-log.error.spec.ts",
+        "src/modules/auth/routes/auth.controller.integration.spec.ts",
+        "src/modules/auth/routes/auth.controller.spec.ts",
+        "src/modules/auth/routes/auth.service.spec.ts",
+        "src/modules/auth/utils/token-expiration.utils.spec.ts"
+      ],
+      "refs_ticket": true
+    },
+    {
+      "number": 3810,
+      "title": "fix(notifications): validate v1 device registration body",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3810",
+      "merged_at": "2026-11-20T13:15:04Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/notifications/routes/v1/entities/__tests__/register-device.dto.entity.spec.ts",
+        "src/modules/notifications/routes/v1/entities/__tests__/safe-registration.builder.spec.ts",
+        "src/modules/notifications/routes/v1/entities/register-device.dto.entity.spec.ts",
+        "src/modules/notifications/routes/v1/entities/safe-registration.dto.entity.spec.ts",
+        "src/modules/notifications/routes/v1/entities/safe-registration.entity.spec.ts",
+        "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
+        "src/modules/notifications/routes/v1/notifications.controller.spec.ts",
+        "entities/__tests__/register-device.dto.entity.spec.ts",
+        "notifications.controller.integration.spec.ts"
+      ],
+      "refs_ticket": true
+    },
+    {
+      "number": 3809,
+      "title": "fix: return 422 for malformed client signatures",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3809",
+      "merged_at": "2026-11-20T16:35:27Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/domain/common/entities/safe-signature.spec.ts",
+        "src/domain/common/utils/__tests__/signatures.builder.spec.ts",
+        "src/domain/common/utils/client-signature.spec.ts",
+        "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
+        "src/modules/messages/routes/messages.controller.integration.spec.ts",
+        "src/modules/messages/routes/messages.controller.spec.ts",
+        "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
+        "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+        "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+        "src/modules/transactions/routes/transactions.controller.spec.ts",
+        "safe-signature.spec.ts"
+      ],
+      "refs_ticket": true
+    },
     {
       "number": 3814,
       "title": "test: give the last four real-database specs their own database",
