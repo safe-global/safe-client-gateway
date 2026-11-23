@@ -19,6 +19,8 @@ import {
 } from '#/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
+  assertMinimumTokenLifetime,
+  assertValidityWindow,
   getMaxExpirationTime,
 } from '#/modules/auth/utils/token-expiration.utils';
 import { ISiweRepository } from '#/modules/siwe/domain/siwe.repository.interface';
@@ -64,11 +66,16 @@ export class AuthService {
     const { chainId, address, notBefore, issuedAt, expirationTime } =
       await this.siweRepository.getValidatedSiweMessage(args);
 
+    const now = new Date();
     const maxExpirationTime = getMaxExpirationTime(
       this.maxValidityPeriodInSeconds,
     );
 
     if (expirationTime) {
+      // The SiWE schema checks each bound on its own, tolerates clock skew and is
+      // shared with wallet linking, so what a usable token needs is checked here
+      assertValidityWindow(notBefore, expirationTime);
+      assertMinimumTokenLifetime(expirationTime, now);
       assertExpirationTime(
         expirationTime,
         maxExpirationTime,
@@ -78,6 +85,12 @@ export class AuthService {
 
     const userId =
       await this.usersRepository.findOrCreateByWalletAddress(address);
+
+    if (expirationTime) {
+      // A slow wallet lookup can use up the remaining lifetime
+      assertMinimumTokenLifetime(expirationTime, new Date());
+    }
+
     const accessToken = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Siwe,
@@ -86,8 +99,9 @@ export class AuthService {
         signer_address: address,
       },
       {
+        // A notBefore within the tolerated clock skew counts as started
         ...(notBefore && {
-          nbf: new Date(notBefore),
+          nbf: notBefore > now ? now : new Date(notBefore),
         }),
         exp: expirationTime
           ? new Date(expirationTime)
