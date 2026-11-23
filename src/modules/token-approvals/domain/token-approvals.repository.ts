@@ -1,59 +1,51 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import uniqBy from 'lodash/uniqBy';
-import {
-  type Address,
-  erc20Abi,
-  getAddress,
-  type Hex,
-  type PublicClient,
-  parseEventLogs,
-} from 'viem';
+import { type Address, decodeEventLog, erc20Abi, size } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
-import { batched } from '#/domain/common/utils/batch';
-import type { Page } from '#/domain/entities/page.entity';
-import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
-import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { TokenApprovalsApi } from '#/modules/token-approvals/datasources/token-approvals-api.service';
+import { AllowanceReadSchema } from '#/modules/token-approvals/domain/entities/allowance-read.entity';
+import {
+  type ApprovalLog,
+  ApprovalLogSchema,
+} from '#/modules/token-approvals/domain/entities/approval-log.entity';
+import { BlockNumberSchema } from '#/modules/token-approvals/domain/entities/block-number.entity';
 import type {
   TokenApproval,
   TokenApprovals,
   TokenSpender,
 } from '#/modules/token-approvals/domain/entities/token-approval.entity';
-import type {
-  ExecutedSafeCall,
-  SafeCallHistory,
-} from '#/modules/token-approvals/domain/entities/token-approval-call.entity';
-import { TokenApprovalCallsHelper } from '#/modules/token-approvals/domain/helpers/token-approval-calls.helper';
 import {
-  HISTORY_PAGE_SIZE,
-  MULTICALL_BATCH_SIZE_BYTES,
-  MULTICALL3_ADDRESS,
+  type TokenApprovalsScanState,
+  TokenApprovalsScanStateSchema,
+} from '#/modules/token-approvals/domain/entities/token-approvals-scan-state.entity';
+import {
+  ERC20_APPROVAL_DATA_BYTES,
+  ERC20_APPROVAL_TOPIC_COUNT,
 } from '#/modules/token-approvals/domain/token-approvals.constants';
 import type { ITokenApprovalsRepository } from '#/modules/token-approvals/domain/token-approvals.repository.interface';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class TokenApprovalsRepository implements ITokenApprovalsRepository {
-  private readonly maxHistoryPages: number;
-  private readonly historyConcurrency: number;
-  private readonly receiptsConcurrency: number;
+  private readonly maxLogsRequests: number;
+  private readonly maxPairs: number;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(ISafeRepository)
-    private readonly safeRepository: ISafeRepository,
-    @Inject(IBlockchainApiManager)
-    private readonly blockchainApiManager: IBlockchainApiManager,
-    private readonly tokenApprovalCallsHelper: TokenApprovalCallsHelper,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    private readonly tokenApprovalsApi: TokenApprovalsApi,
   ) {
-    this.maxHistoryPages = this.configurationService.getOrThrow<number>(
-      'tokenApprovals.history.maxPages',
+    this.maxLogsRequests = this.configurationService.getOrThrow<number>(
+      'tokenApprovals.logs.maxRequests',
     );
-    this.historyConcurrency = this.configurationService.getOrThrow<number>(
-      'tokenApprovals.history.concurrency',
-    );
-    this.receiptsConcurrency = this.configurationService.getOrThrow<number>(
-      'tokenApprovals.receipts.concurrency',
+    this.maxPairs = this.configurationService.getOrThrow<number>(
+      'tokenApprovals.maxPairs',
     );
   }
 
@@ -61,170 +53,214 @@ export class TokenApprovalsRepository implements ITokenApprovalsRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<TokenApprovals> {
-    const [multisigHistory, moduleHistory, client] = await Promise.all([
-      this.getHistory((page) =>
-        this.safeRepository.getMultisigTransactions({
-          ...args,
-          executed: true,
-          ...page,
-        }),
-      ),
-      this.getHistory((page) =>
-        this.safeRepository.getModuleTransactions({ ...args, ...page }),
-      ),
-      this.blockchainApiManager.getApi(args.chainId),
+    const [head, storedState] = await Promise.all([
+      this.getHeadBlockNumber(args.chainId),
+      this.getScanState(args),
     ]);
-
-    const { tokenSpenders, transactionHashes } = this.findCalldataApprovals([
-      ...multisigHistory.calls,
-      ...moduleHistory.calls,
-    ]);
-    const eventTokenSpenders = await this.getEventTokenSpenders({
-      client,
-      safeAddress: args.safeAddress,
-      transactionHashes,
+    const state = await this.scanApprovalLogs({
+      ...args,
+      head,
+      state: storedState,
     });
+    await this.tokenApprovalsApi.setScanState({ ...args, state });
     const approvals = await this.getLiveApprovals({
-      client,
-      safeAddress: args.safeAddress,
-      tokenSpenders: [...tokenSpenders, ...eventTokenSpenders],
+      ...args,
+      pairs: state.pairs,
+      blockNumber: head,
     });
 
     return {
       approvals,
-      isHistoryComplete: multisigHistory.isComplete && moduleHistory.isComplete,
+      isComplete:
+        !state.hasDroppedPairs &&
+        state.lastScannedBlock !== null &&
+        state.lastScannedBlock >= head,
     };
   }
 
-  /**
-   * Reads one history list, newest first. The first page gives the count; the
-   * remaining pages are requested a few at a time.
-   */
-  private async getHistory(
-    getPage: (page: {
-      limit: number;
-      offset: number;
-    }) => Promise<Page<ExecutedSafeCall>>,
-  ): Promise<SafeCallHistory> {
-    const firstPage = await getPage({ limit: HISTORY_PAGE_SIZE, offset: 0 });
-    const count = firstPage.count ?? firstPage.results.length;
-    const pages = Math.ceil(count / HISTORY_PAGE_SIZE);
-    const offsets = Array.from(
-      { length: Math.max(Math.min(pages, this.maxHistoryPages) - 1, 0) },
-      (_, index) => (index + 1) * HISTORY_PAGE_SIZE,
-    );
+  private async getHeadBlockNumber(chainId: string): Promise<number> {
+    const head = await this.tokenApprovalsApi.getHeadBlockNumber(chainId);
+    return BlockNumberSchema.parse(head);
+  }
 
-    const otherPages = await this.allFulfilled(
-      batched(offsets, this.historyConcurrency, (offset) =>
-        getPage({ limit: HISTORY_PAGE_SIZE, offset }),
-      ),
-    );
-
+  /** The stored scan state; a new one when none is stored or it does not parse. */
+  private async getScanState(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<TokenApprovalsScanState> {
+    const stored = await this.tokenApprovalsApi.getScanState(args);
+    const result = TokenApprovalsScanStateSchema.safeParse(stored);
+    if (result.success) {
+      return result.data;
+    }
+    if (stored !== null) {
+      this.loggingService.debug({
+        message: 'Discarded a token approvals scan state that does not parse',
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      });
+    }
     return {
-      calls: [firstPage, ...otherPages].flatMap((page) => page.results),
-      isComplete: pages <= this.maxHistoryPages,
+      pairs: [],
+      lastScannedBlock: null,
+      rangeSize: null,
+      hasDroppedPairs: false,
     };
   }
 
   /**
-   * Splits the history into the approvals readable from calldata and the
-   * transactions whose approvals can only be read from their events.
+   * Providers limit `eth_getLogs` in different ways, so the range adapts: it is
+   * halved when rejected and doubled after it works. When the request budget
+   * runs out, or a single block is rejected, the progress so far is kept for
+   * the next request.
    */
-  private findCalldataApprovals(calls: Array<ExecutedSafeCall>): {
-    tokenSpenders: Array<TokenSpender>;
-    transactionHashes: Array<Hex>;
-  } {
-    const tokenSpenders: Array<TokenSpender> = [];
-    const transactionHashes = new Set<Hex>();
+  private async scanApprovalLogs(args: {
+    chainId: string;
+    safeAddress: Address;
+    head: number;
+    state: TokenApprovalsScanState;
+  }): Promise<TokenApprovalsScanState> {
+    let state = args.state;
+    let rangeSize = Math.min(
+      state.rangeSize ?? Number.POSITIVE_INFINITY,
+      this.blocksLeft(state, args.head),
+    );
 
-    for (const call of calls) {
-      if (call.isSuccessful === false) {
-        continue;
+    for (
+      let requests = 0;
+      requests < this.maxLogsRequests && this.blocksLeft(state, args.head) > 0;
+      requests++
+    ) {
+      const fromBlock = this.nextBlock(state);
+      const toBlock = fromBlock + rangeSize - 1;
+      let logs: Raw<Array<ApprovalLog>>;
+      try {
+        logs = await this.tokenApprovalsApi.getApprovalLogs({
+          chainId: args.chainId,
+          owner: args.safeAddress,
+          fromBlock,
+          toBlock,
+        });
+      } catch (error) {
+        this.loggingService.debug({
+          message: 'Could not read a range of Approval logs',
+          chainId: args.chainId,
+          fromBlock,
+          toBlock,
+          error: asError(error).message,
+        });
+        if (rangeSize > 1) {
+          rangeSize = Math.floor(rangeSize / 2);
+          continue;
+        }
+        const hasScannedAnyBlock =
+          state.lastScannedBlock !== args.state.lastScannedBlock;
+        if (!hasScannedAnyBlock) {
+          throw error;
+        }
+        break;
       }
-      const approvals = this.tokenApprovalCallsHelper.findApprovals(call);
-      tokenSpenders.push(...approvals.tokenSpenders);
-      if (approvals.hasOpaqueDelegateCall && call.transactionHash) {
-        transactionHashes.add(call.transactionHash);
-      }
+
+      state = {
+        ...this.withPairs(state, this.pairsOf(logs)),
+        lastScannedBlock: toBlock,
+        rangeSize,
+      };
+      rangeSize = Math.min(rangeSize * 2, this.blocksLeft(state, args.head));
     }
 
-    return { tokenSpenders, transactionHashes: [...transactionHashes] };
+    return state;
   }
 
-  /** Reads the ERC-20 `Approval` events the given transactions emitted with the Safe as owner. */
-  private async getEventTokenSpenders(args: {
-    client: PublicClient;
-    safeAddress: Address;
-    transactionHashes: Array<Hex>;
-  }): Promise<Array<TokenSpender>> {
-    const receipts = await this.allFulfilled(
-      batched(args.transactionHashes, this.receiptsConcurrency, (hash) =>
-        args.client.getTransactionReceipt({ hash }),
-      ),
-    );
+  private nextBlock(state: TokenApprovalsScanState): number {
+    return state.lastScannedBlock === null ? 0 : state.lastScannedBlock + 1;
+  }
 
-    return receipts.flatMap((receipt) =>
-      parseEventLogs({
-        abi: erc20Abi,
-        eventName: 'Approval',
-        logs: receipt.logs,
-        args: { owner: args.safeAddress },
-      }).map((log) => ({
-        tokenAddress: getAddress(log.address),
-        spender: log.args.spender,
-      })),
+  private blocksLeft(state: TokenApprovalsScanState, head: number): number {
+    return head - this.nextBlock(state) + 1;
+  }
+
+  private pairsOf(logs: Raw<Array<ApprovalLog>>): Array<TokenSpender> {
+    return ApprovalLogSchema.array()
+      .parse(logs)
+      .filter((log) => this.isErc20Approval(log))
+      .map((log) => {
+        const { args } = decodeEventLog({
+          abi: erc20Abi,
+          eventName: 'Approval',
+          topics: log.topics,
+          data: log.data,
+        });
+        return { tokenAddress: log.address, spender: args.spender };
+      });
+  }
+
+  /** ERC-721 emits the same event with the token id as a fourth topic. */
+  private isErc20Approval(log: ApprovalLog): boolean {
+    return (
+      log.topics.length === ERC20_APPROVAL_TOPIC_COUNT &&
+      size(log.data) === ERC20_APPROVAL_DATA_BYTES
     );
+  }
+
+  private withPairs(
+    state: TokenApprovalsScanState,
+    found: Array<TokenSpender>,
+  ): Pick<TokenApprovalsScanState, 'pairs' | 'hasDroppedPairs'> {
+    const pairs = [...state.pairs];
+    const keys = new Set(pairs.map((pair) => this.keyOf(pair)));
+    let hasDroppedPairs = state.hasDroppedPairs;
+
+    for (const pair of found) {
+      const key = this.keyOf(pair);
+      if (keys.has(key)) {
+        continue;
+      }
+      if (pairs.length >= this.maxPairs) {
+        hasDroppedPairs = true;
+        continue;
+      }
+      pairs.push(pair);
+      keys.add(key);
+    }
+
+    return { pairs, hasDroppedPairs };
+  }
+
+  private keyOf(pair: TokenSpender): string {
+    return `${pair.tokenAddress}:${pair.spender}`;
   }
 
   /**
-   * Reads the current allowance of every pair and keeps those above zero.
-   * A pair whose token does not answer `allowance` is not an ERC-20 and is dropped.
+   * Reads the allowance of every pair at {@link args.blockNumber} and keeps
+   * those above zero. A pair whose token does not answer `allowance` is not an
+   * ERC-20 and is dropped.
    */
   private async getLiveApprovals(args: {
-    client: PublicClient;
+    chainId: string;
     safeAddress: Address;
-    tokenSpenders: Array<TokenSpender>;
+    pairs: Array<TokenSpender>;
+    blockNumber: number;
   }): Promise<Array<TokenApproval>> {
-    const tokenSpenders = uniqBy(
-      args.tokenSpenders,
-      ({ tokenAddress, spender }) => `${tokenAddress}:${spender}`,
-    );
-    if (tokenSpenders.length === 0) {
+    if (args.pairs.length === 0) {
       return [];
     }
 
-    const allowances = await args.client.multicall({
-      allowFailure: true,
-      multicallAddress: MULTICALL3_ADDRESS,
-      batchSize: MULTICALL_BATCH_SIZE_BYTES,
-      contracts: tokenSpenders.map(
-        ({ tokenAddress, spender }) =>
-          ({
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: 'allowance',
-            args: [args.safeAddress, spender],
-          }) as const,
-      ),
+    const allowances = await this.tokenApprovalsApi.getAllowances({
+      chainId: args.chainId,
+      owner: args.safeAddress,
+      pairs: args.pairs,
+      blockNumber: args.blockNumber,
     });
+    const reads = AllowanceReadSchema.array()
+      .length(args.pairs.length)
+      .parse(allowances);
 
-    return tokenSpenders.flatMap((tokenSpender, index) => {
-      const allowance = allowances[index];
-      return allowance.status === 'success' && allowance.result > 0n
-        ? [{ ...tokenSpender, allowance: allowance.result }]
+    return args.pairs.flatMap((pair, index) => {
+      const read = reads[index];
+      return read.status === 'success' && read.result > BigInt(0)
+        ? [{ ...pair, allowance: read.result }]
         : [];
-    });
-  }
-
-  /** Unwraps batched results, failing the scan when any request failed: a partial scan would hide approvals. */
-  private async allFulfilled<T>(
-    results: Promise<Array<PromiseSettledResult<T>>>,
-  ): Promise<Array<T>> {
-    return (await results).map((result) => {
-      if (result.status === 'rejected') {
-        throw result.reason;
-      }
-      return result.value;
     });
   }
 }

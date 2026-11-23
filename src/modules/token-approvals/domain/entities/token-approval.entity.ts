@@ -20,6 +20,6 @@ export const TokenApprovalSchema = TokenSpenderSchema.extend({
 
 export const TokenApprovalsSchema = z.object({
   approvals: z.array(TokenApprovalSchema),
-  // False when the Safe has more history than the scan is allowed to read.
-  isHistoryComplete: z.boolean(),
+  // False when the logs are not read up to the latest block, or pairs were left out.
+  isComplete: z.boolean(),
 });

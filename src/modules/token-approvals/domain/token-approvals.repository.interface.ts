@@ -6,11 +6,11 @@ export const ITokenApprovalsRepository = Symbol('ITokenApprovalsRepository');
 
 export interface ITokenApprovalsRepository {
   /**
-   * Returns the ERC-20 allowances a Safe has given that are still above zero.
+   * Returns the ERC-20 allowances a Safe has given that are still above zero,
+   * however they were given.
    *
-   * The token and spender pairs come from the Safe's executed multisig and
-   * module transactions. Approvals signed off-chain (EIP-2612 `permit`,
-   * Permit2) are not part of that history and are not returned.
+   * The token and spender pairs come from the `Approval` logs that name the
+   * Safe as owner; each allowance is read on chain at the latest block.
    */
   getTokenApprovals(args: {
     chainId: string;

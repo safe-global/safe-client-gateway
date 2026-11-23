@@ -1,417 +1,429 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import {
-  type Address,
-  encodeAbiParameters,
-  encodeEventTopics,
-  erc20Abi,
-  getAddress,
-  type Hash,
-  type PublicClient,
-  type TransactionReceipt,
-} from 'viem';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
-import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
-import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ILoggingService } from '#/logging/logging.interface';
+import type { TokenApprovalsApi } from '#/modules/token-approvals/datasources/token-approvals-api.service';
 import {
-  multiSendEncoder,
-  multiSendTransactionsEncoder,
-} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { erc20ApproveEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import { moduleTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
-import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '#/modules/safe/domain/entities/operation.entity';
-import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
-import { TokenApprovalCallsHelper } from '#/modules/token-approvals/domain/helpers/token-approval-calls.helper';
-import {
-  HISTORY_PAGE_SIZE,
-  MULTICALL3_ADDRESS,
-} from '#/modules/token-approvals/domain/token-approvals.constants';
+  erc20ApprovalLogEncoder,
+  erc721ApprovalLogEncoder,
+} from '#/modules/token-approvals/domain/entities/__tests__/approval-log-encoder.builder';
+import { tokenSpenderBuilder } from '#/modules/token-approvals/domain/entities/__tests__/token-approval.builder';
+import { tokenApprovalsScanStateBuilder } from '#/modules/token-approvals/domain/entities/__tests__/token-approvals-scan-state.builder';
 import { TokenApprovalsRepository } from '#/modules/token-approvals/domain/token-approvals.repository';
+import { rawify } from '#/validation/entities/raw.entity';
+
+const tokenApprovalsApi = {
+  getHeadBlockNumber: vi.fn(),
+  getApprovalLogs: vi.fn(),
+  getAllowances: vi.fn(),
+  getScanState: vi.fn(),
+  setScanState: vi.fn(),
+} as MockedObject<TokenApprovalsApi>;
 
 const loggingService = {
-  info: vi.fn(),
   debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-const safeRepository = {
-  getMultisigTransactions: vi.fn(),
-  getModuleTransactions: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>;
-
-const client = {
-  getTransactionReceipt: vi.fn(),
-  multicall: vi.fn(),
-} as unknown as MockedObject<PublicClient>;
-
-const blockchainApiManager = {
-  getApi: vi.fn(),
-} as unknown as MockedObject<IBlockchainApiManager>;
-
-function fakeAddress(): Address {
-  return getAddress(faker.finance.ethereumAddress());
-}
-
-/** An executed multisig transaction that approves `spender` on token `to`. */
-function approveTransaction(args: {
-  tokenAddress: Address;
-  spender: Address;
-}): MultisigTransaction {
-  return multisigTransactionBuilder()
-    .with('to', args.tokenAddress)
-    .with('data', erc20ApproveEncoder().with('spender', args.spender).encode())
-    .with('operation', Operation.CALL)
-    .with('isSuccessful', true)
-    .build();
-}
-
-function receiptWithApproval(args: {
-  tokenAddress: Address;
-  owner: Address;
-  spender: Address;
-}): TransactionReceipt {
-  return {
-    logs: [
-      {
-        address: args.tokenAddress,
-        topics: encodeEventTopics({
-          abi: erc20Abi,
-          eventName: 'Approval',
-          args: { owner: args.owner, spender: args.spender },
-        }),
-        data: encodeAbiParameters(
-          [{ type: 'uint256' }],
-          [faker.number.bigInt()],
-        ),
-      },
-    ],
-  } as unknown as TransactionReceipt;
-}
-
-describe('TokenApprovalsRepository', () => {
+describe('Token approvals scan', () => {
   const chainId = faker.string.numeric();
-  const safeAddress = fakeAddress();
-  const maxPages = 3;
+  const safeAddress = getAddress(faker.finance.ethereumAddress());
+  let configurationService: FakeConfigurationService;
   let target: TokenApprovalsRepository;
-
-  function mockHistory(args: {
-    multisig?: Array<MultisigTransaction>;
-    module?: Array<ModuleTransaction>;
-  }): void {
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>()
-        .with('count', args.multisig?.length ?? 0)
-        .with('results', args.multisig ?? [])
-        .build(),
-    );
-    safeRepository.getModuleTransactions.mockResolvedValue(
-      pageBuilder<ModuleTransaction>()
-        .with('count', args.module?.length ?? 0)
-        .with('results', args.module ?? [])
-        .build(),
-    );
-  }
-
-  /** Answers every `allowance` read with `allowance`, unless the token is in `failing`. */
-  function mockAllowances(
-    allowance: bigint,
-    failing: Array<Address> = [],
-  ): void {
-    client.multicall.mockImplementation(({ contracts }) =>
-      Promise.resolve(
-        contracts.map((contract) =>
-          failing.includes((contract as { address: Address }).address)
-            ? { status: 'failure', error: new Error(), result: undefined }
-            : { status: 'success', result: allowance },
-        ),
-      ),
-    );
-  }
 
   beforeEach(() => {
     vi.resetAllMocks();
-    const configurationService = new FakeConfigurationService();
-    configurationService.set('tokenApprovals.history.maxPages', maxPages);
-    configurationService.set('tokenApprovals.history.concurrency', 2);
-    configurationService.set('tokenApprovals.receipts.concurrency', 2);
-    blockchainApiManager.getApi.mockResolvedValue(client);
+    configurationService = new FakeConfigurationService();
+    configurationService.set(
+      'tokenApprovals.logs.maxRequests',
+      faker.number.int({ min: 32, max: 64 }),
+    );
+    configurationService.set(
+      'tokenApprovals.maxPairs',
+      faker.number.int({ min: 10, max: 100 }),
+    );
     target = new TokenApprovalsRepository(
       configurationService,
-      safeRepository,
-      blockchainApiManager,
-      new TokenApprovalCallsHelper(
-        new MultiSendDecoder(loggingService),
-        loggingService,
+      loggingService,
+      tokenApprovalsApi,
+    );
+  });
+
+  it('should, when the Safe gave an allowance above zero, return it and report the list as complete', async () => {
+    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    const tokenAddress = getAddress(faker.finance.ethereumAddress());
+    const spender = getAddress(faker.finance.ethereumAddress());
+    const allowance = faker.number.bigInt({ min: 1n });
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(
+      rawify([
+        erc20ApprovalLogEncoder()
+          .with('tokenAddress', tokenAddress)
+          .with('owner', safeAddress)
+          .with('spender', spender)
+          .encode(),
+      ]),
+    );
+    tokenApprovalsApi.getAllowances.mockResolvedValue(
+      rawify([{ status: 'success', result: allowance }]),
+    );
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual).toStrictEqual({
+      approvals: [{ tokenAddress, spender, allowance }],
+      isComplete: true,
+    });
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      owner: safeAddress,
+      fromBlock: 0,
+      toBlock: head,
+    });
+    expect(tokenApprovalsApi.getAllowances).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      owner: safeAddress,
+      pairs: [{ tokenAddress, spender }],
+      blockNumber: head,
+    });
+  });
+
+  it('should, when an allowance is zero, leave its pair out', async () => {
+    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    const tokenAddress = getAddress(faker.finance.ethereumAddress());
+    const spender = getAddress(faker.finance.ethereumAddress());
+    const allowance = faker.number.bigInt({ min: 1n });
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(
+      rawify([
+        erc20ApprovalLogEncoder()
+          .with('tokenAddress', tokenAddress)
+          .with('owner', safeAddress)
+          .with('spender', spender)
+          .encode(),
+        erc20ApprovalLogEncoder().with('owner', safeAddress).encode(),
+      ]),
+    );
+    tokenApprovalsApi.getAllowances.mockResolvedValue(
+      rawify([
+        { status: 'success', result: allowance },
+        { status: 'success', result: BigInt(0) },
+      ]),
+    );
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual.approvals).toStrictEqual([
+      { tokenAddress, spender, allowance },
+    ]);
+  });
+
+  it('should, when the allowance call of a token fails, leave its pair out', async () => {
+    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    const tokenAddress = getAddress(faker.finance.ethereumAddress());
+    const spender = getAddress(faker.finance.ethereumAddress());
+    const allowance = faker.number.bigInt({ min: 1n });
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(
+      rawify([
+        erc20ApprovalLogEncoder().with('owner', safeAddress).encode(),
+        erc20ApprovalLogEncoder()
+          .with('tokenAddress', tokenAddress)
+          .with('owner', safeAddress)
+          .with('spender', spender)
+          .encode(),
+      ]),
+    );
+    tokenApprovalsApi.getAllowances.mockResolvedValue(
+      rawify([
+        { status: 'failure', error: new Error(), result: undefined },
+        { status: 'success', result: allowance },
+      ]),
+    );
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual.approvals).toStrictEqual([
+      { tokenAddress, spender, allowance },
+    ]);
+  });
+
+  it('should, when a log is an ERC-721 approval, leave it out', async () => {
+    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    const tokenAddress = getAddress(faker.finance.ethereumAddress());
+    const spender = getAddress(faker.finance.ethereumAddress());
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(
+      rawify([
+        erc721ApprovalLogEncoder().with('owner', safeAddress).encode(),
+        erc20ApprovalLogEncoder()
+          .with('tokenAddress', tokenAddress)
+          .with('owner', safeAddress)
+          .with('spender', spender)
+          .encode(),
+      ]),
+    );
+    tokenApprovalsApi.getAllowances.mockResolvedValue(
+      rawify([{ status: 'success', result: faker.number.bigInt({ min: 1n }) }]),
+    );
+
+    await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(tokenApprovalsApi.getAllowances).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      owner: safeAddress,
+      pairs: [{ tokenAddress, spender }],
+      blockNumber: head,
+    });
+  });
+
+  it('should, when the provider rejects the whole range, read it in halves and report the list as complete', async () => {
+    const half = faker.number.int({ min: 1, max: 10_000_000 });
+    const head = 2 * half - 1;
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs
+      .mockRejectedValueOnce(new DataSourceError('Service unavailable', 503))
+      .mockResolvedValue(rawify([]));
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual).toStrictEqual({ approvals: [], isComplete: true });
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenCalledTimes(3);
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenNthCalledWith(1, {
+      chainId,
+      owner: safeAddress,
+      fromBlock: 0,
+      toBlock: head,
+    });
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenNthCalledWith(2, {
+      chainId,
+      owner: safeAddress,
+      fromBlock: 0,
+      toBlock: half - 1,
+    });
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenNthCalledWith(3, {
+      chainId,
+      owner: safeAddress,
+      fromBlock: half,
+      toBlock: head,
+    });
+    expect(tokenApprovalsApi.setScanState).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      safeAddress,
+      state: {
+        pairs: [],
+        lastScannedBlock: head,
+        rangeSize: half,
+        hasDroppedPairs: false,
+      },
+    });
+  });
+
+  it('should, when the request budget runs out before the latest block, report the list as incomplete and continue after the stored block on the next call', async () => {
+    configurationService.set('tokenApprovals.logs.maxRequests', 2);
+    const target = new TokenApprovalsRepository(
+      configurationService,
+      loggingService,
+      tokenApprovalsApi,
+    );
+    const half = faker.number.int({ min: 1, max: 10_000_000 });
+    const head = 2 * half - 1;
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.setScanState.mockImplementation(({ state }) => {
+      tokenApprovalsApi.getScanState.mockResolvedValue(rawify(state));
+      return Promise.resolve();
+    });
+    tokenApprovalsApi.getApprovalLogs
+      .mockRejectedValueOnce(new DataSourceError('Service unavailable', 503))
+      .mockResolvedValue(rawify([]));
+
+    const first = await target.getTokenApprovals({ chainId, safeAddress });
+    const second = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(first.isComplete).toBe(false);
+    expect(second.isComplete).toBe(true);
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenCalledTimes(3);
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenNthCalledWith(3, {
+      chainId,
+      owner: safeAddress,
+      fromBlock: half,
+      toBlock: head,
+    });
+  });
+
+  it('should, when a complete scan is stored, read only the blocks added since and keep the stored pairs', async () => {
+    const lastScannedBlock = faker.number.int({ min: 1, max: 20_000_000 });
+    const rangeSize = faker.number.int({ min: 10, max: 10_000 });
+    const head =
+      lastScannedBlock + faker.number.int({ min: 1, max: rangeSize });
+    const state = tokenApprovalsScanStateBuilder()
+      .with('lastScannedBlock', lastScannedBlock)
+      .with('rangeSize', rangeSize)
+      .build();
+    const allowance = faker.number.bigInt({ min: 1n });
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(rawify(state));
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(rawify([]));
+    tokenApprovalsApi.getAllowances.mockResolvedValue(
+      rawify(state.pairs.map(() => ({ status: 'success', result: allowance }))),
+    );
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      owner: safeAddress,
+      fromBlock: lastScannedBlock + 1,
+      toBlock: head,
+    });
+    expect(actual).toStrictEqual({
+      approvals: state.pairs.map((pair) => ({ ...pair, allowance })),
+      isComplete: true,
+    });
+  });
+
+  it('should, when the Safe has more pairs than the cap, keep the first ones and report the list as incomplete', async () => {
+    const maxPairs = faker.number.int({ min: 1, max: 5 });
+    configurationService.set('tokenApprovals.maxPairs', maxPairs);
+    const target = new TokenApprovalsRepository(
+      configurationService,
+      loggingService,
+      tokenApprovalsApi,
+    );
+    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    const pairs = faker.helpers.multiple(() => tokenSpenderBuilder().build(), {
+      count: maxPairs + 1,
+    });
+    const keptPairs = pairs.slice(0, maxPairs);
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(
+      rawify(
+        pairs.map((pair) =>
+          erc20ApprovalLogEncoder()
+            .with('tokenAddress', pair.tokenAddress)
+            .with('owner', safeAddress)
+            .with('spender', pair.spender)
+            .encode(),
+        ),
       ),
     );
-  });
-
-  it('returns the live approvals found in multisig and module transactions', async () => {
-    const multisigApproval = {
-      tokenAddress: fakeAddress(),
-      spender: fakeAddress(),
-    };
-    const moduleApproval = {
-      tokenAddress: fakeAddress(),
-      spender: fakeAddress(),
-    };
-    const allowance = faker.number.bigInt({ min: 1n });
-    mockHistory({
-      multisig: [approveTransaction(multisigApproval)],
-      module: [
-        moduleTransactionBuilder()
-          .with('to', moduleApproval.tokenAddress)
-          .with(
-            'data',
-            erc20ApproveEncoder()
-              .with('spender', moduleApproval.spender)
-              .encode(),
-          )
-          .with('operation', Operation.CALL)
-          .with('isSuccessful', true)
-          .build(),
-      ],
-    });
-    mockAllowances(allowance);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual).toStrictEqual({
-      approvals: [
-        { ...multisigApproval, allowance },
-        { ...moduleApproval, allowance },
-      ],
-      isHistoryComplete: true,
-    });
-    expect(safeRepository.getMultisigTransactions).toHaveBeenCalledWith({
-      chainId,
-      safeAddress,
-      executed: true,
-      limit: HISTORY_PAGE_SIZE,
-      offset: 0,
-    });
-    expect(safeRepository.getModuleTransactions).toHaveBeenCalledWith({
-      chainId,
-      safeAddress,
-      limit: HISTORY_PAGE_SIZE,
-      offset: 0,
-    });
-    expect(client.multicall).toHaveBeenCalledWith(
-      expect.objectContaining({
-        allowFailure: true,
-        multicallAddress: MULTICALL3_ADDRESS,
-        contracts: [multisigApproval, moduleApproval].map((approval) => ({
-          address: approval.tokenAddress,
-          abi: erc20Abi,
-          functionName: 'allowance',
-          args: [safeAddress, approval.spender],
+    tokenApprovalsApi.getAllowances.mockResolvedValue(
+      rawify(
+        keptPairs.map(() => ({
+          status: 'success',
+          result: faker.number.bigInt({ min: 1n }),
         })),
-      }),
-    );
-  });
-
-  it('finds the approvals batched in a delegatecalled MultiSend', async () => {
-    const approval = { tokenAddress: fakeAddress(), spender: fakeAddress() };
-    const allowance = faker.number.bigInt({ min: 1n });
-    mockHistory({
-      multisig: [
-        multisigTransactionBuilder()
-          .with(
-            'data',
-            multiSendEncoder()
-              .with(
-                'transactions',
-                multiSendTransactionsEncoder([
-                  {
-                    operation: Operation.CALL,
-                    to: approval.tokenAddress,
-                    value: 0n,
-                    data: erc20ApproveEncoder()
-                      .with('spender', approval.spender)
-                      .encode(),
-                  },
-                ]),
-              )
-              .encode(),
-          )
-          .with('operation', Operation.DELEGATE)
-          .with('isSuccessful', true)
-          .build(),
-      ],
-    });
-    mockAllowances(allowance);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual.approvals).toStrictEqual([{ ...approval, allowance }]);
-    expect(client.getTransactionReceipt).not.toHaveBeenCalled();
-  });
-
-  it('drops approvals that were spent or revoked', async () => {
-    mockHistory({
-      multisig: [
-        approveTransaction({
-          tokenAddress: fakeAddress(),
-          spender: fakeAddress(),
-        }),
-      ],
-    });
-    mockAllowances(0n);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual.approvals).toStrictEqual([]);
-  });
-
-  it('drops tokens that do not answer allowance', async () => {
-    const approval = { tokenAddress: fakeAddress(), spender: fakeAddress() };
-    const notErc20 = { tokenAddress: fakeAddress(), spender: fakeAddress() };
-    const allowance = faker.number.bigInt({ min: 1n });
-    mockHistory({
-      multisig: [approveTransaction(approval), approveTransaction(notErc20)],
-    });
-    mockAllowances(allowance, [notErc20.tokenAddress]);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual.approvals).toStrictEqual([{ ...approval, allowance }]);
-  });
-
-  it('reads each token and spender pair once', async () => {
-    const approval = { tokenAddress: fakeAddress(), spender: fakeAddress() };
-    const allowance = faker.number.bigInt({ min: 1n });
-    mockHistory({
-      multisig: [approveTransaction(approval), approveTransaction(approval)],
-    });
-    mockAllowances(allowance);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual.approvals).toStrictEqual([{ ...approval, allowance }]);
-  });
-
-  it('skips failed transactions', async () => {
-    mockHistory({
-      multisig: [
-        {
-          ...approveTransaction({
-            tokenAddress: fakeAddress(),
-            spender: fakeAddress(),
-          }),
-          isSuccessful: false,
-        },
-      ],
-    });
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual.approvals).toStrictEqual([]);
-    expect(client.multicall).not.toHaveBeenCalled();
-  });
-
-  it('reads the events of a delegatecall to a contract other than MultiSend', async () => {
-    const approval = { tokenAddress: fakeAddress(), spender: fakeAddress() };
-    const allowance = faker.number.bigInt({ min: 1n });
-    const transactionHash = faker.string.hexadecimal({ length: 64 }) as Hash;
-    mockHistory({
-      multisig: [
-        multisigTransactionBuilder()
-          .with('operation', Operation.DELEGATE)
-          .with('isSuccessful', true)
-          .with('transactionHash', transactionHash)
-          .build(),
-      ],
-    });
-    client.getTransactionReceipt.mockResolvedValue({
-      logs: [
-        ...receiptWithApproval({ ...approval, owner: safeAddress }).logs,
-        // An approval given by another account in the same transaction
-        ...receiptWithApproval({
-          tokenAddress: fakeAddress(),
-          owner: fakeAddress(),
-          spender: fakeAddress(),
-        }).logs,
-      ],
-    } as unknown as TransactionReceipt);
-    mockAllowances(allowance);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual.approvals).toStrictEqual([{ ...approval, allowance }]);
-    expect(client.getTransactionReceipt).toHaveBeenCalledTimes(1);
-    expect(client.getTransactionReceipt).toHaveBeenCalledWith({
-      hash: transactionHash,
-    });
-  });
-
-  it('reads every page of a history list', async () => {
-    const count = HISTORY_PAGE_SIZE * 2 + 1;
-    const approvals = Array.from({ length: maxPages }, () => ({
-      tokenAddress: fakeAddress(),
-      spender: fakeAddress(),
-    }));
-    const allowance = faker.number.bigInt({ min: 1n });
-    mockHistory({});
-    safeRepository.getMultisigTransactions.mockImplementation(
-      ({ offset = 0 }) =>
-        Promise.resolve(
-          pageBuilder<MultisigTransaction>()
-            .with('count', count)
-            .with('results', [
-              approveTransaction(approvals[offset / HISTORY_PAGE_SIZE]),
-            ])
-            .build(),
-        ),
-    );
-    mockAllowances(allowance);
-
-    const actual = await target.getTokenApprovals({ chainId, safeAddress });
-
-    expect(actual).toStrictEqual({
-      approvals: approvals.map((approval) => ({ ...approval, allowance })),
-      isHistoryComplete: true,
-    });
-    expect(safeRepository.getMultisigTransactions).toHaveBeenCalledTimes(3);
-  });
-
-  it('stops at the page limit and reports the history as incomplete', async () => {
-    mockHistory({});
-    safeRepository.getModuleTransactions.mockResolvedValue(
-      pageBuilder<ModuleTransaction>()
-        .with('count', HISTORY_PAGE_SIZE * maxPages + 1)
-        .with('results', [])
-        .build(),
+      ),
     );
 
     const actual = await target.getTokenApprovals({ chainId, safeAddress });
 
-    expect(actual).toStrictEqual({ approvals: [], isHistoryComplete: false });
-    expect(safeRepository.getModuleTransactions).toHaveBeenCalledTimes(
-      maxPages,
-    );
+    expect(actual.isComplete).toBe(false);
+    expect(tokenApprovalsApi.getAllowances).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      owner: safeAddress,
+      pairs: keptPairs,
+      blockNumber: head,
+    });
+    expect(tokenApprovalsApi.setScanState).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      safeAddress,
+      state: {
+        pairs: keptPairs,
+        lastScannedBlock: head,
+        rangeSize: head + 1,
+        hasDroppedPairs: true,
+      },
+    });
   });
 
-  it('fails when a history page cannot be read', async () => {
-    const error = new Error(faker.lorem.sentence());
-    mockHistory({});
-    safeRepository.getMultisigTransactions
-      .mockResolvedValueOnce(
-        pageBuilder<MultisigTransaction>()
-          .with('count', HISTORY_PAGE_SIZE + 1)
-          .with('results', [])
-          .build(),
-      )
-      .mockRejectedValueOnce(error);
+  it('should, when a single block is rejected after earlier blocks were read, keep the progress and report the list as incomplete', async () => {
+    const lastScannedBlock = faker.number.int({ min: 1, max: 20_000_000 });
+    const state = tokenApprovalsScanStateBuilder()
+      .with('pairs', [])
+      .with('lastScannedBlock', lastScannedBlock)
+      .with('rangeSize', faker.number.int({ min: 2, max: 10_000 }))
+      .build();
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(lastScannedBlock + 2)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(rawify(state));
+    tokenApprovalsApi.getApprovalLogs
+      .mockRejectedValueOnce(new DataSourceError('Service unavailable', 503))
+      .mockResolvedValueOnce(rawify([]))
+      .mockRejectedValueOnce(new DataSourceError('Service unavailable', 503));
+
+    const actual = await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(actual).toStrictEqual({ approvals: [], isComplete: false });
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenCalledTimes(3);
+    expect(tokenApprovalsApi.setScanState).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      safeAddress,
+      state: {
+        pairs: [],
+        lastScannedBlock: lastScannedBlock + 1,
+        rangeSize: 1,
+        hasDroppedPairs: false,
+      },
+    });
+  });
+
+  it('should, when not even one block can be read, throw the error of the provider', async () => {
+    const error = new DataSourceError('Service unavailable', 503);
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(rawify(BigInt(0)));
+    tokenApprovalsApi.getScanState.mockResolvedValue(null);
+    tokenApprovalsApi.getApprovalLogs.mockRejectedValue(error);
 
     await expect(
       target.getTokenApprovals({ chainId, safeAddress }),
     ).rejects.toThrow(error);
+
+    expect(tokenApprovalsApi.setScanState).not.toHaveBeenCalled();
+  });
+
+  it('should, when the stored scan state does not parse, scan from the first block', async () => {
+    const head = faker.number.int({ min: 1, max: 20_000_000 });
+    tokenApprovalsApi.getHeadBlockNumber.mockResolvedValue(
+      rawify(BigInt(head)),
+    );
+    tokenApprovalsApi.getScanState.mockResolvedValue(
+      rawify({ lastScannedBlock: faker.string.alpha() }),
+    );
+    tokenApprovalsApi.getApprovalLogs.mockResolvedValue(rawify([]));
+
+    await target.getTokenApprovals({ chainId, safeAddress });
+
+    expect(tokenApprovalsApi.getApprovalLogs).toHaveBeenCalledExactlyOnceWith({
+      chainId,
+      owner: safeAddress,
+      fromBlock: 0,
+      toBlock: head,
+    });
   });
 });

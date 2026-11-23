@@ -11,94 +11,80 @@ import {
 } from '#/__tests__/test-app.provider';
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
-import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
-import { erc20ApproveEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigTransactionToJson,
-} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { erc20ApprovalLogEncoder } from '#/modules/token-approvals/domain/entities/__tests__/approval-log-encoder.builder';
+import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Token approvals controller', () => {
-  let app: INestApplication<Server>;
-  let safeConfigUrl: string;
-  let networkService: MockedObject<INetworkService>;
-  let blockchainApiManager: IBlockchainApiManager;
-
-  const client = {
-    getTransactionReceipt: vi.fn(),
+  const cachedClient = {
+    request: vi.fn(),
+  } as MockedObject<PublicClient>;
+  const uncachedClient = {
+    getBlockNumber: vi.fn(),
     multicall: vi.fn(),
-  } as unknown as MockedObject<PublicClient>;
+  } as MockedObject<PublicClient>;
 
-  beforeAll(async () => {
-    const moduleFixture = await createTestModule();
+  describe('with the feature on', () => {
+    let app: INestApplication<Server>;
+    let safeConfigUrl: string;
+    let networkService: MockedObject<INetworkService>;
+    let blockchainApiManager: IBlockchainApiManager;
 
-    const configurationService = moduleFixture.get<IConfigurationService>(
-      IConfigurationService,
-    );
-    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    networkService = moduleFixture.get(NetworkService);
-    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
+    beforeAll(async () => {
+      const moduleFixture = await createTestModule();
+      safeConfigUrl = moduleFixture
+        .get<IConfigurationService>(IConfigurationService)
+        .getOrThrow('safeConfig.baseUri');
+      networkService = moduleFixture.get(NetworkService);
+      blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
+      app = await new TestAppProvider().provide(moduleFixture);
+      await initTestApplication(app);
+    });
 
-    app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
-  });
+    afterAll(async () => {
+      await app?.close();
+    });
 
-  afterAll(async () => {
-    await app?.close();
-  });
+    beforeEach(() => {
+      vi.resetAllMocks();
+      vi.spyOn(blockchainApiManager, 'getApi').mockResolvedValue(cachedClient);
+      vi.spyOn(blockchainApiManager, 'getUncachedApi').mockResolvedValue(
+        uncachedClient,
+      );
+    });
 
-  beforeEach(() => {
-    vi.resetAllMocks();
-    vi.spyOn(blockchainApiManager, 'getApi').mockResolvedValue(client);
-  });
-
-  describe('GET /v1/chains/:chainId/safes/:safeAddress/token-approvals', () => {
-    it('returns the live approvals of the Safe', async () => {
+    it('should, when the Safe gave an allowance above zero, return it with its token metadata', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const tokenAddress = getAddress(faker.finance.ethereumAddress());
+      const token = erc20TokenBuilder().build();
       const spender = getAddress(faker.finance.ethereumAddress());
       const allowance = faker.number.bigInt({ min: 1n });
-      const transaction = multisigTransactionBuilder()
-        .with('safe', safeAddress)
-        .with('to', tokenAddress)
-        .with('data', erc20ApproveEncoder().with('spender', spender).encode())
-        .with('operation', Operation.CALL)
-        .with('isExecuted', true)
-        .with('isSuccessful', true)
-        .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`:
-            return Promise.resolve({
-              data: rawify(
-                pageBuilder()
-                  .with('count', 1)
-                  .with('results', [multisigTransactionToJson(transaction)])
-                  .build(),
-              ),
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/safes/${safeAddress}/module-transactions/`:
-            return Promise.resolve({
-              data: rawify(
-                pageBuilder().with('count', 0).with('results', []).build(),
-              ),
-              status: 200,
-            });
+          case `${chain.transactionService}/api/v1/tokens/${token.address}/`:
+            return Promise.resolve({ data: rawify(token), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
       });
-      client.multicall.mockResolvedValue([
+      uncachedClient.getBlockNumber.mockResolvedValue(
+        faker.number.bigInt({ min: 1n, max: 20_000_000n }),
+      );
+      cachedClient.request.mockResolvedValue([
+        erc20ApprovalLogEncoder()
+          .with('tokenAddress', token.address)
+          .with('owner', safeAddress)
+          .with('spender', spender)
+          .encode(),
+      ]);
+      uncachedClient.multicall.mockResolvedValue([
         { status: 'success', result: allowance },
       ]);
 
@@ -107,20 +93,112 @@ describe('Token approvals controller', () => {
         .expect(200)
         .expect({
           approvals: [
-            { tokenAddress, spender, allowance: allowance.toString() },
+            {
+              tokenAddress: token.address,
+              tokenMetadata: token,
+              spender,
+              allowance: allowance.toString(),
+            },
           ],
-          isHistoryComplete: true,
+          isComplete: true,
         });
     });
 
-    it('rejects an invalid Safe address', async () => {
+    it('should, when the Safe address is invalid, reject the request with 422', async () => {
       await request(app.getHttpServer())
         .get(
           `/v1/chains/${faker.string.numeric()}/safes/${faker.string.alphanumeric()}/token-approvals`,
         )
         .expect(422);
 
-      expect(networkService.get).not.toHaveBeenCalled();
+      expect(blockchainApiManager.getApi).not.toHaveBeenCalled();
+    });
+
+    it('should, when the chain id is invalid, reject the request with 422', async () => {
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${faker.string.alpha()}/safes/${getAddress(faker.finance.ethereumAddress())}/token-approvals`,
+        )
+        .expect(422);
+
+      expect(blockchainApiManager.getApi).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('with a rate limit of one request', () => {
+    let app: INestApplication<Server>;
+    let blockchainApiManager: IBlockchainApiManager;
+
+    beforeAll(async () => {
+      const defaultConfiguration = configuration();
+      const moduleFixture = await createTestModule({
+        config: () => ({
+          ...defaultConfiguration,
+          tokenApprovals: {
+            ...defaultConfiguration.tokenApprovals,
+            rateLimit: {
+              ...defaultConfiguration.tokenApprovals.rateLimit,
+              max: 1,
+            },
+          },
+        }),
+      });
+      blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
+      app = await new TestAppProvider().provide(moduleFixture);
+      await initTestApplication(app);
+    });
+
+    afterAll(async () => {
+      await app?.close();
+    });
+
+    it('should, when the limit is reached, reject the next request with 429', async () => {
+      vi.spyOn(blockchainApiManager, 'getApi').mockResolvedValue(cachedClient);
+      vi.spyOn(blockchainApiManager, 'getUncachedApi').mockResolvedValue(
+        uncachedClient,
+      );
+      uncachedClient.getBlockNumber.mockResolvedValue(
+        faker.number.bigInt({ min: 1n, max: 20_000_000n }),
+      );
+      cachedClient.request.mockResolvedValue([]);
+      const url = `/v1/chains/${faker.string.numeric()}/safes/${getAddress(faker.finance.ethereumAddress())}/token-approvals`;
+
+      await request(app.getHttpServer()).get(url).expect(200);
+      await request(app.getHttpServer())
+        .get(url)
+        .expect(429)
+        .expect('Rate limit reached');
+    });
+  });
+
+  describe('with the feature off', () => {
+    let app: INestApplication<Server>;
+
+    beforeAll(async () => {
+      const defaultConfiguration = configuration();
+      const moduleFixture = await createTestModule({
+        config: () => ({
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            tokenApprovals: false,
+          },
+        }),
+      });
+      app = await new TestAppProvider().provide(moduleFixture);
+      await initTestApplication(app);
+    });
+
+    afterAll(async () => {
+      await app?.close();
+    });
+
+    it('should, when the route is requested, answer 404 because it is not registered', async () => {
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${faker.string.numeric()}/safes/${getAddress(faker.finance.ethereumAddress())}/token-approvals`,
+        )
+        .expect(404);
     });
   });
 });

@@ -151,21 +151,13 @@ export const RootConfigurationSchema = z
     FF_SAFENET: z.string().optional(),
     FF_GUARD_POLICIES: z.string().optional(),
     FF_TOKEN_APPROVALS: z.string().optional(),
-    TOKEN_APPROVALS_HISTORY_MAX_PAGES: z.coerce
+    TOKEN_APPROVALS_LOGS_MAX_REQUESTS: z.coerce
       .number()
       .int()
       .min(1)
       .optional(),
-    TOKEN_APPROVALS_HISTORY_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .optional(),
-    TOKEN_APPROVALS_RECEIPTS_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .optional(),
+    TOKEN_APPROVALS_MAX_PAIRS: z.coerce.number().int().min(1).optional(),
+    TOKEN_APPROVALS_BATCH_SIZE: z.coerce.number().int().min(1).optional(),
     TOKEN_APPROVALS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
     TOKEN_APPROVALS_RATE_LIMIT_WINDOW_SECONDS: z.coerce
       .number()
@@ -291,6 +283,11 @@ export const RootConfigurationSchema = z
       .number()
       .int()
       .min(0)
+      .optional(),
+    EXPIRATION_TIME_TOKEN_APPROVALS_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
       .optional(),
     OWNERS_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
     FINGERPRINT_ENCRYPTION_KEY: z.string(),

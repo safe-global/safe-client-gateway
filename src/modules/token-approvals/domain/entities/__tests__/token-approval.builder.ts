@@ -5,7 +5,14 @@ import { Builder, type IBuilder } from '#/__tests__/builder';
 import type {
   TokenApproval,
   TokenApprovals,
+  TokenSpender,
 } from '#/modules/token-approvals/domain/entities/token-approval.entity';
+
+export function tokenSpenderBuilder(): IBuilder<TokenSpender> {
+  return new Builder<TokenSpender>()
+    .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('spender', getAddress(faker.finance.ethereumAddress()));
+}
 
 export function tokenApprovalBuilder(): IBuilder<TokenApproval> {
   return new Builder<TokenApproval>()
@@ -17,5 +24,5 @@ export function tokenApprovalBuilder(): IBuilder<TokenApproval> {
 export function tokenApprovalsBuilder(): IBuilder<TokenApprovals> {
   return new Builder<TokenApprovals>()
     .with('approvals', [tokenApprovalBuilder().build()])
-    .with('isHistoryComplete', faker.datatype.boolean());
+    .with('isComplete', faker.datatype.boolean());
 }

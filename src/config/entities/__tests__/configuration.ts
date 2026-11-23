@@ -220,6 +220,7 @@ export default (): ReturnType<typeof configuration> => ({
     billing: faker.number.int(),
     entitlements: faker.number.int(),
     decodedData: faker.number.int(),
+    tokenApprovals: faker.number.int({ min: 1 }),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
@@ -465,13 +466,11 @@ export default (): ReturnType<typeof configuration> => ({
     cgwServiceKey: 'CGW',
   },
   tokenApprovals: {
-    history: {
-      maxPages: faker.number.int({ min: 5, max: 10 }),
-      concurrency: faker.number.int({ min: 2, max: 4 }),
+    logs: {
+      maxRequests: faker.number.int({ min: 8, max: 32 }),
     },
-    receipts: {
-      concurrency: faker.number.int({ min: 2, max: 4 }),
-    },
+    maxPairs: faker.number.int({ min: 100, max: 2_000 }),
+    batchSize: faker.number.int({ min: 2, max: 10 }),
     rateLimit: {
       max: faker.number.int({ min: 100, max: 200 }),
       windowSeconds: faker.number.int({ min: 100, max: 200 }),
