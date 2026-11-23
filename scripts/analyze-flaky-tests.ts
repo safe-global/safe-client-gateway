@@ -14,6 +14,8 @@ const CI_WORKFLOWS = new Set(
 );
 // Matches "unit-tests" and reusable-workflow names like "ci / integration-tests (1/3)"
 const TEST_JOB = /(^|\/ )(unit|integration)-tests( \(\d+\/\d+\))?$/;
+// PRs referencing this ticket count as flake work even when they fix no recorded flake
+const FLAKY_TICKET = "WA-1753";
 const PERIOD_DAYS = 60;
 const PER_PAGE = 100;
 const OUTPUT_DIR = path.join(__dirname, "..", "reports", "flaky-tests");
@@ -50,6 +52,8 @@ interface WeeklyTrend {
 	commits: number;
 	flaky: number;
 	rate: number;
+	// Commits first seen after the week's last flaky commit
+	clean_tail?: number;
 }
 
 interface FixPr {
@@ -59,6 +63,7 @@ interface FixPr {
 	merged_at: string | null;
 	state: "open" | "closed" | "merged";
 	tests_fixed: Array<string>;
+	refs_ticket?: boolean;
 }
 
 // --- Helpers ---
@@ -636,7 +641,7 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 	let page = 1;
 
 	// Fetch PRs that mention test/flaky/mock/spec in the title, or carry a
-	// `Flaky-Test:` marker in the body
+	// `Flaky-Test:` marker or the flaky-test ticket in the body
 	while (page <= 5) {
 		const data = gh("pulls", {
 			state: "all",
@@ -658,7 +663,8 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 		const testPrs = data.filter(
 			(pr) =>
 				/test|flaky|mock|spec/i.test(pr.title) ||
-				/^Flaky-Test:/im.test(pr.body ?? ""),
+				/^Flaky-Test:/im.test(pr.body ?? "") ||
+				(pr.body ?? "").includes(FLAKY_TICKET),
 		);
 
 		for (const pr of testPrs) {
@@ -670,11 +676,11 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 				}) as Array<{ filename: string }>;
 
 				// Changed spec files are a heuristic that misses fixes made in
-				// source or shared helper files; `Flaky-Test:` body markers link
-				// a PR to its test regardless of which files it touches.
-				const markerFiles = Array.from(
-					(pr.body ?? "").matchAll(/^Flaky-Test:\s*(\S+)/gim),
-					(m) => m[1],
+				// source, helper or config files; a spec named in the body (path
+				// or basename, e.g. a `Flaky-Test:` marker) links it regardless.
+				const bodySpecs = Array.from(
+					(pr.body ?? "").matchAll(/[\w./-]+\.spec\.ts/g),
+					(m) => m[0],
 				);
 				const testFiles = [
 					...new Set([
@@ -684,11 +690,12 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 								f.filename.replace(/(?<!\.spec)\.ts$/, ".spec.ts"),
 							)
 							.filter((f) => f.match(/\.spec\.ts$/)),
-						...markerFiles,
+						...bodySpecs,
 					]),
 				];
+				const refsTicket = (pr.body ?? "").includes(FLAKY_TICKET);
 
-				if (testFiles.length > 0) {
+				if (testFiles.length > 0 || refsTicket) {
 					prs.push({
 						number: pr.number,
 						title: pr.title,
@@ -696,6 +703,7 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 						merged_at: pr.merged_at,
 						state: prState(pr),
 						tests_fixed: testFiles,
+						refs_ticket: refsTicket,
 					});
 				}
 			} catch {
@@ -801,16 +809,15 @@ function generateReport(args: {
 	lines.push("</details>");
 	lines.push("");
 
-	// Clean-streak tracker: commits accumulated in fully-clean weeks after
-	// the last week that had a flake. Conservative — clean commits within
-	// the flake week itself are not counted. Rule of three: 0 flakes in n
-	// commits bounds the true rate below 3/n at 95% confidence, so the target
-	// rate needs a 3/TARGET_RATE-commit streak.
+	// Clean-streak tracker: commits first seen after the last flaky commit.
+	// Rule of three: 0 flakes in n commits bounds the true rate below 3/n at
+	// 95% confidence, so the target rate needs a 3/TARGET_RATE-commit streak.
 	const needed = Math.round(3 / TARGET_RATE);
 	let cleanStreak = 0;
 	for (let i = weeklyTrend.length - 1; i >= 0; i--) {
-		if (weeklyTrend[i].flaky > 0) break;
-		cleanStreak += weeklyTrend[i].commits;
+		const w = weeklyTrend[i];
+		cleanStreak += w.flaky > 0 ? (w.clean_tail ?? 0) : w.commits;
+		if (w.flaky > 0) break;
 	}
 	lines.push("## Clean Streak");
 	lines.push("");
@@ -820,13 +827,13 @@ function generateReport(args: {
 		);
 	} else if (cleanStreak > 0) {
 		lines.push(
-			`${cleanStreak} commits without a flake since the last flaky week — ` +
+			`${cleanStreak} commits without a flake since the last flake — ` +
 				`rate is below ${(300 / cleanStreak).toFixed(1)}% at 95% confidence. ` +
 				`Target ${target} at 95% needs a **${needed}-commit** streak (${needed - cleanStreak} to go).`,
 		);
 	} else {
 		lines.push(
-			`Streak broken: the most recent week has a flake. Target ${target} at 95% needs a ${needed}-commit clean streak.`,
+			`Streak broken: the most recent commit flaked. Target ${target} at 95% needs a ${needed}-commit clean streak.`,
 		);
 	}
 	lines.push("");
@@ -871,6 +878,28 @@ function generateReport(args: {
 				pr.state
 			];
 			lines.push(`- [#${pr.number}](${pr.url}) - ${pr.title} (${status})`);
+		}
+		lines.push("");
+	}
+
+	// Merged flake work that fixed no recorded flaky test
+	const fixNumbers = new Set(tests.map((t) => t.fix_pr?.number));
+	const prevention = prs
+		.filter((pr) => pr.refs_ticket && pr.merged_at && !fixNumbers.has(pr.number))
+		.sort((a, b) => (b.merged_at ?? "").localeCompare(a.merged_at ?? ""));
+	if (prevention.length > 0) {
+		lines.push("## Prevention PRs");
+		lines.push("");
+		lines.push(
+			`Merged PRs referencing ${FLAKY_TICKET} that fix a latent flake before it showed up in CI.`,
+		);
+		lines.push("");
+		lines.push("| PR | Title | Merged |");
+		lines.push("|----|-------|--------|");
+		for (const pr of prevention) {
+			lines.push(
+				`| [#${pr.number}](${pr.url}) | ${pr.title} | ${pr.merged_at?.slice(0, 10)} |`,
+			);
 		}
 		lines.push("");
 	}
@@ -1086,13 +1115,20 @@ async function main(): Promise<void> {
 		const commits = (keptByWeek.get(week)?.commits ?? 0) + w.commits;
 		const flaky = (keptByWeek.get(week)?.flaky ?? 0) + w.flaky;
 		const rate = commits ? Math.round((flaky / commits) * 1000) / 10 : 0;
-		keptByWeek.set(week, { week, commits, flaky, rate });
+		keptByWeek.set(week, {
+			week,
+			commits,
+			flaky,
+			rate,
+			clean_tail: w.clean_tail,
+		});
 	}
 	const keptWeekly = [...keptByWeek.values()];
 	const keptWeeks = new Set(keptWeekly.map((w) => w.week));
+	// Per week: each commit's first run time, and which commits flaked
 	const newWeeklyMap = new Map<
 		string,
-		{ commits: Set<string>; flaky: Set<string> }
+		{ firstSeen: Map<string, string>; flaky: Set<string> }
 	>();
 	for (const run of allGhRuns) {
 		if (run.conclusion !== "success" && run.conclusion !== "failure") continue;
@@ -1100,10 +1136,11 @@ async function main(): Promise<void> {
 		if (keptWeeks.has(week)) continue;
 		const sha = run.head_sha.substring(0, 7);
 		const entry = newWeeklyMap.get(week) ?? {
-			commits: new Set(),
+			firstSeen: new Map(),
 			flaky: new Set(),
 		};
-		entry.commits.add(sha);
+		const seen = entry.firstSeen.get(sha);
+		if (!seen || run.created_at < seen) entry.firstSeen.set(sha, run.created_at);
 		if (mergedFlakyShas.has(sha)) {
 			entry.flaky.add(sha);
 		}
@@ -1111,15 +1148,22 @@ async function main(): Promise<void> {
 	}
 	const newWeeklyRows: Array<WeeklyTrend> = Array.from(
 		newWeeklyMap.entries(),
-	).map(([week, data]) => ({
-		week,
-		commits: data.commits.size,
-		flaky: data.flaky.size,
-		rate:
-			data.commits.size > 0
-				? Math.round((data.flaky.size / data.commits.size) * 1000) / 10
-				: 0,
-	}));
+	).map(([week, data]) => {
+		const commits = data.firstSeen.size;
+		const lastFlake =
+			[...data.flaky]
+				.map((sha) => data.firstSeen.get(sha) ?? "")
+				.sort()
+				.at(-1) ?? "";
+		return {
+			week,
+			commits,
+			flaky: data.flaky.size,
+			rate: commits > 0 ? Math.round((data.flaky.size / commits) * 1000) / 10 : 0,
+			clean_tail: [...data.firstSeen.values()].filter((t) => t > lastFlake)
+				.length,
+		};
+	});
 	const mergedWeeklyTrend = [...keptWeekly, ...newWeeklyRows].sort((a, b) =>
 		a.week.localeCompare(b.week),
 	);
@@ -1180,6 +1224,11 @@ async function main(): Promise<void> {
 	// 9. Build flaky tests list. A test counts as fixed once a covering PR merged
 	// and no later failure ran on a commit containing it (branches cut before
 	// the fix still fail); an open covering PR means in review.
+	const baseCounts = new Map<string, number>();
+	for (const file of mergedTestCounts.keys()) {
+		const base = path.basename(file);
+		baseCounts.set(base, (baseCounts.get(base) ?? 0) + 1);
+	}
 	const flakyTests: Array<FlakyTest> = Array.from(
 		mergedTestCounts.entries(),
 	).map(([file, count]) => {
@@ -1190,7 +1239,15 @@ async function main(): Promise<void> {
 			(max, run) => (run.created_at > max ? run.created_at : max),
 			"",
 		);
-		const covering = fixPrs.filter((pr) => pr.tests_fixed.includes(file));
+		// A bare basename from a PR body only counts when no other flaky test shares it
+		const covering = fixPrs.filter((pr) =>
+			pr.tests_fixed.some(
+				(f) =>
+					f === file ||
+					(file.endsWith(`/${f}`) &&
+						(f.includes("/") || baseCounts.get(f) === 1)),
+			),
+		);
 		const fix = covering
 			.filter((pr) => pr.merged_at)
 			.sort((a, b) => (a.merged_at ?? "").localeCompare(b.merged_at ?? ""))
