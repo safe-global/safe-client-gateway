@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type postgres from 'postgres';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
 } from '#/__tests__/test-app.provider';
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
@@ -33,9 +37,40 @@ describe('Preview transaction - Transactions Controller', () => {
   let dataDecoderUrl: string;
   let networkService: MockedObject<INetworkService>;
 
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
+  const testDbFactory = new TestDbFactory();
+  let testDatabase: postgres.Sql;
+
+  beforeAll(async () => {
+    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
+  });
+
+  afterAll(async () => {
+    if (testDatabase) {
+      await testDbFactory.destroyTestDatabase(testDatabase);
+    }
+  });
+
   beforeEach(async () => {
     vi.resetAllMocks();
-    const moduleFixture = await createTestModule({ overridePostgresV2: false });
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      db: {
+        ...defaultConfiguration.db,
+        connection: {
+          ...defaultConfiguration.db.connection,
+          postgres: {
+            ...defaultConfiguration.db.connection.postgres,
+            database: testDatabaseName,
+          },
+        },
+      },
+    });
+    const moduleFixture = await createTestModule({
+      config: testConfiguration,
+      overridePostgresV2: false,
+    });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
