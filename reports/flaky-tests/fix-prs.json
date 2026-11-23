@@ -1,6 +1,32 @@
 {
-  "generated_at": "2026-11-23T13:17:12.227Z",
+  "generated_at": "2026-11-23T13:55:51.154Z",
   "prs": [
+    {
+      "number": 3814,
+      "title": "test: give the last four real-database specs their own database",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3814",
+      "merged_at": "2026-11-23T13:18:53Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/policies/routes/__tests__/policies.integration.spec.ts",
+        "src/modules/spaces/routes/elevation.integration.spec.ts",
+        "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
+        "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
+      ],
+      "refs_ticket": true
+    },
+    {
+      "number": 3813,
+      "title": "test(users): cancel lock polling when a test times out",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3813",
+      "merged_at": "2026-11-23T13:17:00Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/users/domain/users.repository.concurrency.integration.spec.ts",
+        "users.repository.concurrency.integration.spec.ts"
+      ],
+      "refs_ticket": true
+    },
     {
       "number": 3824,
       "title": "test(policies): fuzz the pending guard policy states",
@@ -9,30 +35,8 @@
       "state": "open",
       "tests_fixed": [
         "src/modules/policies/routes/mappers/__tests__/delayed-guard-policies.mapper.fuzz.spec.ts"
-      ]
-    },
-    {
-      "number": 3813,
-      "title": "test(users): cancel lock polling when a test times out",
-      "url": "https://github.com/safe-global/safe-client-gateway/pull/3813",
-      "merged_at": null,
-      "state": "open",
-      "tests_fixed": [
-        "src/modules/users/domain/users.repository.concurrency.integration.spec.ts"
-      ]
-    },
-    {
-      "number": 3814,
-      "title": "test: give the last four real-database specs their own database",
-      "url": "https://github.com/safe-global/safe-client-gateway/pull/3814",
-      "merged_at": null,
-      "state": "open",
-      "tests_fixed": [
-        "src/modules/policies/routes/__tests__/policies.integration.spec.ts",
-        "src/modules/spaces/routes/elevation.integration.spec.ts",
-        "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
-        "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3821,
@@ -41,8 +45,10 @@
       "merged_at": "2026-11-19T17:44:44Z",
       "state": "merged",
       "tests_fixed": [
-        "src/modules/hooks/routes/hooks-cache.integration.spec.ts"
-      ]
+        "src/modules/hooks/routes/hooks-cache.integration.spec.ts",
+        "hooks-cache.integration.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3820,
@@ -52,7 +58,8 @@
       "state": "open",
       "tests_fixed": [
         "src/modules/hooks/routes/hooks-cache.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3816,
@@ -62,8 +69,10 @@
       "state": "merged",
       "tests_fixed": [
         "src/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder.spec.ts",
-        "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts"
-      ]
+        "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts",
+        "auth-payload.entity.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3815,
@@ -75,8 +84,10 @@
         "src/modules/blockchain/datasources/blockchain-api.manager.spec.ts",
         "src/modules/chains/domain/entities/__tests__/chain.builder.spec.ts",
         "src/modules/recovery/routes/recovery.controller.integration.spec.ts",
-        "src/modules/transactions/routes/mappers/common/vault-transaction.mapper.spec.ts"
-      ]
+        "src/modules/transactions/routes/mappers/common/vault-transaction.mapper.spec.ts",
+        "blockchain-api.manager.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3812,
@@ -86,8 +97,10 @@
       "state": "merged",
       "tests_fixed": [
         "src/__tests__/redis-client.factory.spec.ts",
-        "src/datasources/cache/redis.cache.service.integration.spec.ts"
-      ]
+        "src/datasources/cache/redis.cache.service.integration.spec.ts",
+        "redis.cache.service.integration.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3811,
@@ -97,8 +110,11 @@
       "state": "merged",
       "tests_fixed": [
         "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts",
-        "src/routes/common/auth/elevation.guard.spec.ts"
-      ]
+        "src/routes/common/auth/elevation.guard.spec.ts",
+        "elevation.guard.spec.ts",
+        "auth-payload.entity.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3808,
@@ -107,8 +123,10 @@
       "merged_at": "2026-11-19T13:09:01Z",
       "state": "merged",
       "tests_fixed": [
-        "vitest.config.spec.ts"
-      ]
+        "vitest.config.spec.ts",
+        "address-book-tags.controller.integration.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3801,
@@ -118,7 +136,8 @@
       "state": "merged",
       "tests_fixed": [
         "src/modules/transactions/routes/transactions-safe-queue.controller.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3560,
@@ -169,8 +188,10 @@
         "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
         "src/datasources/common/chain-api.manager.spec.ts",
         "src/datasources/config-api/config-api.service.spec.ts",
-        "src/datasources/db/v1/cached-query-resolver.spec.ts"
-      ]
+        "src/datasources/db/v1/cached-query-resolver.spec.ts",
+        ".e2e.spec.ts"
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3762,
@@ -180,7 +201,8 @@
       "state": "merged",
       "tests_fixed": [
         "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3751,
@@ -190,7 +212,8 @@
       "state": "merged",
       "tests_fixed": [
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3761,
@@ -201,7 +224,8 @@
       "tests_fixed": [
         "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts",
         "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3594,
@@ -215,7 +239,8 @@
         "src/datasources/db/v2/database-migrator.service.spec.ts",
         "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
         "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3617,
@@ -225,7 +250,8 @@
       "state": "merged",
       "tests_fixed": [
         "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3692,
@@ -235,7 +261,8 @@
       "state": "closed",
       "tests_fixed": [
         "src/modules/policies/routes/mappers/__tests__/delayed-guard-policies.mapper.fuzz.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3572,
@@ -248,8 +275,14 @@
         "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
         "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
         "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
-        "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts"
-      ]
+        "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+        "transaction-verifier.helper.spec.ts",
+        "message-verifier.helper.spec.ts",
+        "safe-signature.spec.ts",
+        "recipient-analysis.service.spec.ts",
+        "notifications.controller.integration.spec.ts"
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3589,
@@ -259,7 +292,8 @@
       "state": "merged",
       "tests_fixed": [
         "src/__tests__/matchers/to-be-string-or-null.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3558,
@@ -268,8 +302,10 @@
       "merged_at": "2026-10-09T15:12:22Z",
       "state": "merged",
       "tests_fixed": [
-        "src/modules/relay/routes/relay.controller.integration.spec.ts"
-      ]
+        "src/modules/relay/routes/relay.controller.integration.spec.ts",
+        "relay.controller.integration.spec.ts"
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3554,
@@ -280,8 +316,10 @@
       "tests_fixed": [
         "src/config/configuration.module.spec.ts",
         "test/shared-module-cache-setup.spec.ts",
-        "vitest.config.spec.ts"
-      ]
+        "vitest.config.spec.ts",
+        "relay.controller.integration.spec.ts"
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3552,
@@ -292,8 +330,12 @@
       "tests_fixed": [
         "src/logging/logging.service.spec.ts",
         "test/shared-module-cache-setup.spec.ts",
-        "vitest.config.spec.ts"
-      ]
+        "vitest.config.spec.ts",
+        "logging.service.spec.ts",
+        "tokens.service.spec.ts",
+        "messages.repository.spec.ts"
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3551,
@@ -368,8 +410,14 @@
         "src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts",
         "src/datasources/db/v1/postgres-database.migration.hook.spec.ts",
         "src/datasources/db/v1/postgres-database.migrator.integration.spec.ts",
-        "src/datasources/db/v1/postgres-database.module.integration.spec.ts"
-      ]
+        "src/datasources/db/v1/postgres-database.module.integration.spec.ts",
+        "space-safes.repository.spec.ts",
+        "billing.service.spec.ts",
+        "zerion-wallet-portfolio-api.service.spec.ts",
+        "queues-api.service.spec.ts",
+        "http-request.utils.spec.ts"
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3447,
@@ -394,7 +442,8 @@
         "src/modules/zerion/domain/zerion.repository.interface.spec.ts",
         "src/modules/zerion/domain/zerion.repository.spec.ts",
         "src/modules/zerion/zerion.module.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3550,
@@ -410,7 +459,8 @@
         "src/modules/safe/routes/safes.controller.integration.spec.ts",
         "src/modules/safe/routes/safes.service.spec.ts",
         "src/modules/transactions/datasources/transaction-api.service.spec.ts"
-      ]
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3444,
@@ -419,8 +469,10 @@
       "merged_at": null,
       "state": "closed",
       "tests_fixed": [
-        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts"
-      ]
+        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+        "circuit-breaker.service.spec.ts"
+      ],
+      "refs_ticket": false
     },
     {
       "number": 3506,
@@ -431,7 +483,8 @@
       "tests_fixed": [
         "src/modules/users/domain/users.repository.spec.ts",
         "src/modules/users/domain/users.repository.integration.spec.ts"
-      ]
+      ],
+      "refs_ticket": true
     },
     {
       "number": 3262,

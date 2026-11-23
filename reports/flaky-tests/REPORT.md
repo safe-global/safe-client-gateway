@@ -1,13 +1,13 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-11-23T13:17:12.229Z | Period: 2026-01-16 to 2026-11-23
+Generated: 2026-11-23T13:55:51.155Z | Period: 2026-01-16 to 2026-11-23
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| **Confidence flake rate <0.5%** (last 4 weeks) | **15%** (3 flaky / 402 commits) |
-| Total unique commits | 3766 |
+| **Confidence flake rate <0.5%** (last 4 weeks) | **15%** (3 flaky / 404 commits) |
+| Total unique commits | 3768 |
 | Flaky commits (pass + fail on same SHA) | 149 |
 | Flakiness rate | 4% |
 
@@ -69,13 +69,13 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | 2026-11-02 | 33 | 0 | 0% | 73% |
 | 2026-11-09 | 136 | 2 | 1.5% | 23% |
 | 2026-11-16 | 230 | 1 | 0.4% | 12% |
-| 2026-11-23 | 3 | 0 | 0% | 15% |
+| 2026-11-23 | 5 | 0 | 0% | 15% |
 
 </details>
 
 ## Clean Streak
 
-3 commits without a flake since the last flaky week — rate is below 100.0% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (597 to go).
+162 commits without a flake since the last flake — rate is below 1.9% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (438 to go).
 
 ## Flaky Test Leaderboard
 
@@ -111,13 +111,13 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) | 78% |
 | `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 71% |
 | `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fixed | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) | 7% |
-| `src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts` | 1 | 2026-11-17 | Open | - | - |
+| `src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts` | 1 | 2026-11-17 | Fixed | [#3808](https://github.com/safe-global/safe-client-gateway/pull/3808) | 0% |
 
 ## Fix PRs
 
+- [#3814](https://github.com/safe-global/safe-client-gateway/pull/3814) - test: give the last four real-database specs their own database (Merged)
+- [#3813](https://github.com/safe-global/safe-client-gateway/pull/3813) - test(users): cancel lock polling when a test times out (Merged)
 - [#3824](https://github.com/safe-global/safe-client-gateway/pull/3824) - test(policies): fuzz the pending guard policy states (Open)
-- [#3813](https://github.com/safe-global/safe-client-gateway/pull/3813) - test(users): cancel lock polling when a test times out (Open)
-- [#3814](https://github.com/safe-global/safe-client-gateway/pull/3814) - test: give the last four real-database specs their own database (Open)
 - [#3821](https://github.com/safe-global/safe-client-gateway/pull/3821) - test(hooks): match the Safe URL in the SAFE_CREATED cache spec (Merged)
 - [#3820](https://github.com/safe-global/safe-client-gateway/pull/3820) - test(hooks): match the Safe detail URL in the cache test (Open)
 - [#3816](https://github.com/safe-global/safe-client-gateway/pull/3816) - test(auth): draw auth payload IDs from a wide range (Merged)
@@ -164,9 +164,19 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 - [#2806](https://github.com/safe-global/safe-client-gateway/pull/2806) - feat(portfolio): add X-Env testnet header for Zerion API requests (Merged)
 - [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) - chores(tests): address flaky tests (Closed)
 
-## Still-Open Flaky Tests
+## Prevention PRs
 
-- `src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts` (1 failures, last 2026-11-17)
+Merged PRs referencing WA-1753 that fix a latent flake before it showed up in CI.
+
+| PR | Title | Merged |
+|----|-------|--------|
+| [#3814](https://github.com/safe-global/safe-client-gateway/pull/3814) | test: give the last four real-database specs their own database | 2026-11-23 |
+| [#3813](https://github.com/safe-global/safe-client-gateway/pull/3813) | test(users): cancel lock polling when a test times out | 2026-11-23 |
+| [#3821](https://github.com/safe-global/safe-client-gateway/pull/3821) | test(hooks): match the Safe URL in the SAFE_CREATED cache spec | 2026-11-19 |
+| [#3816](https://github.com/safe-global/safe-client-gateway/pull/3816) | test(auth): draw auth payload IDs from a wide range | 2026-11-19 |
+| [#3815](https://github.com/safe-global/safe-client-gateway/pull/3815) | test: draw chain builder IDs from a wide range | 2026-11-19 |
+| [#3812](https://github.com/safe-global/safe-client-gateway/pull/3812) | test: give the Redis cache spec its own Redis database | 2026-11-19 |
+| [#3811](https://github.com/safe-global/safe-client-gateway/pull/3811) | test(auth): freeze the clock in the MFA window-edge specs | 2026-11-19 |
 
 ---
 
