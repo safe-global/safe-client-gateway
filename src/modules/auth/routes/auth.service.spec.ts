@@ -4,12 +4,13 @@ import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
   ForbiddenException,
-  UnauthorizedException,
+  HttpStatus,
 } from '@nestjs/common';
 import type { Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { JwtPayloadWithClaims } from '#/datasources/jwt/jwt-claims.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
 import {
@@ -265,7 +266,7 @@ describe('AuthService', () => {
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException when expirationTime has passed', async () => {
+    it('should reject with an unlogged 401 when expirationTime has passed', async () => {
       const siweMessage = siweMessageBuilder()
         .with(
           'expirationTime',
@@ -277,8 +278,12 @@ describe('AuthService', () => {
 
       siweRepositoryMock.getValidatedSiweMessage.mockResolvedValue(siweMessage);
 
-      await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
-        new UnauthorizedException('Invalid message'),
+      await expect(target.authenticateWithSiwe(siweArgs)).rejects.toStrictEqual(
+        new HttpExceptionNoLog(
+          'Invalid message',
+          HttpStatus.UNAUTHORIZED,
+          'Unauthorized',
+        ),
       );
 
       expect(
@@ -299,7 +304,7 @@ describe('AuthService', () => {
         return Math.ceil((now.getTime() + minimumInMs) / 1_000) * 1_000;
       };
 
-      it('should throw UnauthorizedException when expirationTime leaves less than the minimum', async () => {
+      it('should reject with an unlogged 401 when expirationTime leaves less than the minimum', async () => {
         setSubSecondNow();
         const siweMessage = siweMessageBuilder()
           .with('expirationTime', new Date(getEarliestAcceptedExpiry() - 1))
@@ -309,8 +314,14 @@ describe('AuthService', () => {
           siweMessage,
         );
 
-        await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
-          new UnauthorizedException('Invalid message'),
+        await expect(
+          target.authenticateWithSiwe(siweArgs),
+        ).rejects.toStrictEqual(
+          new HttpExceptionNoLog(
+            'Invalid message',
+            HttpStatus.UNAUTHORIZED,
+            'Unauthorized',
+          ),
         );
 
         expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
@@ -338,7 +349,7 @@ describe('AuthService', () => {
         );
       });
 
-      it('should throw UnauthorizedException when the wallet lookup uses up the minimum', async () => {
+      it('should reject with an unlogged 401 when the wallet lookup uses up the minimum', async () => {
         const siweMessage = siweMessageBuilder()
           .with('expirationTime', new Date(getEarliestAcceptedExpiry()))
           .build();
@@ -355,8 +366,14 @@ describe('AuthService', () => {
           },
         );
 
-        await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
-          new UnauthorizedException('Invalid message'),
+        await expect(
+          target.authenticateWithSiwe(siweArgs),
+        ).rejects.toStrictEqual(
+          new HttpExceptionNoLog(
+            'Invalid message',
+            HttpStatus.UNAUTHORIZED,
+            'Unauthorized',
+          ),
         );
 
         expect(
@@ -419,7 +436,7 @@ describe('AuthService', () => {
       ['equals', (): number => 0],
       ['is before', (): number => faker.number.int({ min: 1, max: 5_000 })],
     ])(
-      'should throw UnauthorizedException when expirationTime %s notBefore',
+      'should reject with an unlogged 401 when expirationTime %s notBefore',
       async (_, getOffsetInMs) => {
         const notBefore = new Date(
           now.getTime() + faker.number.int({ min: 10_000, max: 30_000 }),
@@ -435,8 +452,14 @@ describe('AuthService', () => {
           siweMessage,
         );
 
-        await expect(target.authenticateWithSiwe(siweArgs)).rejects.toThrow(
-          new UnauthorizedException('Invalid message'),
+        await expect(
+          target.authenticateWithSiwe(siweArgs),
+        ).rejects.toStrictEqual(
+          new HttpExceptionNoLog(
+            'Invalid message',
+            HttpStatus.UNAUTHORIZED,
+            'Unauthorized',
+          ),
         );
 
         expect(
