@@ -441,11 +441,6 @@ export default () => ({
       process.env.EXPIRATION_TIME_DECODED_DATA_SECONDS ?? `${3600}`,
       10,
     ),
-    tokenApprovals: Number.parseInt(
-      process.env.EXPIRATION_TIME_TOKEN_APPROVALS_SECONDS ??
-        `${30 * 24 * 60 * 60}`,
-      10,
-    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -542,11 +537,6 @@ export default () => ({
     // Hides every SafePolicyGuard policy from the active and pending policy
     // endpoints while the guard flow is unreleased.
     guardPolicies: process.env.FF_GUARD_POLICIES?.toLowerCase() === 'true',
-    // Owner: Security Hub token approvals (WA-4142). Serves the token
-    // approvals endpoint, which lists a Safe's ERC-20 allowances found in the
-    // Approval logs it owns. Remove the flag once the wallet reads approvals
-    // from this endpoint in production.
-    tokenApprovals: process.env.FF_TOKEN_APPROVALS?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -889,35 +879,6 @@ export default () => ({
       ),
     },
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
-  },
-  tokenApprovals: {
-    logs: {
-      /** `eth_getLogs` calls one request may make before it returns what it found. */
-      maxRequests: Number.parseInt(
-        process.env.TOKEN_APPROVALS_LOGS_MAX_REQUESTS ?? `${32}`,
-        10,
-      ),
-    },
-    /** Token and spender pairs kept per Safe. */
-    maxPairs: Number.parseInt(
-      process.env.TOKEN_APPROVALS_MAX_PAIRS ?? `${2_000}`,
-      10,
-    ),
-    /** Token metadata reads one request makes at the same time. */
-    batchSize: Number.parseInt(
-      process.env.TOKEN_APPROVALS_BATCH_SIZE ?? `${10}`,
-      10,
-    ),
-    rateLimit: {
-      max: Number.parseInt(
-        process.env.TOKEN_APPROVALS_RATE_LIMIT_MAX ?? `${30}`,
-        10,
-      ),
-      windowSeconds: Number.parseInt(
-        process.env.TOKEN_APPROVALS_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
-        10,
-      ),
-    },
   },
   policies: {
     /** How many delayed configuration requests CGW stores per Safe and Space. */

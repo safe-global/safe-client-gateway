@@ -220,7 +220,6 @@ export default (): ReturnType<typeof configuration> => ({
     billing: faker.number.int(),
     entitlements: faker.number.int(),
     decodedData: faker.number.int(),
-    tokenApprovals: faker.number.int({ min: 1 }),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
@@ -267,7 +266,6 @@ export default (): ReturnType<typeof configuration> => ({
     safeQueueService: false,
     safenet: false,
     guardPolicies: true,
-    tokenApprovals: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -464,17 +462,6 @@ export default (): ReturnType<typeof configuration> => ({
       maxSequentialPages: faker.number.int(),
     },
     cgwServiceKey: 'CGW',
-  },
-  tokenApprovals: {
-    logs: {
-      maxRequests: faker.number.int({ min: 8, max: 32 }),
-    },
-    maxPairs: faker.number.int({ min: 100, max: 2_000 }),
-    batchSize: faker.number.int({ min: 2, max: 10 }),
-    rateLimit: {
-      max: faker.number.int({ min: 100, max: 200 }),
-      windowSeconds: faker.number.int({ min: 100, max: 200 }),
-    },
   },
   policies: {
     maxConfigurationRequestsPerSpaceSafe: faker.number.int({

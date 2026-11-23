@@ -70,7 +70,6 @@ import { UnavailableSpaceSetupBillingModule } from '#/modules/spaces/domain/setu
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SurveysModule } from '#/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '#/modules/targeted-messaging/targeted-messaging.module';
-import { TokenApprovalsModule } from '#/modules/token-approvals/token-approvals.module';
 import { SpaceTransactionsModule } from '#/modules/transactions/space-transactions.module';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
 import { UsersModule } from '#/modules/users/users.module';
@@ -94,7 +93,6 @@ export class AppModule implements NestModule {
       safenet: isSafenetFeatureEnabled,
       sesEmail: isSesEmailFeatureEnabled,
       safeQueueService: isSafeQueueServiceFeatureEnabled,
-      tokenApprovals: isTokenApprovalsFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -156,7 +154,6 @@ export class AppModule implements NestModule {
         SafeModule,
         SafeShieldModule,
         TargetedMessagingModule,
-        ...(isTokenApprovalsFeatureEnabled ? [TokenApprovalsModule] : []),
         TransactionsModule,
         // common
         CacheModule,

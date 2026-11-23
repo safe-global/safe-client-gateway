@@ -87,7 +87,6 @@ export class CacheRouter {
     'targeted_messaging_submission';
   private static readonly TARGETED_MESSAGING_TARGETED_SAFE_KEY =
     'targeted_messaging_targeted_safe';
-  private static readonly TOKEN_APPROVALS_SCAN_KEY = 'token_approvals_scan';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -1454,16 +1453,5 @@ export class CacheRouter {
     safeAddress: Address;
   }): string {
     return `${args.chainId}_${CacheRouter.POLICY_INDEXER_STATE_KEY}_${args.safeAddress}`;
-  }
-
-  /** The scan only ever adds pairs and blocks, so nothing needs to clear it. */
-  static getTokenApprovalsScanCacheDir(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): CacheDir {
-    return new CacheDir(
-      `${args.chainId}_${CacheRouter.TOKEN_APPROVALS_SCAN_KEY}_${args.safeAddress}`,
-      '',
-    );
   }
 }

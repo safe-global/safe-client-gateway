@@ -26,7 +26,7 @@ const NativeTokenSchema = BaseTokenSchema.extend({
   decimals: z.number(),
 });
 
-export const Erc20TokenSchema = BaseTokenSchema.extend({
+const Erc20TokenSchema = BaseTokenSchema.extend({
   type: z.literal('ERC20'),
   decimals: z.number().catch(DEFAULT_ERC20_DECIMALS),
 });
