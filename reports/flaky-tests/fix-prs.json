@@ -1,6 +1,115 @@
 {
-  "generated_at": "2026-11-19T11:16:56.244Z",
+  "generated_at": "2026-11-23T13:17:12.227Z",
   "prs": [
+    {
+      "number": 3824,
+      "title": "test(policies): fuzz the pending guard policy states",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3824",
+      "merged_at": null,
+      "state": "open",
+      "tests_fixed": [
+        "src/modules/policies/routes/mappers/__tests__/delayed-guard-policies.mapper.fuzz.spec.ts"
+      ]
+    },
+    {
+      "number": 3813,
+      "title": "test(users): cancel lock polling when a test times out",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3813",
+      "merged_at": null,
+      "state": "open",
+      "tests_fixed": [
+        "src/modules/users/domain/users.repository.concurrency.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3814,
+      "title": "test: give the last four real-database specs their own database",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3814",
+      "merged_at": null,
+      "state": "open",
+      "tests_fixed": [
+        "src/modules/policies/routes/__tests__/policies.integration.spec.ts",
+        "src/modules/spaces/routes/elevation.integration.spec.ts",
+        "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
+        "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3821,
+      "title": "test(hooks): match the Safe URL in the SAFE_CREATED cache spec",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3821",
+      "merged_at": "2026-11-19T17:44:44Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/hooks/routes/hooks-cache.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3820,
+      "title": "test(hooks): match the Safe detail URL in the cache test",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3820",
+      "merged_at": null,
+      "state": "open",
+      "tests_fixed": [
+        "src/modules/hooks/routes/hooks-cache.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3816,
+      "title": "test(auth): draw auth payload IDs from a wide range",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3816",
+      "merged_at": "2026-11-19T17:28:31Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder.spec.ts",
+        "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts"
+      ]
+    },
+    {
+      "number": 3815,
+      "title": "test: draw chain builder IDs from a wide range",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3815",
+      "merged_at": "2026-11-19T17:28:20Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/blockchain/datasources/blockchain-api.manager.spec.ts",
+        "src/modules/chains/domain/entities/__tests__/chain.builder.spec.ts",
+        "src/modules/recovery/routes/recovery.controller.integration.spec.ts",
+        "src/modules/transactions/routes/mappers/common/vault-transaction.mapper.spec.ts"
+      ]
+    },
+    {
+      "number": 3812,
+      "title": "test: give the Redis cache spec its own Redis database",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3812",
+      "merged_at": "2026-11-19T17:28:08Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/__tests__/redis-client.factory.spec.ts",
+        "src/datasources/cache/redis.cache.service.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3811,
+      "title": "test(auth): freeze the clock in the MFA window-edge specs",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3811",
+      "merged_at": "2026-11-19T17:27:58Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts",
+        "src/routes/common/auth/elevation.guard.spec.ts"
+      ]
+    },
+    {
+      "number": 3808,
+      "title": "build: give integration test hooks the 60s test timeout",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3808",
+      "merged_at": "2026-11-19T13:09:01Z",
+      "state": "merged",
+      "tests_fixed": [
+        "vitest.config.spec.ts"
+      ]
+    },
     {
       "number": 3801,
       "title": "test(transactions): mock the Safe URL with its trailing slash",

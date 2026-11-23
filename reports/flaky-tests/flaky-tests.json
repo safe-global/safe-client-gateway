@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-19T11:16:56.244Z",
+  "generated_at": "2026-11-23T13:17:12.227Z",
   "summary": {
-    "total_commits": 3674,
+    "total_commits": 3766,
     "flaky_commits": 149,
-    "flakiness_rate": 4.1,
+    "flakiness_rate": 4,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-11-19"
+      "to": "2026-11-23"
     }
   },
   "weekly_trend": [
@@ -276,9 +276,15 @@
     },
     {
       "week": "2026-11-16",
-      "commits": 141,
+      "commits": 230,
       "flaky": 1,
-      "rate": 0.7
+      "rate": 0.4
+    },
+    {
+      "week": "2026-11-23",
+      "commits": 3,
+      "flaky": 0,
+      "rate": 0
     }
   ],
   "tests": [
