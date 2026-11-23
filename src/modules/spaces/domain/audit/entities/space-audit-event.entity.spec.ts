@@ -6,7 +6,6 @@ import {
   SpaceAuditEventSchema,
   SpaceAuditEventType,
 } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 
 describe('SpaceAuditEventSchema — plaintext addresses', () => {
   const ciphertext = 'kms:v1:abcDEF012_-';
@@ -96,11 +95,10 @@ describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
     expect(result.payload).toStrictEqual(payload);
   });
 
-  it('round-trips an experimentalFeatures change', () => {
-    const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+  it('round-trips a stored experimentalFeatures change', () => {
     const payload = {
       old: { experimentalFeatures: [] },
-      new: { experimentalFeatures: features },
+      new: { experimentalFeatures: [faker.word.noun()] },
     };
 
     const result = SpaceAuditEventSchema.parse({
@@ -109,18 +107,6 @@ describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
     });
 
     expect(result.payload).toStrictEqual(payload);
-  });
-
-  it('accepts a feature key no longer in the enum', () => {
-    const result = SpaceAuditEventSchema.safeParse({
-      eventType: 'SPACE_UPDATED',
-      payload: {
-        old: { experimentalFeatures: [faker.word.noun()] },
-        new: { experimentalFeatures: [] },
-      },
-    });
-
-    expect(result.success).toBe(true);
   });
 });
 

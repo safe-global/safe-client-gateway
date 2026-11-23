@@ -106,7 +106,6 @@ export class SpacesService {
         id: true,
         uuid: true,
         name: true,
-        experimentalFeatures: true,
         members: {
           role: true,
           name: true,
@@ -143,7 +142,6 @@ export class SpacesService {
         return {
           uuid: space.uuid,
           name: space.name,
-          experimentalFeatures: space.experimentalFeatures,
           members: await Promise.all(
             visibleMembers.map(async (member) => ({
               ...member,

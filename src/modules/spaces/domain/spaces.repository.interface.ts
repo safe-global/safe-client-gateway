@@ -63,9 +63,7 @@ export interface ISpacesRepository {
 
   update(args: {
     id: Space['id'];
-    updatePayload: Partial<
-      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
-    >;
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
     actorUserId: number;
     /** Runs in this transaction when given, else in its own. */
     entityManager?: EntityManager;
