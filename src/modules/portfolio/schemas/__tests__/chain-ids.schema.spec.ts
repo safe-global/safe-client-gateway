@@ -24,16 +24,6 @@ describe('ChainIdsSchema', () => {
       expect(result).toEqual(['1', '10', '137', '42161']);
     });
 
-    it('should handle undefined input', () => {
-      const result = ChainIdsSchema.parse(undefined);
-      expect(result).toBeUndefined();
-    });
-
-    it('should handle empty string', () => {
-      const result = ChainIdsSchema.parse('');
-      expect(result).toBeUndefined();
-    });
-
     it('should filter out empty strings after splitting', () => {
       const result = ChainIdsSchema.parse('1,,10');
       expect(result).toEqual(['1', '10']);
@@ -58,6 +48,14 @@ describe('ChainIdsSchema', () => {
   });
 
   describe('invalid inputs', () => {
+    it('should reject a missing value', () => {
+      expect(() => ChainIdsSchema.parse(undefined)).toThrow(ZodError);
+    });
+
+    it('should reject an empty string', () => {
+      expect(() => ChainIdsSchema.parse('')).toThrow(ZodError);
+    });
+
     it('should reject non-numeric chain IDs', () => {
       expect(() => ChainIdsSchema.parse('abc')).toThrow(ZodError);
     });
@@ -86,19 +84,16 @@ describe('ChainIdsSchema', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle single comma', () => {
-      const result = ChainIdsSchema.parse(',');
-      expect(result).toBeUndefined();
+    it('should reject single comma', () => {
+      expect(() => ChainIdsSchema.parse(',')).toThrow(ZodError);
     });
 
-    it('should handle multiple commas', () => {
-      const result = ChainIdsSchema.parse(',,,');
-      expect(result).toBeUndefined();
+    it('should reject multiple commas', () => {
+      expect(() => ChainIdsSchema.parse(',,,')).toThrow(ZodError);
     });
 
-    it('should handle commas with spaces', () => {
-      const result = ChainIdsSchema.parse(', , ,');
-      expect(result).toBeUndefined();
+    it('should reject commas with spaces', () => {
+      expect(() => ChainIdsSchema.parse(', , ,')).toThrow(ZodError);
     });
 
     it('should handle trailing comma', () => {

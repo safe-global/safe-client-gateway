@@ -46,7 +46,7 @@ export class PortfolioController {
   @ApiOperation({
     summary: 'Get portfolio',
     description:
-      'Retrieves the complete portfolio for an address including token balances and app positions across all supported chains.',
+      'Retrieves the portfolio of a Safe, including token balances and app positions, on the given chains. Only Safes are served, so the paid data behind it cannot be read for any address.',
   })
   @ApiParam({
     name: 'address',
@@ -62,10 +62,10 @@ export class PortfolioController {
   })
   @ApiQuery({
     name: 'chainIds',
-    required: false,
+    required: true,
     type: String,
     description:
-      'Comma-separated list of chain IDs to filter by. If omitted, returns data for all chains.',
+      'Comma-separated list of chain IDs. The address must be a Safe on each of them.',
     example: '1,137,42161',
   })
   @ApiQuery({
@@ -91,6 +91,12 @@ export class PortfolioController {
     example: false,
   })
   @ApiOkResponse({ type: Portfolio })
+  @ApiNotFoundResponse({
+    description: 'The address is not a Safe on one of chainIds',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid address, or chainIds missing or invalid',
+  })
   @Get('/portfolio/:address')
   public getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))

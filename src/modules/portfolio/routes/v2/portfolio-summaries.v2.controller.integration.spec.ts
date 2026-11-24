@@ -361,7 +361,7 @@ describe('PortfolioSummariesV2Controller', () => {
         );
       }
       expect(Number(summaries[0].snapshot.fiatTotal)).toBeCloseTo(
-        await getAssetsTotal(),
+        await getAssetsTotal(chains.map(({ chainId }) => chainId).join(',')),
         6,
       );
     },

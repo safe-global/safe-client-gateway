@@ -70,6 +70,7 @@ describe('Portfolio Controller', () => {
     let app: INestApplication<Server>;
     let networkService: MockedObject<INetworkService>;
     let safeConfigUrl: string;
+    let zerionBaseUri: string;
 
     function mockSafe(args: { chain: Chain; address: Address }): void {
       networkService.get.mockImplementation(({ url }) => {
@@ -81,6 +82,8 @@ describe('Portfolio Controller', () => {
               data: rawify(safeBuilder().with('address', args.address).build()),
               status: 200,
             });
+          case `${zerionBaseUri}/v1/wallets/${args.address}/positions/`:
+            return Promise.resolve({ data: rawify({ data: [] }), status: 200 });
           default:
             return Promise.reject(
               new NetworkResponseError(new URL(url), {
@@ -112,6 +115,7 @@ describe('Portfolio Controller', () => {
         },
       });
       safeConfigUrl = defaultConfiguration.safeConfig.baseUri;
+      zerionBaseUri = defaultConfiguration.balances.providers.zerion.baseUri;
 
       const moduleFixture = await createTestModule({
         config: testConfiguration,
@@ -123,6 +127,63 @@ describe('Portfolio Controller', () => {
 
     afterEach(async () => {
       await app.close();
+    });
+
+    const zerionCallsFor = (address: Address): Array<unknown> =>
+      networkService.get.mock.calls.filter(([{ url }]) =>
+        url.startsWith(`${zerionBaseUri}/v1/wallets/${address}`),
+      );
+
+    it('GET /v1/portfolio/:address returns the portfolio of a Safe', async () => {
+      const chain = chainBuilder().with('isTestnet', false).build();
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockSafe({ chain, address });
+
+      await request(app.getHttpServer())
+        .get(`/v1/portfolio/${address}`)
+        .query({ chainIds: chain.chainId })
+        .expect(200);
+
+      expect(zerionCallsFor(address)).toHaveLength(1);
+    });
+
+    it('GET /v1/portfolio/:address returns 404 for an address that is not a Safe, without calling Zerion', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const otherAddress = getAddress(faker.finance.ethereumAddress());
+      mockSafe({ chain, address: safeAddress });
+
+      await request(app.getHttpServer())
+        .get(`/v1/portfolio/${otherAddress}`)
+        .query({ chainIds: chain.chainId })
+        .expect(404);
+
+      expect(zerionCallsFor(otherAddress)).toHaveLength(0);
+    });
+
+    it('GET /v1/portfolio/:address returns 404 when the address is a Safe on only some of chainIds', async () => {
+      const [chain, otherChain] = faker.helpers
+        .uniqueArray(() => faker.string.numeric({ length: 6 }), 2)
+        .map((chainId) => chainBuilder().with('chainId', chainId).build());
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockSafe({ chain, address });
+
+      await request(app.getHttpServer())
+        .get(`/v1/portfolio/${address}`)
+        .query({ chainIds: `${chain.chainId},${otherChain.chainId}` })
+        .expect(404);
+
+      expect(zerionCallsFor(address)).toHaveLength(0);
+    });
+
+    it('GET /v1/portfolio/:address returns 422 without chainIds', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .get(`/v1/portfolio/${address}`)
+        .expect(422);
+
+      expect(networkService.get).not.toHaveBeenCalled();
     });
 
     it('DELETE /v1/portfolio/:address clears the caches of a Safe', async () => {

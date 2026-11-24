@@ -26,7 +26,7 @@ describe('PortfolioController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -40,7 +40,7 @@ describe('PortfolioController', () => {
       expect(service.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -52,7 +52,7 @@ describe('PortfolioController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'EUR',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -94,7 +94,7 @@ describe('PortfolioController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: false,
         excludeDust: true,
         sync: false,
@@ -115,7 +115,7 @@ describe('PortfolioController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: true,
         excludeDust: false,
         sync: false,
@@ -136,7 +136,7 @@ describe('PortfolioController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: true,
         excludeDust: true,
         sync: true,
@@ -181,7 +181,7 @@ describe('PortfolioController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds: ['1'],
         trusted: true,
         excludeDust: true,
         sync: false,
