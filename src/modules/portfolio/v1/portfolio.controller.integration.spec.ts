@@ -129,10 +129,10 @@ describe('Portfolio Controller', () => {
       await app.close();
     });
 
-    const zerionCallsFor = (address: Address): Array<unknown> =>
-      networkService.get.mock.calls.filter(([{ url }]) =>
-        url.startsWith(`${zerionBaseUri}/v1/wallets/${address}`),
-      );
+    const zerionPositionsRequest = (address: Address): unknown =>
+      expect.objectContaining({
+        url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,
+      });
 
     it('GET /v1/portfolio/:address returns the portfolio of a Safe', async () => {
       const chain = chainBuilder().with('isTestnet', false).build();
@@ -144,7 +144,9 @@ describe('Portfolio Controller', () => {
         .query({ chainIds: chain.chainId })
         .expect(200);
 
-      expect(zerionCallsFor(address)).toHaveLength(1);
+      expect(networkService.get).toHaveBeenCalledWith(
+        zerionPositionsRequest(address),
+      );
     });
 
     it('GET /v1/portfolio/:address returns 404 for an address that is not a Safe, without calling Zerion', async () => {
@@ -158,7 +160,9 @@ describe('Portfolio Controller', () => {
         .query({ chainIds: chain.chainId })
         .expect(404);
 
-      expect(zerionCallsFor(otherAddress)).toHaveLength(0);
+      expect(networkService.get).not.toHaveBeenCalledWith(
+        zerionPositionsRequest(otherAddress),
+      );
     });
 
     it('GET /v1/portfolio/:address returns 404 when the address is a Safe on only some of chainIds', async () => {
@@ -173,7 +177,9 @@ describe('Portfolio Controller', () => {
         .query({ chainIds: `${chain.chainId},${otherChain.chainId}` })
         .expect(404);
 
-      expect(zerionCallsFor(address)).toHaveLength(0);
+      expect(networkService.get).not.toHaveBeenCalledWith(
+        zerionPositionsRequest(address),
+      );
     });
 
     it('GET /v1/portfolio/:address returns 422 without chainIds', async () => {

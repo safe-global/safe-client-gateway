@@ -130,14 +130,9 @@ export class PortfolioApiService {
 
   /**
    * Determines if the provided chainIds are testnet chains.
-   * Returns true if chainIds are provided and ALL of them are testnets.
-   * Returns false if no chainIds provided or if any chain is not a testnet.
+   * Returns true if ALL of them are testnets, false if any is not.
    */
-  private async _areTestnetChains(chainIds?: Array<string>): Promise<boolean> {
-    if (!chainIds || chainIds.length === 0) {
-      return false;
-    }
-
+  private async _areTestnetChains(chainIds: Array<string>): Promise<boolean> {
     const chains = await Promise.all(
       chainIds.map((chainId) =>
         this.chainsRepository.getChain(chainId).catch(() => null),

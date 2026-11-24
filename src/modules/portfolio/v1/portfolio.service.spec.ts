@@ -270,13 +270,15 @@ describe('PortfolioApiService', () => {
 
       await service.getPortfolio({ address, fiatCode: 'USD', chainIds });
 
-      expect(mockSafeRepository.getSafe.mock.calls).toEqual(
-        chainIds.map((chainId) => [{ chainId, address }]),
-      );
-      expect(
-        mockSafeRepository.getSafe.mock.invocationCallOrder.at(-1),
-      ).toBeLessThan(
-        mockDomainService.getPortfolio.mock.invocationCallOrder[0],
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(chainIds.length);
+      chainIds.forEach((chainId, i) => {
+        expect(mockSafeRepository.getSafe).toHaveBeenNthCalledWith(i + 1, {
+          chainId,
+          address,
+        });
+      });
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledBefore(
+        mockDomainService.getPortfolio,
       );
     });
 
