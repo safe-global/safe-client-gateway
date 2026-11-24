@@ -39,6 +39,10 @@ on:
         description: yq path to the image tag field inside values_file.
         type: string
         default: .image.tag
+      version_path:
+        description: yq path to the Datadog version field inside values_file (optional).
+        type: string
+        default: ""
       argocd_app:
         description: ArgoCD Application name to wait on (optional; production gate).
         type: string
@@ -176,6 +180,7 @@ jobs:
           IMAGE_TAG: ${{ inputs.image_tag }}
           VALUES_FILE: ${{ inputs.values_file }}
           TAG_PATH: ${{ inputs.image_tag_path }}
+          VERSION_PATH: ${{ inputs.version_path }}
           ENVIRONMENT: ${{ inputs.environment }}
           INFRA_REPO: ${{ inputs.infra_repo }}
         run: |
@@ -186,6 +191,12 @@ jobs:
           git checkout -b "$BRANCH"
           # mikefarah yq v4 is preinstalled on ubuntu-latest runners.
           yq -i "${TAG_PATH} = strenv(IMAGE_TAG)" "$VALUES_FILE"
+          if [ -n "$VERSION_PATH" ]; then
+            # Datadog reports this as the running version. A digest-pinned
+            # image_tag is written here without the digest, which is not a
+            # valid version tag.
+            VERSION="${IMAGE_TAG%%@*}" yq -i "${VERSION_PATH} = strenv(VERSION)" "$VALUES_FILE"
+          fi
           git add "$VALUES_FILE"
           if git diff --cached --quiet; then
             echo "Image tag already ${IMAGE_TAG} — nothing to deploy."
