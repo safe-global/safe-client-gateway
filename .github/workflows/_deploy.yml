@@ -192,10 +192,9 @@ jobs:
           # mikefarah yq v4 is preinstalled on ubuntu-latest runners.
           yq -i "${TAG_PATH} = strenv(IMAGE_TAG)" "$VALUES_FILE"
           if [ -n "$VERSION_PATH" ]; then
-            # Datadog reports this as the running version. A digest-pinned
-            # image_tag is written here without the digest, which is not a
-            # valid version tag.
-            VERSION="${IMAGE_TAG%%@*}" yq -i "${VERSION_PATH} = strenv(VERSION)" "$VALUES_FILE"
+            # Datadog reports this as the running version, which is why it has to
+            # be the tag itself: health_url polls /about until .version equals it.
+            yq -i "${VERSION_PATH} = strenv(IMAGE_TAG)" "$VALUES_FILE"
           fi
           git add "$VALUES_FILE"
           if git diff --cached --quiet; then
