@@ -55,6 +55,15 @@ These checks are independent of Part 1 and of each other: passing one never excu
 
 ## Reporting format
 
+Every report opens with the change's risk tier, computed by the reviewer from the diff per [risk-tiers.md](risk-tiers.md), never copied from the PR description:
+
+```
+**Risk tier:** <n> — <the path or escalation rule that set it>. <What it allows: "two human maintainer approvals required" | "one human maintainer approval required" | "agent may approve; a human merges" | "agent may approve and merge">.
+```
+
+- When the PR states a less critical tier than the computed one, that is a finding (`Risk tier understated`, cited against `PR description`), and the computed tier applies.
+- An agent reviewer's verdict never approves a Tier 1 or Tier 2 change, however clean. It reports findings and the tier, and leaves approval to humans.
+
 Findings are ordered most-severe-first and rendered as a **numbered list** — one item per finding, so a reader can answer "finding 3" and be understood. Findings separated only by line breaks are not a list: in a Markdown-rendered report (a PR comment, a Markdown file) consecutive lines collapse into one run-together paragraph, which is a failed report even when every finding in it is correct.
 
 Each finding is one item:

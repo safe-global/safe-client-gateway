@@ -85,7 +85,7 @@ The anti-example is `Feat add subscriptions model` (open PR #3327): capitalized,
 
 | Section | Required | Content |
 |---|---|---|
-| `## Summary` | Always | What changed and why, in prose. The reader is a reviewer who has not seen the ticket. |
+| `## Summary` | Always | First line: `**Risk tier:** <n> — <the path or rule that set it>` per [risk-tiers.md](risk-tiers.md); the `Risk tier` check fails without it. Then what changed and why, in prose. The reader is a reviewer who has not seen the ticket. |
 | `## Changes` | Always | Per-area bullets. For a wide change, group by directory or module, as PR #3328 does. |
 
 **Why:** the body stays lean because everything else already has a home — pre-commit evidence is the PR's own CI run, and risk belongs in `## Summary`'s prose when it is worth a reviewer's attention. What does land here is every requirement another guide places on the description *text itself* (not a commit message or a chat thread), and all of them belong in `## Summary`: ratchet-baseline growth and staged delivery (`reviewing.md`), a `routes/` directory landing ahead of its controller (`module-structure.md`), an in-place change to a field no released client could have parsed (`api-dtos-and-validation.md`), a performance change (`caching-and-performance.md`), and `OptionalAuthGuard` on a caller-scoped route (`security.md`). This list names the subject and the guide that owns it, never the condition — read the bar from the owning guide, so tightening it there cannot leave this rule stale. Treat the set as open: a guide may add a requirement without editing this rule.

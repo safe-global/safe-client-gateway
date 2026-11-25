@@ -11,6 +11,7 @@
 | Your task touches | You MUST read first |
 |---|---|
 | Anything non-trivial (session start) | [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md) |
+| Any change or review — how critical it is, who must approve it, whether an agent may approve/merge | [docs/agents/risk-tiers.md](docs/agents/risk-tiers.md) |
 | Any TypeScript code change (cross-cutting dos & don'ts) | [docs/agents/best-practices.md](docs/agents/best-practices.md) |
 | Nest module, provider, guard, interceptor, pipe, filter, DI | [docs/agents/nestjs-patterns.md](docs/agents/nestjs-patterns.md) |
 | Endpoint, DTO, controller, Swagger | [docs/agents/api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md) |
@@ -24,7 +25,7 @@
 | Commit message, PR title, PR body, splitting a PR | [docs/agents/commits-and-prs.md](docs/agents/commits-and-prs.md) |
 | Adding a skill or a slash command for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
 
-Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Code skill that loads itself on the matching work, and a `PreToolUse` hook in `.claude/settings.json` applies the review checklist on any commit that touches `src/`. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. There are no repo-specific slash commands to remember. All three mechanisms are documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
+Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Code skill that loads itself on the matching work, and a `PreToolUse` hook in `.claude/settings.json` applies the review checklist on any commit that touches `src/`. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. On every PR, the `Risk tier` workflow computes the PR's risk tier from its changed paths and shows it in the PR's checks. It fails if the description understates the tier, or until the PR has the human approvals the tier requires. There are no repo-specific slash commands to remember. All four mechanisms are documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
 
 ## Non-negotiables
 
@@ -38,6 +39,7 @@ Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Cod
 8. Cache keys only via `CacheRouter`; TTLs only from config. → [caching-and-performance.md](docs/agents/caching-and-performance.md)
 9. State-changing or caller-scoped routes declare an auth guard; identity comes from signature recovery or a verified JWT, never from client claims. Sensitive Workspace mutations additionally declare `ElevationGuard` and are recorded in the gated/ungated tables of `elevation.integration.spec.ts`. Workspace membership, admin and Safe-in-Workspace checks go through `assertMember`/`assertAdmin`/`assertSafeInSpace` from `space-assert.utils.ts`, called from the route service — never a private re-implementation or a check inside a repository query. → [security.md](docs/agents/security.md)
 10. One error funnel per layer: `HttpErrorFactory`/`DataSourceError` in datasources; domain errors + filters in `domain/`; `HttpExceptionNoLog` for expected rejections. → [api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md)
+11. Every change has a risk tier (1 critical – 4 low) from the tier map; the most critical path touched wins, and the PR states it. An agent never approves or merges Tier 1 or Tier 2 work — Tier 1 needs two human maintainers, Tier 2 one. → [risk-tiers.md](docs/agents/risk-tiers.md)
 
 ## Architecture
 

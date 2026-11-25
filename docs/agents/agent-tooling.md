@@ -4,7 +4,7 @@
 
 # Agent Tooling
 
-The guides in this directory are the content. This file documents the three mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, and the `Architecture Check` CI workflow, which reviews a pull request on demand — plus the conventions for adding to any of them.
+The guides in this directory are the content. This file documents the mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, the `Architecture Check` CI workflow, which reviews a pull request on demand, and the `Risk tier` workflow, which computes every PR's risk tier — plus the conventions for adding to any of them.
 
 The first two are **automatic by design**. Nothing here needs a slash command typed to take effect, which is why the repo ships none of its own (see "Commands" below).
 
@@ -26,6 +26,7 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 | `cgw-database` | [database-and-migrations.md](database-and-migrations.md) | Migrations, `*.entity.db.ts`, indexes, SQL |
 | `cgw-config` | [configuration-and-flags.md](configuration-and-flags.md) | Env vars, feature flags, config keys |
 | `cgw-testing` | [testing.md](testing.md) | Any test file; builders, mocks, the Fastify test harness |
+| `cgw-risk-tiers` | [risk-tiers.md](risk-tiers.md) | Starting any task or review; "can an agent approve/merge this", "does this need a human" |
 | `cgw-review` | [reviewing.md](reviewing.md) | Reviewing a diff; self-check before commit or PR |
 | `cgw-remarks` | [remarks.md](remarks.md) | Reviewing a diff; "what will reviewers flag" |
 | `cgw-commits-and-prs` | [commits-and-prs.md](commits-and-prs.md) | Commit messages, PR titles and bodies, splitting a PR |
@@ -62,6 +63,16 @@ One Part 2 item is adapted for CI: "pre-commit commands ran clean" is skipped be
 
 The review agent reads untrusted PR content, so its prompt carries the same injection warning as `claude-code-review.yml`, and its tools are read-only plus `gh pr comment` for the single result comment. The runner never checks out the PR head: the checkout is the default branch, used only for the guides, and the PR's content arrives solely through `gh pr view`/`gh pr diff` — so untrusted code never reaches the runner's disk and a force-push mid-review cannot swap what gets analyzed (the CodeQL untrusted-checkout and TOCTOU alerts this design avoids). Each allowed `gh` command is also pinned to the triggering PR's number, so an injection cannot redirect a comment at another PR. The verdict is still an LLM judgment: a finding it misses stays missed, so the gate complements, not replaces, the skills and the hook that run while the code is being written.
 
+## The risk-tier check
+
+`.github/workflows/risk-tier.yml` runs on every pull request. It is the CI half of [risk-tiers.md](risk-tiers.md), and that guide's "Enforcement status" section is where its behaviour is documented. Unlike the review hook and `Architecture Check`, it is not an LLM: `scripts/risk-tier.ts` computes the tier deterministically from the guide's `tier-map` block.
+
+The organization ruleset selects the workflow from protected `main`. The runner checks out the classifier, input reader and map from the PR base. It reads PR files, reviews, authors and the organization-managed roster through read-only APIs. The dependency-free classifier emits a fixed-format annotation and writes escaped paths to the job summary. The first installation needs independent human review because the trusted base has no classifier yet.
+
+`Compute risk tier` validates the declared tier and evidence. `Risk tier approvals` checks the required maintainer count. For activation and when to rerun the protected workflow, see [Enforcement status](risk-tiers.md#enforcement-status).
+
+Its tests (`scripts/risk-tier.spec.ts`) also guard the map itself: an unclassified module, or a pattern that has gone stale, fails `yarn test`.
+
 ## Commands
 
 **This repo intentionally ships no repo-specific slash commands.** Seven were written and then removed before merge, deliberately: `/new-route`, `/new-datasource`, `/new-domain-service`, `/new-env-var`, `/new-migration`, `/audit-test`, `/pr-ready`.
@@ -86,7 +97,7 @@ Adding one back is a reasonable thing to do — but the bar is that it must do s
 
 ## Trigger validation
 
-A skill's `description` is the only thing the auto-load decision sees, so it is the part that needs testing — and it is testable: give a fresh session a synthetic prompt phrased the way a developer would actually phrase it, and check which skill it reaches for. Doing this to the first draft of these thirteen found five real defects, each of which is worth knowing about when writing the next one:
+A skill's `description` is the only thing the auto-load decision sees, so it is the part that needs testing — and it is testable: give a fresh session a synthetic prompt phrased the way a developer would actually phrase it, and check which skill it reaches for. Doing this to the first draft of the original thirteen found five real defects, each of which is worth knowing about when writing the next one:
 
 - **Two skills sharing a trigger phrase is a coin flip, not a fallback.** `cgw-review` and `cgw-remarks` both opened with "use when reviewing a diff", so neither won. The fix was to state the relationship in the descriptions themselves — one is the entry point, the other is the catalog it consults.
 - **A description must claim symptoms, not just concepts.** "Why is my provider constructed twice?" matched nothing in `cgw-nestjs-patterns`, whose triggers were all primitive names; the `useExisting`-vs-`useClass` rule that answers it was one keyword away from being unreachable.

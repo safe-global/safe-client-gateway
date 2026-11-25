@@ -1,0 +1,50 @@
+{
+  "name": "Risk tier",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "repository_name": { "include": ["safe-client-gateway"], "exclude": [] },
+    "ref_name": { "include": ["refs/heads/main"], "exclude": [] }
+  },
+  "rules": [
+    {
+      "type": "workflows",
+      "parameters": {
+        "workflows": [
+          {
+            "repository_id": 520822851,
+            "path": ".github/workflows/risk-tier-required.yml",
+            "ref": "refs/heads/main"
+          }
+        ]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          { "context": "Compute risk tier", "integration_id": 15368 },
+          { "context": "Risk tier approvals", "integration_id": 15368 }
+        ]
+      }
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 0,
+        "required_review_thread_resolution": false,
+        "required_reviewers": [
+          {
+            "file_patterns": [".github/workflows/*", ".github/workflows/**/*"],
+            "minimum_approvals": 2,
+            "reviewer": { "type": "Team", "id": 7545880 }
+          }
+        ]
+      }
+    }
+  ]
+}

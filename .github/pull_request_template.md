@@ -4,6 +4,8 @@
 
 ## Summary
 
+**Risk tier:** <!-- 1–4 and the path or rule that set it, per docs/agents/risk-tiers.md. Tier 1: two human maintainer approvals; Tier 2: one; Tier 3: agent may approve, a human merges; Tier 4: agent may approve and merge. -->
+
 <!-- What changed and why. The reader is a reviewer who has not seen the ticket. Link the Linear issue (e.g. WA-1234). -->
 
 ## Changes
