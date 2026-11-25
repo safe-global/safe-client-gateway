@@ -10,8 +10,10 @@ import {
 import {
   getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
+  getTokenCallbackHandlerVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
+  isTokenCallbackHandlerDeployed,
 } from '#/domain/common/utils/deployments';
 import { IDataDecoderApi } from '#/domain/interfaces/data-decoder-api.interface';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
@@ -441,7 +443,8 @@ export class ContractAnalysisService {
 
   /**
    * Checks if a fallback handler address matches any official Safe fallback handler deployment
-   * across all available versions (>= 1.3.0).
+   * across all available versions (>= 1.3.0): the Compatibility-, Extensible- and TokenCallbackHandler.
+   * A recipient allowlist sets the TokenCallbackHandler on purpose.
    *
    * @param {Address} address - The fallback handler address to check
    * @param {string} chainId - The chain ID to check deployments on
@@ -457,6 +460,9 @@ export class ContractAnalysisService {
       ) ||
       getExtensibleFallbackHandlerVersions().some((version) =>
         isExtensibleFallbackHandlerDeployed({ chainId, version, address }),
+      ) ||
+      getTokenCallbackHandlerVersions().some((version) =>
+        isTokenCallbackHandlerDeployed({ chainId, version, address }),
       )
     );
   }
