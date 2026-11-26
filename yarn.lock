@@ -5050,7 +5050,7 @@ __metadata:
     supertest: "npm:7.3.2"
     typeorm: "npm:1.1.2"
     typescript: "npm:7.0.2"
-    undici: "npm:8.12.4"
+    undici: "npm:8.13.0"
     unplugin-swc: "npm:2.0.0"
     viem: "npm:2.57.17"
     vite: "npm:8.3.8"
@@ -5768,10 +5768,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici@npm:8.12.4":
-  version: 8.12.4
-  resolution: "undici@npm:8.12.4"
-  checksum: 10/f99eb6c2351b933bf9d6e95aa34361af9be9edc6bfe34e25fca1f1cd8aeae5e547850cd317d6e0d7189267bb9dbfd6e3400869156e43e095d151b0d66471bf97
+"undici@npm:8.13.0":
+  version: 8.13.0
+  resolution: "undici@npm:8.13.0"
+  checksum: 10/51c30d230089afa7641a818f0a82cc4e4313eb06ed4954477ca0ac46431195c53ab2e73e8b467160b7713fb30f82ca2048c51185a111bddd4620320396d18076
   languageName: node
   linkType: hard
 
