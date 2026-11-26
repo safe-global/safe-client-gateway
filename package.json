@@ -44,12 +44,12 @@
     "mark:deployed-counterfactual-safes": "yarn build && node --env-file=.env dist/scripts/mark-deployed-counterfactual-safes.js"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.1165.0",
-    "@aws-sdk/client-s3": "3.1165.0",
-    "@aws-sdk/client-sesv2": "3.1165.0",
-    "@aws-sdk/credential-provider-web-identity": "3.972.89",
-    "@aws-sdk/lib-storage": "3.1165.0",
-    "@aws-sdk/s3-request-presigner": "3.1165.0",
+    "@aws-sdk/client-kms": "3.1172.0",
+    "@aws-sdk/client-s3": "3.1172.0",
+    "@aws-sdk/client-sesv2": "3.1172.0",
+    "@aws-sdk/credential-provider-web-identity": "3.972.90",
+    "@aws-sdk/lib-storage": "3.1172.0",
+    "@aws-sdk/s3-request-presigner": "3.1172.0",
     "@blockaid/client": "^1.9.0",
     "@fastify/cookie": "^11.1.5",
     "@fastify/static": "^10.1.11",
