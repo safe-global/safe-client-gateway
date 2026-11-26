@@ -894,6 +894,7 @@ export default () => ({
     ),
     indexer: {
       baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
+      apiKey: process.env.POLICY_INDEXER_API_KEY,
     },
     batchSize: Number.parseInt(process.env.POLICY_BATCH_SIZE ?? `${1}`, 10),
   },

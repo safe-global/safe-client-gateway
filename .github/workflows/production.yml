@@ -130,7 +130,8 @@ jobs:
       image_tag: ${{ needs.prepare.outputs.tag }}
       infra_repo: safe-global/safe-client-gateway-infra-tf
       values_file: apps/safe-client-gateway/values-production.yaml
-      image_tag_path: .client.imageTag
+      image_tag_path: .image.tag
+      version_path: .apm.version
       argocd_app: safe-client-gateway
       health_url: https://safe-client.safe.global/health/ready
       # VPN-free rollout confirmation in addition to the ArgoCD wait. /about, not

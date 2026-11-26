@@ -8,8 +8,8 @@
 # commit, for soak testing and hotfix verification.
 #
 # `deploy-devstaging` is the only path to devstaging: the ArgoCD Application in
-# safe-client-gateway-infra-tf renders `client.imageTag` from the values file
-# that job bumps.
+# safe-client-gateway-infra-tf renders `image.tag` from the values file that job
+# bumps.
 # -----------------------------------------------------------------------------
 name: Devstaging
 
@@ -64,7 +64,8 @@ jobs:
       image_tag: ${{ needs.prepare.outputs.tag }}
       infra_repo: safe-global/safe-client-gateway-infra-tf
       values_file: apps/safe-client-gateway/values-devstaging.yaml
-      image_tag_path: .client.imageTag
+      image_tag_path: .image.tag
+      version_path: .apm.version
       health_url: https://safe-client.staging.5afe.dev/health/ready
       # /about, not /v1/about: AboutController declares no version and
       # app.provider.ts enables URI versioning with no default, so /v1/about 404s.

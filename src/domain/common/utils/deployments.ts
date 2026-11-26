@@ -10,6 +10,7 @@ import {
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
+  getTokenCallbackHandlerDeployments as _getTokenCallbackHandlerDeployments,
 } from '@safe-global/safe-deployments';
 import {
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
@@ -20,6 +21,7 @@ import {
   _SAFE_L2_DEPLOYMENTS,
   _SAFE_MIGRATION_DEPLOYMENTS,
   _SAFE_TO_L2_SETUP_DEPLOYMENTS,
+  _TOKEN_CALLBACK_HANDLER_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
 import {
   getAllowanceModuleDeployment,
@@ -40,6 +42,7 @@ type DeploymentGetter =
   | typeof _getMultiSendDeployments
   | typeof _getFallbackHandlerDeployments
   | typeof _getExtensibleFallbackHandlerDeployments
+  | typeof _getTokenCallbackHandlerDeployments
   | typeof _getSafeToL2SetupDeployments
   | typeof _getSafeToL2MigrationDeployments;
 
@@ -168,6 +171,20 @@ export function getExtensibleFallbackHandlerDeployments(
 }
 
 /**
+ * Returns a list of official TokenCallbackHandler addresses based on given {@link Filter}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @param {string} args.version - the version to filter deployments by
+ *
+ * @returns {Array<Address>} - a list of checksummed TokenCallbackHandler addresses
+ */
+export function getTokenCallbackHandlerDeployments(
+  args: Filter,
+): Array<Address> {
+  return formatDeployments(_getTokenCallbackHandlerDeployments, args);
+}
+
+/**
  * Returns a list of official SafeToL2Migration addresses based on given {@link Filter}.
  *
  * @param {string} args.chainId - the chain ID to filter deployments by
@@ -249,6 +266,20 @@ export function getExtensibleFallbackHandlerVersions(): Array<string> {
   return _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS.map(
     (deployment) => deployment.version,
   );
+}
+
+/**
+ * Gets the list of TokenCallbackHandler versions available in the safe-deployments package.
+ * Infers versions from the _TOKEN_CALLBACK_HANDLER_DEPLOYMENTS constant exported by the package.
+ * Note: the TokenCallbackHandler was introduced in Safe v1.5.0. The constant also lists the 1.1.1
+ * DefaultCallbackHandler, which is left out.
+ *
+ * @returns {Array<string>} - a list of TokenCallbackHandler versions in descending order
+ */
+export function getTokenCallbackHandlerVersions(): Array<string> {
+  return _TOKEN_CALLBACK_HANDLER_DEPLOYMENTS
+    .filter((deployment) => deployment.contractName === 'TokenCallbackHandler')
+    .map((deployment) => deployment.version);
 }
 
 /**
@@ -375,6 +406,13 @@ export const isFallbackHandlerDeployed = (
 export const isExtensibleFallbackHandlerDeployed = (
   args: Filter & { address: Address },
 ): boolean => isDeployed(getExtensibleFallbackHandlerDeployments, args);
+
+/**
+ * Checks if a given address is deployed as a TokenCallbackHandler.
+ */
+export const isTokenCallbackHandlerDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getTokenCallbackHandlerDeployments, args);
 
 /**
  * The SafeWebAuthnSignerFactory contract version supported by the relay.

@@ -303,6 +303,7 @@ export const RootConfigurationSchema = z
       .optional(),
     // Policy indexer configuration
     POLICY_INDEXER_BASE_URI: z.url().optional(),
+    POLICY_INDEXER_API_KEY: z.string().trim().min(1).optional(),
     POLICY_INDEXER_EXPIRE_TIME_SECONDS: z.coerce
       .number()
       .int()
