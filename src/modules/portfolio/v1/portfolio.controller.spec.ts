@@ -24,9 +24,10 @@ describe('PortfolioController', () => {
   describe('getPortfolio', () => {
     it('should call service with address and DTO parameters', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds,
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -40,7 +41,7 @@ describe('PortfolioController', () => {
       expect(service.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds,
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -50,9 +51,10 @@ describe('PortfolioController', () => {
 
     it('should pass custom fiatCode to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'EUR',
-        chainIds: undefined,
+        chainIds,
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -71,9 +73,13 @@ describe('PortfolioController', () => {
 
     it('should pass chainIds array to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        3,
+      );
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: ['1', '10', '137'],
+        chainIds,
         trusted: true,
         excludeDust: true,
         sync: false,
@@ -85,16 +91,17 @@ describe('PortfolioController', () => {
 
       expect(service.getPortfolio).toHaveBeenCalledWith(
         expect.objectContaining({
-          chainIds: ['1', '10', '137'],
+          chainIds,
         }),
       );
     });
 
     it('should pass trusted=false to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds,
         trusted: false,
         excludeDust: true,
         sync: false,
@@ -113,9 +120,10 @@ describe('PortfolioController', () => {
 
     it('should pass excludeDust=false to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds,
         trusted: true,
         excludeDust: false,
         sync: false,
@@ -134,9 +142,10 @@ describe('PortfolioController', () => {
 
     it('should pass sync=true to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds,
         trusted: true,
         excludeDust: true,
         sync: true,
@@ -155,9 +164,13 @@ describe('PortfolioController', () => {
 
     it('should pass all parameters to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        2,
+      );
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'EUR',
-        chainIds: ['1', '10'],
+        chainIds,
         trusted: false,
         excludeDust: false,
         sync: true,
@@ -170,7 +183,7 @@ describe('PortfolioController', () => {
       expect(service.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode: 'EUR',
-        chainIds: ['1', '10'],
+        chainIds,
         trusted: false,
         excludeDust: false,
         sync: true,
@@ -179,9 +192,10 @@ describe('PortfolioController', () => {
 
     it('should return portfolio from service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const getPortfolioDto: GetPortfolioDto = {
         fiatCode: 'USD',
-        chainIds: undefined,
+        chainIds,
         trusted: true,
         excludeDust: true,
         sync: false,

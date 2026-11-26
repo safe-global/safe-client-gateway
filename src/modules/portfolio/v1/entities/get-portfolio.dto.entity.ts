@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { z } from 'zod';
 import type { GetPortfolioDtoSchema } from '#/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 
@@ -11,12 +11,12 @@ export class GetPortfolioDto implements z.infer<typeof GetPortfolioDtoSchema> {
   })
   public readonly fiatCode!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description:
-      'Comma-separated list of chain IDs to filter by. If omitted, returns data for all chains.',
+      'Comma-separated list of chain IDs. The address must be a Safe on each of them.',
     example: '1,137,42161',
   })
-  public readonly chainIds?: Array<string>;
+  public readonly chainIds!: Array<string>;
 
   @ApiPropertyOptional({
     description: 'If true, only returns trusted tokens',

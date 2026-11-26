@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
-import { ChainIdsSchema } from '#/modules/portfolio/schemas/chain-ids.schema';
+import {
+  ChainIdsSchema,
+  MAX_PORTFOLIO_CHAIN_IDS,
+} from '#/modules/portfolio/schemas/chain-ids.schema';
 
 describe('ChainIdsSchema', () => {
   describe('valid inputs', () => {
@@ -22,16 +27,6 @@ describe('ChainIdsSchema', () => {
     it('should parse chain IDs with inconsistent spacing', () => {
       const result = ChainIdsSchema.parse('1,  10,137  , 42161');
       expect(result).toEqual(['1', '10', '137', '42161']);
-    });
-
-    it('should handle undefined input', () => {
-      const result = ChainIdsSchema.parse(undefined);
-      expect(result).toBeUndefined();
-    });
-
-    it('should handle empty string', () => {
-      const result = ChainIdsSchema.parse('');
-      expect(result).toBeUndefined();
     });
 
     it('should filter out empty strings after splitting', () => {
@@ -57,7 +52,51 @@ describe('ChainIdsSchema', () => {
     });
   });
 
+  describe('duplicates and size', () => {
+    it('should remove duplicate chain IDs, keeping the first order', () => {
+      const [first, second] = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        2,
+      );
+      const input = [first, second, first, ` ${second} `, first].join(',');
+
+      expect(ChainIdsSchema.parse(input)).toEqual([first, second]);
+    });
+
+    it('should accept many copies of one chain ID as a single entry', () => {
+      const chainId = faker.string.numeric();
+      const input = Array.from({ length: 1_000 }, () => chainId).join(',');
+
+      expect(ChainIdsSchema.parse(input)).toEqual([chainId]);
+    });
+
+    it('should accept the maximum number of distinct chain IDs', () => {
+      const chainIds = Array.from({ length: MAX_PORTFOLIO_CHAIN_IDS }, (_, i) =>
+        String(i + 1),
+      );
+
+      expect(ChainIdsSchema.parse(chainIds.join(','))).toEqual(chainIds);
+    });
+
+    it('should reject more distinct chain IDs than the maximum', () => {
+      const chainIds = Array.from(
+        { length: MAX_PORTFOLIO_CHAIN_IDS + 1 },
+        (_, i) => String(i + 1),
+      );
+
+      expect(() => ChainIdsSchema.parse(chainIds.join(','))).toThrow(ZodError);
+    });
+  });
+
   describe('invalid inputs', () => {
+    it('should reject a missing value', () => {
+      expect(() => ChainIdsSchema.parse(undefined)).toThrow(ZodError);
+    });
+
+    it('should reject an empty string', () => {
+      expect(() => ChainIdsSchema.parse('')).toThrow(ZodError);
+    });
+
     it('should reject non-numeric chain IDs', () => {
       expect(() => ChainIdsSchema.parse('abc')).toThrow(ZodError);
     });
@@ -86,19 +125,16 @@ describe('ChainIdsSchema', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle single comma', () => {
-      const result = ChainIdsSchema.parse(',');
-      expect(result).toBeUndefined();
+    it('should reject single comma', () => {
+      expect(() => ChainIdsSchema.parse(',')).toThrow(ZodError);
     });
 
-    it('should handle multiple commas', () => {
-      const result = ChainIdsSchema.parse(',,,');
-      expect(result).toBeUndefined();
+    it('should reject multiple commas', () => {
+      expect(() => ChainIdsSchema.parse(',,,')).toThrow(ZodError);
     });
 
-    it('should handle commas with spaces', () => {
-      const result = ChainIdsSchema.parse(', , ,');
-      expect(result).toBeUndefined();
+    it('should reject commas with spaces', () => {
+      expect(() => ChainIdsSchema.parse(', , ,')).toThrow(ZodError);
     });
 
     it('should handle trailing comma', () => {

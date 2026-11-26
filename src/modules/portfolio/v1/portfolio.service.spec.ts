@@ -77,8 +77,16 @@ describe('PortfolioApiService', () => {
   });
 
   describe('getPortfolio', () => {
+    beforeEach(() => {
+      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
+      mockChainsRepository.getChain.mockResolvedValue(
+        chainBuilder().with('isTestnet', false).build(),
+      );
+    });
+
     it('should call domain service and map result', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const fiatCode = 'USD';
       const domainPortfolio = portfolioBuilder().build();
 
@@ -87,12 +95,13 @@ describe('PortfolioApiService', () => {
       const result = await service.getPortfolio({
         address,
         fiatCode,
+        chainIds,
       });
 
       expect(mockDomainService.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode,
-        chainIds: undefined,
+        chainIds,
         trusted: undefined,
         excludeDust: undefined,
         isTestnet: false,
@@ -107,6 +116,7 @@ describe('PortfolioApiService', () => {
 
     it('should map domain portfolio through mapper with correct structure', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const fiatCode = 'USD';
 
       const tokenBalance = tokenBalanceBuilder().build();
@@ -122,6 +132,7 @@ describe('PortfolioApiService', () => {
       const result = await service.getPortfolio({
         address,
         fiatCode,
+        chainIds,
       });
 
       // Verify mapper was used - check that structure matches mapped format
@@ -222,6 +233,7 @@ describe('PortfolioApiService', () => {
 
     it('should pass sync parameter through to domain service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = [faker.string.numeric()];
       const fiatCode = 'USD';
       const sync = true;
 
@@ -231,18 +243,78 @@ describe('PortfolioApiService', () => {
       await service.getPortfolio({
         address,
         fiatCode,
+        chainIds,
         sync,
       });
 
       expect(mockDomainService.getPortfolio).toHaveBeenCalledWith({
         address,
         fiatCode,
-        chainIds: undefined,
+        chainIds,
         trusted: undefined,
         excludeDust: undefined,
         sync,
         isTestnet: false,
       });
+    });
+
+    it('should check the address is a Safe on every chain before Zerion', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        3,
+      );
+      mockDomainService.getPortfolio.mockImplementation(() => {
+        expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(
+          chainIds.length,
+        );
+        return Promise.resolve(portfolioBuilder().build());
+      });
+
+      await service.getPortfolio({ address, fiatCode: 'USD', chainIds });
+
+      expect(mockDomainService.getPortfolio).toHaveBeenCalledTimes(1);
+      chainIds.forEach((chainId, i) => {
+        expect(mockSafeRepository.getSafe).toHaveBeenNthCalledWith(i + 1, {
+          chainId,
+          address,
+        });
+      });
+    });
+
+    it('should not read the portfolio of an address that is not a Safe, and stop at the first chain', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        3,
+      );
+      const error = new Error('Not found');
+      mockSafeRepository.getSafe.mockRejectedValue(error);
+
+      await expect(
+        service.getPortfolio({ address, fiatCode: 'USD', chainIds }),
+      ).rejects.toThrow(error);
+
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);
+      expect(mockDomainService.getPortfolio).not.toHaveBeenCalled();
+    });
+
+    it('should not read the portfolio when the address is not a Safe on a later chain', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        2,
+      );
+      const error = new Error('Not found');
+      mockSafeRepository.getSafe
+        .mockResolvedValueOnce(safeBuilder().build())
+        .mockRejectedValueOnce(error);
+
+      await expect(
+        service.getPortfolio({ address, fiatCode: 'USD', chainIds }),
+      ).rejects.toThrow(error);
+
+      expect(mockDomainService.getPortfolio).not.toHaveBeenCalled();
     });
   });
 

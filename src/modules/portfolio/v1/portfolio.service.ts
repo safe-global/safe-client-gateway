@@ -41,14 +41,24 @@ export class PortfolioApiService {
     );
   }
 
+  /**
+   * Returns the portfolio of a Safe. The address must be a Safe on every
+   * requested chain, checked before Zerion is called, so the paid portfolio
+   * cannot be read for an arbitrary address.
+   *
+   * @param args - The Safe, its chains and the portfolio filters
+   * @returns The portfolio of the Safe on the requested chains
+   * @throws when the address is not a Safe on one of the chains (404)
+   */
   public async getPortfolio(args: {
     address: Address;
     fiatCode: string;
-    chainIds?: Array<string>;
+    chainIds: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
     sync?: boolean;
   }): Promise<Portfolio> {
+    await this._assertSafeOnChains(args);
     const isTestnet = await this._areTestnetChains(args.chainIds);
     const domainPortfolio = await this.domainPortfolioService.getPortfolio({
       ...args,
@@ -84,6 +94,23 @@ export class PortfolioApiService {
   }
 
   /**
+   * Checks the address is a Safe on each chain, one chain at a time, so an
+   * address that is not a Safe costs one lookup, not one per chain.
+   *
+   * @param args.address - The address to check
+   * @param args.chainIds - The chains it must be a Safe on
+   * @throws when the address is not a Safe on one of the chains (404)
+   */
+  private async _assertSafeOnChains(args: {
+    address: Address;
+    chainIds: Array<string>;
+  }): Promise<void> {
+    for (const chainId of args.chainIds) {
+      await this.safeRepository.getSafe({ chainId, address: args.address });
+    }
+  }
+
+  /**
    * Whether the Safe's caches were cleared, by an event or a request, within
    * the recent-clear window. Bounded to that window, not the whole settle
    * window, so a second transaction minutes later still gets its clear.
@@ -103,14 +130,9 @@ export class PortfolioApiService {
 
   /**
    * Determines if the provided chainIds are testnet chains.
-   * Returns true if chainIds are provided and ALL of them are testnets.
-   * Returns false if no chainIds provided or if any chain is not a testnet.
+   * Returns true if ALL of them are testnets, false if any is not.
    */
-  private async _areTestnetChains(chainIds?: Array<string>): Promise<boolean> {
-    if (!chainIds || chainIds.length === 0) {
-      return false;
-    }
-
+  private async _areTestnetChains(chainIds: Array<string>): Promise<boolean> {
     const chains = await Promise.all(
       chainIds.map((chainId) =>
         this.chainsRepository.getChain(chainId).catch(() => null),
