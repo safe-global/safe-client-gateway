@@ -471,6 +471,7 @@ export default (): ReturnType<typeof configuration> => ({
     configurationRequestRetentionDays: faker.number.int({ min: 1, max: 60 }),
     indexer: {
       baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
     },
     batchSize: faker.number.int({ min: 1, max: 10 }),
   },
