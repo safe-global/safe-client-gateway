@@ -678,13 +678,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/cookie@npm:^11.1.3":
-  version: 11.1.3
-  resolution: "@fastify/cookie@npm:11.1.3"
+"@fastify/cookie@npm:^11.1.5":
+  version: 11.1.5
+  resolution: "@fastify/cookie@npm:11.1.5"
   dependencies:
     cookie: "npm:^2.0.0"
     fastify-plugin: "npm:^6.0.0"
-  checksum: 10/20e231950cf869a0401bfc5f9ed60ec91a4cc0ed4cdd54c15a1c1762614d7759805263e954d32256573fec6afb19571cf77993da6c7199d2c18acf7d17107a6a
+  checksum: 10/24af58ff0ab0a5020d6fd42ab3a9d9f84228878edfdb2bcc50844092807f0bb042a659e7db9defa97679697bfd7685dc76123e877693f56c1b68d77ea5b5eb6c
   languageName: node
   linkType: hard
 
@@ -4979,7 +4979,7 @@ __metadata:
     "@biomejs/biome": "npm:2.6.8"
     "@blockaid/client": "npm:^1.9.0"
     "@faker-js/faker": "npm:10.6.0"
-    "@fastify/cookie": "npm:^11.1.3"
+    "@fastify/cookie": "npm:^11.1.5"
     "@fastify/static": "npm:^10.1.11"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.13.1"
     "@nestjs/bullmq": "npm:^12.0.1"
