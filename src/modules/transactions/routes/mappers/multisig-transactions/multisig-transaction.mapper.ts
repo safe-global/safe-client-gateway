@@ -9,6 +9,7 @@ import {
   TRANSACTION_ID_SEPARATOR,
 } from '#/modules/transactions/routes/constants';
 import { Transaction } from '#/modules/transactions/routes/entities/transaction.entity';
+import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionInfoMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
@@ -41,11 +42,15 @@ export class MultisigTransactionMapper {
       transaction,
     });
     const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
+    const isQueued =
+      txStatus === TransactionStatus.AwaitingConfirmations ||
+      txStatus === TransactionStatus.AwaitingExecution;
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       transaction,
       dataDecoded,
       addressLookups,
+      isQueued ? safe : null,
     );
     const executionInfo = this.executionInfoMapper.mapExecutionInfo(
       transaction,

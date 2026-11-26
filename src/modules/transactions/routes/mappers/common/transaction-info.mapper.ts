@@ -13,6 +13,7 @@ import type {
 import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import type {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
@@ -94,11 +95,16 @@ export class MultisigTransactionInfoMapper {
       this.configurationService.getOrThrow('features.lifiTransactionsMapping');
   }
 
+  /**
+   * @param queuedSafe - the Safe of a queued transaction or a preview, else
+   *   null. A removed guard is known only from the current Safe state.
+   */
   async mapTransactionInfo(
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
     dataDecoded: DataDecoded | null,
     addressLookups: AddressLookups,
+    queuedSafe: Safe | null,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
     const dataByteLength = transaction.data
@@ -225,6 +231,7 @@ export class MultisigTransactionInfoMapper {
       const settingsInfo = await this.settingsChangeMapper.mapSettingsChange(
         addressLookups,
         dataDecoded,
+        queuedSafe,
       );
 
       if (!dataDecoded) {

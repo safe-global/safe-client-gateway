@@ -114,7 +114,48 @@ describe('MultisigTransactionMapper', () => {
         transaction,
         null,
         addressLookups,
+        null,
       );
     });
+
+    it.each([
+      [TransactionStatus.AwaitingConfirmations, true],
+      [TransactionStatus.AwaitingExecution, true],
+      [TransactionStatus.Success, false],
+      [TransactionStatus.Failed, false],
+      [TransactionStatus.Cancelled, false],
+    ])(
+      'should pass the Safe to the transaction info for status %s: %s',
+      async (txStatus, isQueued) => {
+        const chain = chainBuilder().build();
+        const safe = safeBuilder().build();
+        const transaction = multisigTransactionBuilder().build();
+
+        statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
+        transactionInfoMapper.mapTransactionInfo.mockResolvedValue(
+          transferTransactionInfoBuilder().build(),
+        );
+        executionInfoMapper.mapExecutionInfo.mockReturnValue(
+          new MultisigExecutionInfo(0, 0, 0, null),
+        );
+        safeAppInfoMapper.mapSafeAppInfo.mockResolvedValue(null);
+
+        await mapper.mapTransaction(
+          chain.chainId,
+          transaction,
+          safe,
+          null,
+          addressLookups,
+        );
+
+        expect(transactionInfoMapper.mapTransactionInfo).toHaveBeenCalledWith(
+          chain.chainId,
+          transaction,
+          null,
+          addressLookups,
+          isQueued ? safe : null,
+        );
+      },
+    );
   });
 });

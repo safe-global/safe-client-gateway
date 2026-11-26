@@ -31,6 +31,7 @@ export class ModuleTransactionMapper {
       transaction,
       dataDecoded,
       addressLookups,
+      null,
     );
     const executionInfo = new ModuleExecutionInfo(
       await addressLookups.getOrDefault(transaction.module, ['CONTRACT']),
