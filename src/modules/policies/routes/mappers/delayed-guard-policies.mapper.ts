@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual, zeroAddress } from 'viem';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -144,7 +145,8 @@ export class DelayedGuardPoliciesMapper {
    *
    * CGW stores configurations per Safe and root, not per guard, so they
    * belong to every change with their root; with no such change they are a
-   * draft.
+   * draft, unless a request made after they were drafted is already applied
+   * or invalidated on any guard.
    */
   private changesByGuardAndRoot(args: {
     enabledGuards: ReadonlyArray<Address>;
@@ -190,6 +192,15 @@ export class DelayedGuardPoliciesMapper {
       }
     }
 
+    // Drafted before a request that is applied or invalidated now, on any
+    // guard. Drafting the same configurations again later is a new draft.
+    const isFinished = (stored: SafePolicyGuardConfiguration): boolean =>
+      args.onChainConfigurations.some(
+        (onChain) =>
+          onChain.root === stored.root &&
+          onChain.status !== 'PENDING' &&
+          toSecondsTimestamp(stored.createdAt) < onChain.readyAt,
+      );
     const drafts: Array<DelayedPolicyChange> = [];
     for (const stored of args.storedConfigurations) {
       const withRoot = [...changes.values()].filter(
@@ -198,7 +209,7 @@ export class DelayedGuardPoliciesMapper {
       for (const change of withRoot) {
         change.stored = stored;
       }
-      if (withRoot.length === 0) {
+      if (withRoot.length === 0 && !isFinished(stored)) {
         drafts.push({
           guard: null,
           root: stored.root,

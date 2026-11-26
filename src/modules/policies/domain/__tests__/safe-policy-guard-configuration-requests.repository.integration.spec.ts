@@ -216,16 +216,32 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       );
     });
 
-    it('should not store a re-submission again', async () => {
+    it('should replace the row of a re-submission, refreshing its createdAt', async () => {
       const request = storableRequest();
+      // `created_at` is not insertable through the entity.
+      await postgresDatabaseService
+        .getDataSource()
+        .query(
+          `INSERT INTO "policy_configuration_requests" ("space_id", "chain_id", "safe_address", "root", "configurations", "created_by", "created_at") VALUES ($1, $2, $3, $4, $5, $6, NOW() - make_interval(days => 1))`,
+          [
+            request.spaceId,
+            request.chainId,
+            request.safeAddress,
+            request.root,
+            JSON.stringify(request.configurations),
+            request.createdBy,
+          ],
+        );
+      const [previous] = await dbRepository.find();
 
-      await repository.create(request);
       await repository.create({ ...request, createdBy: request.createdBy + 1 });
 
       const stored = await dbRepository.find();
       expect(stored).toHaveLength(1);
-      // the first write wins; a retry does not rewrite the row
-      expect(stored[0].createdBy).toBe(request.createdBy);
+      expect(stored[0].createdBy).toBe(request.createdBy + 1);
+      expect(stored[0].createdAt.getTime()).toBeGreaterThan(
+        previous.createdAt.getTime(),
+      );
     });
 
     it('should store the same root of a Safe for each Space', async () => {

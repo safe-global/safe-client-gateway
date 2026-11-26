@@ -11,7 +11,8 @@ export const ISafePolicyGuardConfigurationRequestsRepository = Symbol(
 export interface ISafePolicyGuardConfigurationRequestsRepository {
   /**
    * Stores the configurations of a request for a Safe in a Space, keyed by
-   * root. Storing a stored root again is a no-op. The caller must have
+   * root. Storing a stored root again replaces its row, refreshing
+   * `createdAt`. The caller must have
    * verified that `root` is the hash of `configurations`, and enforce the
    * per-Safe cap.
    */
