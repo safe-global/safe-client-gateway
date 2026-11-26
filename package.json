@@ -93,7 +93,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.8",
     "@faker-js/faker": "10.6.0",
     "@nestjs/testing": "12.4.2",
     "@smithy/util-stream": "4.8.2",
