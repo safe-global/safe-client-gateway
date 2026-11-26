@@ -290,10 +290,7 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'put',
     path: (id) => `/v1/spaces/${id}/address-book/requests/1/reject`,
   },
-  // Tags only label contacts: they change no address, so a stolen session
-  // cannot redirect funds through them. A challenge on every tag edit costs
-  // more than that protects. Setting tags while saving a contact still goes
-  // through the gated PUT /v1/spaces/:spaceId/address-book.
+  // Tags only label existing contacts and change no address, so no step-up.
   {
     name: 'POST /v1/spaces/:spaceId/address-book/tags',
     method: 'post',
