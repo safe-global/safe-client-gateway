@@ -46,6 +46,7 @@ import { type Raw, rawify } from '#/validation/entities/raw.entity';
 @Injectable()
 export class PolicyIndexerApi {
   private readonly baseUri: string;
+  private readonly apiKey: string | undefined;
   private readonly expirationTimeSeconds: number;
 
   constructor(
@@ -61,6 +62,9 @@ export class PolicyIndexerApi {
   ) {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'policies.indexer.baseUri',
+    );
+    this.apiKey = this.configurationService.get<string>(
+      'policies.indexer.apiKey',
     );
     this.expirationTimeSeconds = this.configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.policyIndexer',
@@ -149,6 +153,10 @@ export class PolicyIndexerApi {
             variables: toPolicyIndexerVariables(safes, guardPolicyKinds),
           },
           networkRequest: {
+            // Envio Cloud ignores the header until API key auth is enabled.
+            ...(this.apiKey && {
+              headers: { Authorization: `Bearer ${this.apiKey}` },
+            }),
             circuitBreaker: { key: CircuitBreakerKeys.getPolicyIndexerKey() },
           },
         });
