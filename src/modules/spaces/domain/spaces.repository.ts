@@ -24,7 +24,6 @@ import {
 } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
-import { isSameFeatureSet } from '#/modules/spaces/domain/experimental-features.utils';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
@@ -256,9 +255,7 @@ export class SpacesRepository implements ISpacesRepository {
 
   public async update(args: {
     id: Space['id'];
-    updatePayload: Partial<
-      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
-    >;
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
     actorUserId: number;
     entityManager?: EntityManager;
   }): Promise<Pick<Space, 'uuid'>> {
@@ -273,7 +270,6 @@ export class SpacesRepository implements ISpacesRepository {
           uuid: true,
           name: true,
           status: true,
-          experimentalFeatures: true,
         },
       });
       if (!current) {
@@ -325,17 +321,15 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   /**
-   * Changed `name`/`status`/`experimentalFeatures` fields of a space update, or `null` for a no-op.
+   * Changed `name`/`status` fields of a space update, or `null` for a no-op.
    * Names are the plaintext values — the audit payload is encrypted as a whole
    * blob by the audit repository.
    */
   private diffSpaceUpdate(args: {
-    current: Pick<Space, 'status' | 'experimentalFeatures'>;
+    current: Pick<Space, 'status'>;
     /** The stored name decrypted, for the plaintext comparison. */
     currentName: string;
-    updatePayload: Partial<
-      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
-    >;
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
   }): SpaceUpdatedPayload | null {
     const { name, status } = args.updatePayload;
     const oldFields: SpaceUpdatedPayload['old'] = {};
@@ -348,14 +342,6 @@ export class SpacesRepository implements ISpacesRepository {
     if (status !== undefined && status !== args.current.status) {
       oldFields.status = args.current.status;
       newFields.status = status;
-    }
-    const { experimentalFeatures } = args.updatePayload;
-    if (
-      experimentalFeatures !== undefined &&
-      !isSameFeatureSet(experimentalFeatures, args.current.experimentalFeatures)
-    ) {
-      oldFields.experimentalFeatures = args.current.experimentalFeatures;
-      newFields.experimentalFeatures = experimentalFeatures;
     }
 
     return Object.keys(newFields).length > 0

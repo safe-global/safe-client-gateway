@@ -47,6 +47,7 @@ const UserIdSchema = z.number().int().positive();
 const SpaceFieldsSchema = z.object({
   name: z.string().optional(),
   status: z.enum(getStringEnumKeys(SpaceStatus)).optional(),
+  // No longer written; kept so stored SPACE_UPDATED rows read back whole.
   experimentalFeatures: z.array(z.string()).optional(),
 });
 
