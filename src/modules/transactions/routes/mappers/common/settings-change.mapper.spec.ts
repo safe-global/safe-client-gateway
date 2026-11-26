@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { zeroAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { AddOwner } from '#/modules/transactions/routes/entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '#/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '#/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
@@ -47,7 +48,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new SetFallbackHandler(new AddressInfo(handlerValue));
     expect(actual).toEqual(expected);
@@ -59,7 +64,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .with('parameters', [])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     expect(actual).toBeNull();
   });
@@ -75,7 +84,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new AddOwner(
       new AddressInfo(ownerValue),
@@ -98,7 +111,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new RemoveOwner(
       new AddressInfo(ownerValue),
@@ -121,7 +138,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new SwapOwner(
       new AddressInfo(oldOwner),
@@ -142,7 +163,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new ChangeMasterCopy(new AddressInfo(newMasterCopy));
     expect(actual).toEqual(expected);
@@ -160,7 +185,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new EnableModule(new AddressInfo(moduleAddress));
     expect(actual).toEqual(expected);
@@ -181,7 +210,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new DisableModule(new AddressInfo(moduleAddress));
     expect(actual).toEqual(expected);
@@ -196,7 +229,11 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new ChangeThreshold(Number(thresholdValue));
     expect(actual).toEqual(expected);
@@ -213,24 +250,74 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new SetGuard(new AddressInfo(guardAddress));
     expect(actual).toEqual(expected);
   });
 
-  it('should build a DeleteGuard setting', async () => {
-    const guardValue = '0x0000000000000000000000000000000000000000';
+  it('should build a DeleteGuard setting without a guard when the transaction is not queued', async () => {
     const dataDecoded = dataDecodedBuilder()
       .with('method', 'setGuard')
       .with('parameters', [
-        dataDecodedParameterBuilder().with('value', guardValue).build(),
+        dataDecodedParameterBuilder().with('value', zeroAddress).build(),
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
-    expect(actual).toEqual(new DeleteGuard());
+    expect(actual).toEqual(new DeleteGuard(null));
+    expect(addressLookups.getOrDefault).not.toHaveBeenCalled();
+  });
+
+  it('should build a DeleteGuard setting with the current guard of a queued Safe', async () => {
+    const safe = safeBuilder().build();
+    const guardAddressInfo = new AddressInfo(safe.guard);
+    addressLookups.getOrDefault.mockResolvedValue(guardAddressInfo);
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'setGuard')
+      .with('parameters', [
+        dataDecodedParameterBuilder().with('value', zeroAddress).build(),
+      ])
+      .build();
+
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      safe,
+    );
+
+    expect(actual).toEqual(new DeleteGuard(guardAddressInfo));
+    expect(addressLookups.getOrDefault).toHaveBeenCalledWith(safe.guard, [
+      'CONTRACT',
+    ]);
+  });
+
+  it('should build a DeleteGuard setting without a guard when the queued Safe has none', async () => {
+    const safe = safeBuilder().with('guard', zeroAddress).build();
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'setGuard')
+      .with('parameters', [
+        dataDecodedParameterBuilder().with('value', zeroAddress).build(),
+      ])
+      .build();
+
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      safe,
+    );
+
+    expect(actual).toEqual(new DeleteGuard(null));
+    expect(addressLookups.getOrDefault).not.toHaveBeenCalled();
   });
 
   it('should build a SetModuleGuard setting', async () => {
@@ -244,13 +331,17 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
     const expected = new SetModuleGuard(new AddressInfo(moduleGuardAddress));
     expect(actual).toEqual(expected);
   });
 
-  it('should build a DeleteModuleGuard setting', async () => {
+  it('should build a DeleteModuleGuard setting without a module guard when the transaction is not queued', async () => {
     const dataDecoded = dataDecodedBuilder()
       .with('method', 'setModuleGuard')
       .with('parameters', [
@@ -258,10 +349,61 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       ])
       .build();
 
-    const actual = await mapper.mapSettingsChange(addressLookups, dataDecoded);
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      null,
+    );
 
-    expect(actual).toEqual(new DeleteModuleGuard());
+    expect(actual).toEqual(new DeleteModuleGuard(null));
+    expect(addressLookups.getOrDefault).not.toHaveBeenCalled();
   });
+
+  it('should build a DeleteModuleGuard setting with the current module guard of a queued Safe', async () => {
+    const moduleGuard = getAddress(faker.finance.ethereumAddress());
+    const safe = safeBuilder().with('moduleGuard', moduleGuard).build();
+    const moduleGuardAddressInfo = new AddressInfo(moduleGuard);
+    addressLookups.getOrDefault.mockResolvedValue(moduleGuardAddressInfo);
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'setModuleGuard')
+      .with('parameters', [
+        dataDecodedParameterBuilder().with('value', zeroAddress).build(),
+      ])
+      .build();
+
+    const actual = await mapper.mapSettingsChange(
+      addressLookups,
+      dataDecoded,
+      safe,
+    );
+
+    expect(actual).toEqual(new DeleteModuleGuard(moduleGuardAddressInfo));
+    expect(addressLookups.getOrDefault).toHaveBeenCalledWith(moduleGuard, [
+      'CONTRACT',
+    ]);
+  });
+
+  it.each([null, zeroAddress])(
+    'should build a DeleteModuleGuard setting without a module guard when the queued Safe module guard is %s',
+    async (moduleGuard) => {
+      const safe = safeBuilder().with('moduleGuard', moduleGuard).build();
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'setModuleGuard')
+        .with('parameters', [
+          dataDecodedParameterBuilder().with('value', zeroAddress).build(),
+        ])
+        .build();
+
+      const actual = await mapper.mapSettingsChange(
+        addressLookups,
+        dataDecoded,
+        safe,
+      );
+
+      expect(actual).toEqual(new DeleteModuleGuard(null));
+      expect(addressLookups.getOrDefault).not.toHaveBeenCalled();
+    },
+  );
 
   it('should throw an error on a unknown setting', async () => {
     const dataDecoded = dataDecodedBuilder()
@@ -270,7 +412,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
       .build();
 
     await expect(
-      mapper.mapSettingsChange(addressLookups, dataDecoded),
+      mapper.mapSettingsChange(addressLookups, dataDecoded, null),
     ).rejects.toThrow();
   });
 });

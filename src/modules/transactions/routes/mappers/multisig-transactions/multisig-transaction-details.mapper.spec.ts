@@ -238,4 +238,40 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       safeAppInfo,
     });
   });
+
+  it.each([
+    [TransactionStatus.AwaitingConfirmations, true],
+    [TransactionStatus.AwaitingExecution, true],
+    [TransactionStatus.Success, false],
+    [TransactionStatus.Failed, false],
+    [TransactionStatus.Cancelled, false],
+  ])(
+    'should pass the Safe to the transaction info for status %s: %s',
+    async (txStatus, isQueued) => {
+      const chainId = faker.string.numeric();
+      const signer = privateKeyToAccount(generatePrivateKey());
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({ chainId, safe, signers: [signer] });
+      statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
+      transactionInfoMapper.mapTransactionInfo.mockResolvedValue(
+        transferTransactionInfoBuilder().build(),
+      );
+      addressInfoHelper.createLookups.mockReturnValue(addressLookups);
+
+      await mapper.mapDetails(chainId, transaction, safe, null);
+
+      expect(transactionInfoMapper.mapTransactionInfo).toHaveBeenCalledWith(
+        chainId,
+        transaction,
+        null,
+        addressLookups,
+        isQueued ? safe : null,
+      );
+    },
+  );
 });

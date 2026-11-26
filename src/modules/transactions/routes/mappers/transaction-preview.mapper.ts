@@ -60,6 +60,7 @@ export class TransactionPreviewMapper {
       multisigTransaction,
       dataDecoded,
       this.addressInfoHelper.createLookups(chainId),
+      safe,
     );
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,

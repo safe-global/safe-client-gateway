@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { AddOwner } from '#/modules/transactions/routes/entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '#/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '#/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
@@ -206,7 +207,7 @@ export class SettingsChangeMapper {
     addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
     createSet: (guard: AddressInfo) => TSet,
-    createDelete: () => TDelete,
+    createDelete: () => Promise<TDelete>,
   ): Promise<TSet | TDelete | null> {
     const guardValue: unknown = this.dataDecodedParamHelper.getValueAtPosition(
       dataDecoded,
@@ -227,27 +228,48 @@ export class SettingsChangeMapper {
     return createDelete();
   }
 
+  private async getCurrentGuard(
+    addressLookups: AddressLookups,
+    guard: Address | null,
+  ): Promise<AddressInfo | null> {
+    if (!guard || guard === NULL_ADDRESS) {
+      return null;
+    }
+    return await addressLookups.getOrDefault(guard, ['CONTRACT']);
+  }
+
   private handleSetGuard(
     addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
+    queuedSafe: Safe | null,
   ): Promise<DeleteGuard | SetGuard | null> {
     return this.handleGuardLike(
       addressLookups,
       dataDecoded,
       (guard) => new SetGuard(guard),
-      () => new DeleteGuard(),
+      async () =>
+        new DeleteGuard(
+          await this.getCurrentGuard(addressLookups, queuedSafe?.guard ?? null),
+        ),
     );
   }
 
   private handleSetModuleGuard(
     addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
+    queuedSafe: Safe | null,
   ): Promise<DeleteModuleGuard | SetModuleGuard | null> {
     return this.handleGuardLike(
       addressLookups,
       dataDecoded,
       (moduleGuard) => new SetModuleGuard(moduleGuard),
-      () => new DeleteModuleGuard(),
+      async () =>
+        new DeleteModuleGuard(
+          await this.getCurrentGuard(
+            addressLookups,
+            queuedSafe?.moduleGuard ?? null,
+          ),
+        ),
     );
   }
 
@@ -255,6 +277,7 @@ export class SettingsChangeMapper {
   async mapSettingsChange(
     addressLookups: AddressLookups,
     dataDecoded: DataDecoded | null,
+    queuedSafe: Safe | null,
   ): Promise<SettingsChange | null> {
     switch (dataDecoded?.method) {
       case SettingsChangeMapper.SET_FALLBACK_HANDLER:
@@ -274,9 +297,13 @@ export class SettingsChangeMapper {
       case SettingsChangeMapper.CHANGE_THRESHOLD:
         return this.handleChangeThreshold(dataDecoded);
       case SettingsChangeMapper.SET_GUARD:
-        return this.handleSetGuard(addressLookups, dataDecoded);
+        return this.handleSetGuard(addressLookups, dataDecoded, queuedSafe);
       case SettingsChangeMapper.SET_MODULE_GUARD:
-        return this.handleSetModuleGuard(addressLookups, dataDecoded);
+        return this.handleSetModuleGuard(
+          addressLookups,
+          dataDecoded,
+          queuedSafe,
+        );
     }
 
     throw new Error(`Unknown setting method: ${dataDecoded?.method}`);

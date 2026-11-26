@@ -16,7 +16,10 @@ import { TransactionDataMapper } from '#/modules/transactions/routes/mappers/com
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionDetailsMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
-import { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import {
+  isQueuedStatus,
+  MultisigTransactionStatusMapper,
+} from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 @Injectable()
@@ -74,6 +77,7 @@ export class MultisigTransactionDetailsMapper {
         transaction,
         dataDecoded,
         addressLookups,
+        isQueuedStatus(txStatus) ? safe : null,
       ),
       this.multisigTransactionExecutionDetailsMapper.mapMultisigExecutionDetails(
         chainId,

@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
 import {
@@ -247,6 +247,74 @@ describe('Preview transaction - Transactions Controller', () => {
           tokenInfoIndex: null,
         },
       });
+  });
+
+  it('should preview a guard removal with the current guard of the Safe', async () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const previewTransactionDto = previewTransactionDtoBuilder()
+      .with('to', safeAddress)
+      .with('value', '0')
+      .with('operation', Operation.CALL)
+      .build();
+    const safeResponse = safeBuilder().with('address', safeAddress).build();
+    const chainResponse = chainBuilder().build();
+    const guardContract = contractBuilder()
+      .with('address', safeResponse.guard)
+      .build();
+    const dataDecodedResponse = dataDecodedBuilder()
+      .with('method', 'setGuard')
+      .with('parameters', [
+        dataDecodedParameterBuilder()
+          .with('name', 'guard')
+          .with('type', 'address')
+          .with('value', zeroAddress)
+          .build(),
+      ])
+      .build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/`;
+      const getGuardContractUrl = `${dataDecoderUrl}/api/v1/contracts/${safeResponse.guard}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safeResponse), status: 200 });
+      }
+      if (url.includes(getGuardContractUrl)) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', [guardContract]).build()),
+          status: 200,
+        });
+      }
+      return Promise.reject({ status: 404 });
+    });
+    networkService.post.mockImplementation(({ url }) => {
+      const getDataDecodedUrl = `${dataDecoderUrl}/api/v1/data-decoder`;
+      if (url === getDataDecodedUrl) {
+        return Promise.resolve({
+          data: rawify(dataDecodedResponse),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    const response = await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/transactions/${safeAddress}/preview`)
+      .send(previewTransactionDto)
+      .expect(200);
+
+    expect(response.body.txInfo.type).toBe('SettingsChange');
+    expect(response.body.txInfo.settingsInfo).toEqual({
+      type: 'DELETE_GUARD',
+      guard: {
+        value: guardContract.address,
+        name: guardContract.displayName || guardContract.name,
+        logoUri: guardContract.logoUrl,
+      },
+    });
   });
 
   it('should preview a "standard" transaction even if the data cannot be decoded', async () => {

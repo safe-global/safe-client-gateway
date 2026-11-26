@@ -38,6 +38,7 @@ export class ModuleTransactionDetailsMapper {
         transaction,
         dataDecoded,
         addressLookups,
+        null,
       ),
       this.mapTransactionData(
         chainId,

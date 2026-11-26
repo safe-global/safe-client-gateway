@@ -64,3 +64,10 @@ export class MultisigTransactionStatusMapper {
     return hasEnoughConfirmations && recentlyModified;
   }
 }
+
+export function isQueuedStatus(status: TransactionStatus): boolean {
+  return (
+    status === TransactionStatus.AwaitingConfirmations ||
+    status === TransactionStatus.AwaitingExecution
+  );
+}

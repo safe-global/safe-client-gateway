@@ -13,7 +13,10 @@ import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionInfoMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
-import { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import {
+  isQueuedStatus,
+  MultisigTransactionStatusMapper,
+} from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
@@ -46,6 +49,7 @@ export class MultisigTransactionMapper {
       transaction,
       dataDecoded,
       addressLookups,
+      isQueuedStatus(txStatus) ? safe : null,
     );
     const executionInfo = this.executionInfoMapper.mapExecutionInfo(
       transaction,
