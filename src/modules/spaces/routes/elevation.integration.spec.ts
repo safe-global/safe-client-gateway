@@ -113,31 +113,6 @@ const GATED_ROUTES: Array<Route> = [
     path: (id) =>
       `/v1/spaces/${id}/address-book/${getAddress(faker.finance.ethereumAddress())}`,
   },
-  // Tags are shared by the whole Workspace, so any member's tag edit is gated
-  // even though members (not only admins) may make it.
-  {
-    name: 'POST /v1/spaces/:spaceId/address-book/tags',
-    method: 'post',
-    path: (id) => `/v1/spaces/${id}/address-book/tags`,
-    body: { name: faker.word.noun() },
-  },
-  {
-    name: 'PUT /v1/spaces/:spaceId/address-book/tags',
-    method: 'put',
-    path: (id) => `/v1/spaces/${id}/address-book/tags`,
-    body: { items: [] },
-  },
-  {
-    name: 'PATCH /v1/spaces/:spaceId/address-book/tags/:tagId',
-    method: 'patch',
-    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
-    body: { name: faker.word.noun() },
-  },
-  {
-    name: 'DELETE /v1/spaces/:spaceId/address-book/tags/:tagId',
-    method: 'delete',
-    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
-  },
   {
     name: 'PUT /v1/spaces/:spaceId/address-book/requests/:requestId/approve',
     method: 'put',
@@ -314,6 +289,30 @@ const UNGATED_ROUTES: Array<Route> = [
     name: 'PUT /v1/spaces/:spaceId/address-book/requests/:requestId/reject',
     method: 'put',
     path: (id) => `/v1/spaces/${id}/address-book/requests/1/reject`,
+  },
+  // Tags only label existing contacts and change no address, so no step-up.
+  {
+    name: 'POST /v1/spaces/:spaceId/address-book/tags',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'PUT /v1/spaces/:spaceId/address-book/tags',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { items: [] },
+  },
+  {
+    name: 'PATCH /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'patch',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'DELETE /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'delete',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
   },
 ];
 

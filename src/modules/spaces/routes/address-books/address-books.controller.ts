@@ -190,7 +190,7 @@ export class AddressBooksController {
   })
   @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @Put('/:spaceId/address-book/tags')
-  @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
+  @UseGuards(AuthGuard, SpacesAddressBookRateLimitGuard)
   public async setContactTags(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -233,7 +233,7 @@ export class AddressBooksController {
   @ApiUnprocessableEntityResponse({ description: 'Invalid tag name' })
   @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @Post('/:spaceId/address-book/tags')
-  @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
+  @UseGuards(AuthGuard, SpacesAddressBookRateLimitGuard)
   public async createTag(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -283,7 +283,7 @@ export class AddressBooksController {
   })
   @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @Patch('/:spaceId/address-book/tags/:tagId')
-  @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
+  @UseGuards(AuthGuard, SpacesAddressBookRateLimitGuard)
   public async renameTag(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -330,7 +330,7 @@ export class AddressBooksController {
   })
   @Delete('/:spaceId/address-book/tags/:tagId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard, ElevationGuard)
+  @UseGuards(AuthGuard)
   public async deleteTag(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
