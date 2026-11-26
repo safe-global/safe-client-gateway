@@ -264,22 +264,22 @@ describe('PortfolioApiService', () => {
         () => faker.string.numeric(),
         3,
       );
-      mockDomainService.getPortfolio.mockResolvedValue(
-        portfolioBuilder().build(),
-      );
+      mockDomainService.getPortfolio.mockImplementation(() => {
+        expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(
+          chainIds.length,
+        );
+        return Promise.resolve(portfolioBuilder().build());
+      });
 
       await service.getPortfolio({ address, fiatCode: 'USD', chainIds });
 
-      expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(chainIds.length);
+      expect(mockDomainService.getPortfolio).toHaveBeenCalledTimes(1);
       chainIds.forEach((chainId, i) => {
         expect(mockSafeRepository.getSafe).toHaveBeenNthCalledWith(i + 1, {
           chainId,
           address,
         });
       });
-      expect(mockSafeRepository.getSafe).toHaveBeenCalledBefore(
-        mockDomainService.getPortfolio,
-      );
     });
 
     it('should not read the portfolio of an address that is not a Safe, and stop at the first chain', async () => {

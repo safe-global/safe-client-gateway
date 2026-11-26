@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
-import { ChainIdsSchema } from '#/modules/portfolio/schemas/chain-ids.schema';
+import {
+  ChainIdsSchema,
+  MAX_PORTFOLIO_CHAIN_IDS,
+} from '#/modules/portfolio/schemas/chain-ids.schema';
 
 describe('ChainIdsSchema', () => {
   describe('valid inputs', () => {
@@ -44,6 +49,42 @@ describe('ChainIdsSchema', () => {
       const input = chainIds.join(',');
       const result = ChainIdsSchema.parse(input);
       expect(result).toEqual(chainIds);
+    });
+  });
+
+  describe('duplicates and size', () => {
+    it('should remove duplicate chain IDs, keeping the first order', () => {
+      const [first, second] = faker.helpers.uniqueArray(
+        () => faker.string.numeric(),
+        2,
+      );
+      const input = [first, second, first, ` ${second} `, first].join(',');
+
+      expect(ChainIdsSchema.parse(input)).toEqual([first, second]);
+    });
+
+    it('should accept many copies of one chain ID as a single entry', () => {
+      const chainId = faker.string.numeric();
+      const input = Array.from({ length: 1_000 }, () => chainId).join(',');
+
+      expect(ChainIdsSchema.parse(input)).toEqual([chainId]);
+    });
+
+    it('should accept the maximum number of distinct chain IDs', () => {
+      const chainIds = Array.from({ length: MAX_PORTFOLIO_CHAIN_IDS }, (_, i) =>
+        String(i + 1),
+      );
+
+      expect(ChainIdsSchema.parse(chainIds.join(','))).toEqual(chainIds);
+    });
+
+    it('should reject more distinct chain IDs than the maximum', () => {
+      const chainIds = Array.from(
+        { length: MAX_PORTFOLIO_CHAIN_IDS + 1 },
+        (_, i) => String(i + 1),
+      );
+
+      expect(() => ChainIdsSchema.parse(chainIds.join(','))).toThrow(ZodError);
     });
   });
 

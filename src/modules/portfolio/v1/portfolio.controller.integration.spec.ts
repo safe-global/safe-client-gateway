@@ -19,6 +19,7 @@ import {
 } from '#/datasources/network/network.service.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { MAX_PORTFOLIO_CHAIN_IDS } from '#/modules/portfolio/schemas/chain-ids.schema';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -180,6 +181,21 @@ describe('Portfolio Controller', () => {
       expect(networkService.get).not.toHaveBeenCalledWith(
         zerionPositionsRequest(address),
       );
+    });
+
+    it('GET /v1/portfolio/:address returns 422 for more chainIds than the maximum', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = Array.from(
+        { length: MAX_PORTFOLIO_CHAIN_IDS + 1 },
+        (_, i) => String(i + 1),
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v1/portfolio/${address}`)
+        .query({ chainIds: chainIds.join(',') })
+        .expect(422);
+
+      expect(networkService.get).not.toHaveBeenCalled();
     });
 
     it('GET /v1/portfolio/:address returns 422 without chainIds', async () => {
