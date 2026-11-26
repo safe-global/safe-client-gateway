@@ -117,9 +117,20 @@ function mockGraphQlErrors(...messages: Array<string>): void {
 
 describe('PolicyIndexerApi', () => {
   let target: PolicyIndexerApi;
+  let fakeConfigurationService: FakeConfigurationService;
+
+  function createTarget(): PolicyIndexerApi {
+    return new PolicyIndexerApi(
+      fakeConfigurationService,
+      mockNetworkService,
+      mockCacheService,
+      mockLoggingService,
+      new HttpErrorFactory(),
+    );
+  }
 
   beforeEach(() => {
-    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('policies.indexer.baseUri', baseUri);
     fakeConfigurationService.set(
       'expirationTimeInSeconds.policyIndexer',
@@ -130,13 +141,7 @@ describe('PolicyIndexerApi', () => {
     mockCacheService.getInvalidationTimeMs.mockResolvedValue(null);
     mockIndexerState();
 
-    target = new PolicyIndexerApi(
-      fakeConfigurationService,
-      mockNetworkService,
-      mockCacheService,
-      mockLoggingService,
-      new HttpErrorFactory(),
-    );
+    target = createTarget();
   });
 
   /** A read of one Sepolia Safe, for the cases that do not care which. */
@@ -153,6 +158,23 @@ describe('PolicyIndexerApi', () => {
         expect.objectContaining({
           url: `${baseUri}/v1/graphql`,
           networkRequest: { circuitBreaker: { key: 'policy-indexer' } },
+        }),
+      );
+    });
+
+    it('should send the API key as a Bearer token when one is configured', async () => {
+      const apiKey = faker.string.alphanumeric(32);
+      fakeConfigurationService.set('policies.indexer.apiKey', apiKey);
+      target = createTarget();
+
+      await readOneSafe();
+
+      expect(mockNetworkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          networkRequest: {
+            headers: { Authorization: `Bearer ${apiKey}` },
+            circuitBreaker: { key: 'policy-indexer' },
+          },
         }),
       );
     });
