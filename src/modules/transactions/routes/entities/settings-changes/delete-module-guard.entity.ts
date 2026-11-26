@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   SettingsChange,
   SettingsChangeType,
@@ -10,7 +10,7 @@ export class DeleteModuleGuard extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.DeleteModuleGuard] })
   declare type: SettingsChangeType.DeleteModuleGuard;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: AddressInfo,
     nullable: true,
     description:

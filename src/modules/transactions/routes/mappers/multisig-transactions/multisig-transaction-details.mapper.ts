@@ -11,13 +11,15 @@ import {
 } from '#/modules/transactions/routes/constants';
 import { TransactionData } from '#/modules/transactions/routes/entities/transaction-data.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
-import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { TransactionDataMapper } from '#/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionDetailsMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
-import { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import {
+  isQueuedStatus,
+  MultisigTransactionStatusMapper,
+} from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 @Injectable()
@@ -47,9 +49,6 @@ export class MultisigTransactionDetailsMapper {
     });
 
     const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
-    const isQueued =
-      txStatus === TransactionStatus.AwaitingConfirmations ||
-      txStatus === TransactionStatus.AwaitingExecution;
     const note = this.noteMapper.mapTxNote(transaction);
     const addressLookups = this.addressInfoHelper.createLookups(chainId);
     const [
@@ -78,7 +77,7 @@ export class MultisigTransactionDetailsMapper {
         transaction,
         dataDecoded,
         addressLookups,
-        isQueued ? safe : null,
+        isQueuedStatus(txStatus) ? safe : null,
       ),
       this.multisigTransactionExecutionDetailsMapper.mapMultisigExecutionDetails(
         chainId,
