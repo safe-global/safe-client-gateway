@@ -991,48 +991,48 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/bull-shared@npm:^12.0.1":
-  version: 12.0.1
-  resolution: "@nestjs/bull-shared@npm:12.0.1"
+"@nestjs/bull-shared@npm:^12.0.2":
+  version: 12.0.2
+  resolution: "@nestjs/bull-shared@npm:12.0.2"
   dependencies:
     tslib: "npm:2.8.1"
   peerDependencies:
     "@nestjs/common": ^10.0.0 || ^11.0.0 || ^12.0.0
     "@nestjs/core": ^10.0.0 || ^11.0.0 || ^12.0.0
-  checksum: 10/397a5003452949f9f621f927924c24a79b92ba37e8e736e29390c50087ba378e0aa300113d359e6ef4a69ac02058e2278a09060a6f943e9b290c7c7f5a3e27a3
+  checksum: 10/b38bf22c9c26944c5864b1325c3b00ee7dcd55f26d9ae5849e83ca20ef32fbebe4d3151b849e43e9448ad1edbddd67d3662464f5e99f42ca8d0ba9352dbc6260
   languageName: node
   linkType: hard
 
-"@nestjs/bullmq@npm:^12.0.1":
-  version: 12.0.1
-  resolution: "@nestjs/bullmq@npm:12.0.1"
+"@nestjs/bullmq@npm:^12.0.2":
+  version: 12.0.2
+  resolution: "@nestjs/bullmq@npm:12.0.2"
   dependencies:
-    "@nestjs/bull-shared": "npm:^12.0.1"
+    "@nestjs/bull-shared": "npm:^12.0.2"
     tslib: "npm:2.8.1"
   peerDependencies:
     "@nestjs/common": ^10.0.0 || ^11.0.0 || ^12.0.0
     "@nestjs/core": ^10.0.0 || ^11.0.0 || ^12.0.0
     bullmq: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0
-  checksum: 10/50e31d800a28734762ff991f2724770031db406d9abfa1a4870b66e05cd5bb4b33a4b02fc0ea2ae1c64c247958098b82898a7f665e73edca6190d228270d40e6
+  checksum: 10/184e92e9dfa7f336bf5f3c66e48af76ff75a5d9537dea21eafb7d4a3c77f5e86b804ec8c5435cebf8ab45ef4753f64d9340773fc162e8c8f4b223c35607cdf0e
   languageName: node
   linkType: hard
 
-"@nestjs/cache-manager@npm:12.0.4":
-  version: 12.0.4
-  resolution: "@nestjs/cache-manager@npm:12.0.4"
+"@nestjs/cache-manager@npm:12.0.5":
+  version: 12.0.5
+  resolution: "@nestjs/cache-manager@npm:12.0.5"
   peerDependencies:
     "@nestjs/common": ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
     "@nestjs/core": ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
     cache-manager: ">=6"
     keyv: ">=5"
     rxjs: ^7.8.1
-  checksum: 10/1c00cfc52d68b080ff95362b92306c7e6fa3c8cdab324e0db3ec559b8d787fbb02ff8138c055e465b5a5f1a4efc47a53c40c06df00b7ea5870d33177c51649d2
+  checksum: 10/aa23a35cd4be8ca96745a7c4b345ed047cc997c3504aaf9658e690d8127fc81491246783da09dc5c19de313ecd4664d1f4aab7a7552d9f74bf729cd909e54169
   languageName: node
   linkType: hard
 
-"@nestjs/common@npm:12.4.2":
-  version: 12.4.2
-  resolution: "@nestjs/common@npm:12.4.2"
+"@nestjs/common@npm:12.5.1":
+  version: 12.5.1
+  resolution: "@nestjs/common@npm:12.5.1"
   dependencies:
     "@standard-schema/spec": "npm:1.1.0"
     file-type: "npm:22.3.0"
@@ -1050,7 +1050,7 @@ __metadata:
       optional: true
     class-validator:
       optional: true
-  checksum: 10/f3f4d656dafa7296250578962a71a0f10d75163b45ed81ddc565b051e5f0e21c8589d88f749d8606c4c828839545967e212d46088561758fd0178f58c0ef35e9
+  checksum: 10/6ed0e6a3eea3fd6aff8f06a6a5f7dbf847e920a94962c102f3abbad6885df67e9f60615f1315b7cf6cdc4bd1fd8b9e546020245a52cc5c5cf3fe1c25d55b0281
   languageName: node
   linkType: hard
 
@@ -1069,9 +1069,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/core@npm:12.4.2":
-  version: 12.4.2
-  resolution: "@nestjs/core@npm:12.4.2"
+"@nestjs/core@npm:12.5.1":
+  version: 12.5.1
+  resolution: "@nestjs/core@npm:12.5.1"
   dependencies:
     fast-safe-stringify: "npm:2.1.1"
     iterare: "npm:1.2.1"
@@ -1092,7 +1092,7 @@ __metadata:
       optional: true
     "@nestjs/websockets":
       optional: true
-  checksum: 10/4939fd4959d480d1b1aba6d10f833baba363e9c539e319cbe353faf927db91d5c88167a812de20e0efa63373100a4b3bb67dac460341267d34d1211b7b35317a
+  checksum: 10/3a9d4179dddc13078338b641caa72c11ce2da27c5485fa896ee5f30ef82ca08ab1a7cc3af6bd3c50f6f03611c7ea6b9b985592c130ecd0eceecbbebd10381f60
   languageName: node
   linkType: hard
 
@@ -1113,9 +1113,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/platform-fastify@npm:12.4.2":
-  version: 12.4.2
-  resolution: "@nestjs/platform-fastify@npm:12.4.2"
+"@nestjs/platform-fastify@npm:12.5.1":
+  version: 12.5.1
+  resolution: "@nestjs/platform-fastify@npm:12.5.1"
   dependencies:
     "@fastify/cors": "npm:11.4.1"
     "@fastify/formbody": "npm:9.0.1"
@@ -1140,19 +1140,19 @@ __metadata:
       optional: true
     "@fastify/view":
       optional: true
-  checksum: 10/0dcaefacf01eee273ef05d366303ad4f1af5bb1a3d7e4c5c496988159c091322aa68d0628a8a516024b01b44ed3a685785db2e87a60f329d9aeb4e523723cecc
+  checksum: 10/f2192fb79ca51f13e92a8fe4216b701b1442a6cb278a735b5546f2106ade5fa19d9e1e0aaf8e03bbe7f9236feefa20108c4971e18fb6ccfb6dc7971e29496d26
   languageName: node
   linkType: hard
 
-"@nestjs/schedule@npm:12.0.3":
-  version: 12.0.3
-  resolution: "@nestjs/schedule@npm:12.0.3"
+"@nestjs/schedule@npm:12.0.4":
+  version: 12.0.4
+  resolution: "@nestjs/schedule@npm:12.0.4"
   dependencies:
     cron: "npm:4.4.0"
   peerDependencies:
     "@nestjs/common": ^11.0.0 || ^12.0.0
     "@nestjs/core": ^11.0.0 || ^12.0.0
-  checksum: 10/31b90c673717574cb38f3f612b1615fbc9b6277571d19e1b442d593a496cf14aa302a33b2415f5ee495e812d09df5cacdb3d46d1dd56f99fd33611c85b0766f5
+  checksum: 10/777efe6b594e142cb54d4e219c13240a7a3aaaf11d36bc9b5178f7b5bc3b6bf4788e7eac7800b70ea787755efda8306b9807940f332a554d234c97c4cd55c1e8
   languageName: node
   linkType: hard
 
@@ -1181,9 +1181,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/swagger@npm:12.1.1":
-  version: 12.1.1
-  resolution: "@nestjs/swagger@npm:12.1.1"
+"@nestjs/swagger@npm:12.1.2":
+  version: 12.1.2
+  resolution: "@nestjs/swagger@npm:12.1.2"
   dependencies:
     "@microsoft/tsdoc": "npm:0.17.1"
     "@nestjs/mapped-types": "npm:12.0.1"
@@ -1209,13 +1209,13 @@ __metadata:
       optional: true
     typescript:
       optional: true
-  checksum: 10/6b2874dbaf4c7d845ef59f0ad6fdc3400a1f54df4c821a0617b2c4040bca8927353eb651d46c8813379a7f3a47d73c38a610fd9d11fcb8d0eb0c07111226a469
+  checksum: 10/798a0da940cb99884530c57c1425e8784eb9f2acfde95295fc0dba690871bce48b6efe9b34b0f1e787a8704ec6e560935c6590e25420db143a3c278212daf2f1
   languageName: node
   linkType: hard
 
-"@nestjs/testing@npm:12.4.2":
-  version: 12.4.2
-  resolution: "@nestjs/testing@npm:12.4.2"
+"@nestjs/testing@npm:12.5.1":
+  version: 12.5.1
+  resolution: "@nestjs/testing@npm:12.5.1"
   dependencies:
     tslib: "npm:2.9.1"
   peerDependencies:
@@ -1228,7 +1228,7 @@ __metadata:
       optional: true
     "@nestjs/platform-express":
       optional: true
-  checksum: 10/253d33ff47124d86bd8eeb9258d431675acfda00565c2ccf1a1fb9b2ab6b929c2ae0e6e6a69c071a816fe09a5c1e11f44986af5d15bd21ffcc0ffd34a0b45e77
+  checksum: 10/53005b6a138a4c4aae859f8db418c5b46f962b219552d41002c879f732ebfa7b62d6cb47f816fa569eb0bafeae655989a6dc109f5ff1d282bd33845b8a3f95d7
   languageName: node
   linkType: hard
 
@@ -4982,16 +4982,16 @@ __metadata:
     "@fastify/cookie": "npm:^11.1.5"
     "@fastify/static": "npm:^10.1.11"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.13.1"
-    "@nestjs/bullmq": "npm:^12.0.1"
-    "@nestjs/cache-manager": "npm:12.0.4"
-    "@nestjs/common": "npm:12.4.2"
+    "@nestjs/bullmq": "npm:^12.0.2"
+    "@nestjs/cache-manager": "npm:12.0.5"
+    "@nestjs/common": "npm:12.5.1"
     "@nestjs/config": "npm:12.1.1"
-    "@nestjs/core": "npm:12.4.2"
-    "@nestjs/platform-fastify": "npm:12.4.2"
-    "@nestjs/schedule": "npm:12.0.3"
+    "@nestjs/core": "npm:12.5.1"
+    "@nestjs/platform-fastify": "npm:12.5.1"
+    "@nestjs/schedule": "npm:12.0.4"
     "@nestjs/serve-static": "npm:12.1.1"
-    "@nestjs/swagger": "npm:12.1.1"
-    "@nestjs/testing": "npm:12.4.2"
+    "@nestjs/swagger": "npm:12.1.2"
+    "@nestjs/testing": "npm:12.5.1"
     "@nestjs/typeorm": "npm:12.0.3"
     "@safe-global/safe-deployments": "npm:1.37.67"
     "@safe-global/safe-modules-deployments": "npm:3.0.13"
