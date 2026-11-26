@@ -13,8 +13,10 @@ import {
   getSafeMigrationVersions,
   getSafeSingletonVersions,
   getSafeToL2SetupVersions,
+  getTokenCallbackHandlerVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
+  isTokenCallbackHandlerDeployed,
 } from '#/domain/common/utils/deployments';
 
 // Canonical 1.5.0 deployment addresses (identical across all chains)
@@ -23,6 +25,9 @@ const EXTENSIBLE_FALLBACK_HANDLER_150 = getAddress(
 );
 const COMPATIBILITY_FALLBACK_HANDLER_150 = getAddress(
   '0x3EfCBb83A4A7AfcB4F68D501E2c2203a38be77f4',
+);
+const TOKEN_CALLBACK_HANDLER_150 = getAddress(
+  '0x54e86d004d71a8D2112ec75FaCE57D730b0433F3',
 );
 const MAINNET_CHAIN_ID = '1';
 
@@ -40,6 +45,34 @@ describe('deployments', () => {
       expect(getExtensibleFallbackHandlerVersions()).toEqual(
         expect.arrayContaining(['1.5.0']),
       );
+    });
+  });
+
+  describe('getTokenCallbackHandlerVersions', () => {
+    it('should list only 1.5.0, leaving out the 1.1.1 DefaultCallbackHandler', () => {
+      expect(getTokenCallbackHandlerVersions()).toEqual(['1.5.0']);
+    });
+  });
+
+  describe('isTokenCallbackHandlerDeployed', () => {
+    it('should return true for the canonical TokenCallbackHandler deployment', () => {
+      expect(
+        isTokenCallbackHandlerDeployed({
+          chainId: MAINNET_CHAIN_ID,
+          version: '1.5.0',
+          address: TOKEN_CALLBACK_HANDLER_150,
+        }),
+      ).toBe(true);
+    });
+
+    it('should return false for the CompatibilityFallbackHandler deployment', () => {
+      expect(
+        isTokenCallbackHandlerDeployed({
+          chainId: MAINNET_CHAIN_ID,
+          version: '1.5.0',
+          address: COMPATIBILITY_FALLBACK_HANDLER_150,
+        }),
+      ).toBe(false);
     });
   });
 
