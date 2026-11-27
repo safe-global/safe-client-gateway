@@ -15,6 +15,7 @@ import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/deco
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import { PolicyConfigurationRequestVerifier } from '#/modules/policies/routes/helpers/policy-configuration-request-verifier.helper';
 import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
@@ -55,6 +56,7 @@ import { UsersModule } from '#/modules/users/users.module';
   providers: [
     PoliciesService,
     PolicyConfigurationRequestsService,
+    PolicyConfigurationRequestVerifier,
     SpaceEncryptionService,
     SpendingLimitMapper,
     ProposerMapper,

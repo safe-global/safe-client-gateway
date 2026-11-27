@@ -8,18 +8,20 @@ import {
   PolicyConfigurationsSchema,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
-import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 import { HexBytesSchema } from '#/validation/entities/schemas/hexbytes.schema';
+import { SignatureSchema } from '#/validation/entities/schemas/signature.schema';
 
-export const CreatePolicyConfigurationRequestSchema = z.object({
-  root: HexSchema,
-  configurations: PolicyConfigurationsSchema,
+const Bytes32Schema = HexBytesSchema.refine((value) => size(value) === 32, {
+  error: 'Invalid 32-byte hex',
 });
 
-export const PolicyConfigurationRootSchema = HexBytesSchema.refine(
-  (root) => size(root) === 32,
-  { error: 'Invalid 32-byte hex' },
-);
+export const PolicyConfigurationRootSchema = Bytes32Schema;
+
+export const CreatePolicyConfigurationRequestSchema = z.object({
+  configurations: PolicyConfigurationsSchema,
+  safeTxHash: Bytes32Schema,
+  signature: SignatureSchema,
+});
 
 export type CreatePolicyConfigurationRequestPayload = z.infer<
   typeof CreatePolicyConfigurationRequestSchema
@@ -51,20 +53,27 @@ export class CreatePolicyConfigurationRequestDto
   implements CreatePolicyConfigurationRequestPayload
 {
   @ApiProperty({
-    description:
-      'keccak256(abi.encode(Configuration[])), as requested on-chain',
-  })
-  public readonly root!: Hex;
-  @ApiProperty({
     type: PolicyConfigurationDto,
     isArray: true,
     minItems: 1,
     maxItems: MAX_POLICY_CONFIGURATIONS_PER_REQUEST,
+    description:
+      'The configurations whose root, keccak256(abi.encode(Configuration[])), the Safe transaction requests',
   })
   public readonly configurations!: [
     PolicyConfiguration,
     ...Array<PolicyConfiguration>,
   ];
+  @ApiProperty({
+    description:
+      "Hash of the queued Safe transaction calling requestConfiguration(root) on the Safe's policy guard",
+  })
+  public readonly safeTxHash!: Hex;
+  @ApiProperty({
+    description:
+      "A current owner's signature of safeTxHash. A contract signature or approved hash must already be a confirmation of the queued transaction.",
+  })
+  public readonly signature!: Hex;
 }
 
 export class CreatePolicyConfigurationRequestResponse {

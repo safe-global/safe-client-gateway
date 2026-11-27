@@ -28,6 +28,7 @@ import type {
   CreatePolicyConfigurationRequestPayload,
   CreatePolicyConfigurationRequestResponse,
 } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
+import { PolicyConfigurationRequestVerifier } from '#/modules/policies/routes/helpers/policy-configuration-request-verifier.helper';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
@@ -53,6 +54,8 @@ export class PolicyConfigurationRequestsService {
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(PolicyConfigurationRequestVerifier)
+    private readonly verifier: PolicyConfigurationRequestVerifier,
   ) {
     this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
       'policies.maxConfigurationRequestsPerSpaceSafe',
@@ -60,8 +63,9 @@ export class PolicyConfigurationRequestsService {
   }
 
   /**
-   * Stores the configurations of a request. The root is recomputed from them
-   * and has to match; it is not checked on-chain, as the wallet stores first.
+   * Stores the configurations of a request once an owner backs their root: a
+   * queued Safe transaction requesting it on the Safe's policy guard, signed
+   * by a current owner.
    */
   public async create(args: {
     spaceId: Space['id'];
@@ -77,18 +81,16 @@ export class PolicyConfigurationRequestsService {
       address: args.safe.address,
     });
 
-    // Stored as recomputed, so a retry in another casing hits the same row.
     const root = configurationRoot(args.payload.configurations);
-    if (root !== args.payload.root.toLowerCase()) {
-      throw new HttpExceptionNoLog(
-        'The configurations do not hash to the given root',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
     this.assertKnownPolicies({
       chainId: args.safe.chainId,
       configurations: args.payload.configurations,
+    });
+    await this.verifier.verify({
+      safe: args.safe,
+      root,
+      safeTxHash: args.payload.safeTxHash,
+      signature: args.payload.signature,
     });
     await this.assertBelowCap({ ...args, root });
 

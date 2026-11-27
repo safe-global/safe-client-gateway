@@ -55,7 +55,7 @@ export class PoliciesController {
   @ApiOperation({
     summary: 'Store the configurations of a delayed configuration request',
     description:
-      'Stores the `Configuration[]` behind a `requestConfiguration(root)`, which publishes only the hash on-chain, so that the configurations a later `applyConfiguration` needs survive the delay. Call it before requesting the configuration on-chain: the root is recomputed from the configurations and has to match, but it is not required to exist on-chain yet. Idempotent: storing the same root again is a no-op.',
+      "Stores the `Configuration[]` behind a `requestConfiguration(root)`, which publishes only the hash on-chain, so that the configurations a later `applyConfiguration` needs survive the delay. Call it after proposing the Safe transaction: it must be queued for this Safe, call `requestConfiguration(root)` on the Safe's policy guard with the root recomputed from the configurations, and `signature` must be a current owner's signature of it. Idempotent: storing the same root again is a no-op.",
   })
   @ApiParam({
     name: 'spaceId',
@@ -82,7 +82,7 @@ export class PoliciesController {
   })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid chain ID, Safe address or body, the configurations do not hash to the given root, the chain has no policy engine, or a policy is neither a known policy contract on the chain nor the zero address',
+      "Invalid chain ID, Safe address or body, the chain has no policy engine, a policy is neither a known policy contract on the chain nor the zero address, the Safe transaction is not queued for this Safe or does not call `requestConfiguration(root)` on the Safe's policy guard, or the signature is not a current owner's",
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
