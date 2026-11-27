@@ -46,6 +46,32 @@ This mirror is distinct from the narrower `FakeConfigurationService` (`src/confi
 
 An entry that lingers in `.env.sample.json` after its variable leaves the code only warns (`extraInJson`) and exits zero; neither check enforces deleting it, but `commits-and-prs.md`'s "A removal takes what only it used" rule requires it.
 
+### Environment-specific values and tunables come from config
+
+**Rule:** A value that differs between environments (a URL, a host) and a tunable an operator may need to change without a release (a timeout, TTL, poll interval, batch size, queue attempts or retention) are read from configuration; only the fixed part stays a constant. A tunable keeps today's value as its default. A URL or host never defaults to a local or staging value: it defaults to production or has no default, so a deployment that misses it fails at boot. A tunable that is unsafe outside a range still goes to config, with the range enforced in `RootConfigurationSchema` so a bad value fails at boot. A value stays a named constant when it is part of the published API contract, or has one right value in every environment.
+
+**Why:** an environment-specific literal can only be right in one environment, and a tunable in code takes a release to change. The literal usually arrives under a `// TODO: make this configurable`, which reads in review as already handled. A contract value behind an env var would make the published spec, and the clients generated from it, vary by deployment.
+
+**Canonical example:** `src/modules/spaces/routes/members/space-invite-email.service.ts` builds the invite link from `safeWebApp.baseUri` plus the constant `SPACE_INVITE_PATH`. `RootConfigurationSchema` bounds `SAFENET_CHECKS_QUEUE_ATTEMPTS` to 1…10 and both Safenet retention ages to at least `SAFENET_CHECKS_MIN_RETENTION_SECONDS`. `MAX_TOKEN_ADDRESSES` in `src/modules/tokens/routes/entities/token-addresses.dto.entity.ts` stays a constant because the Swagger descriptions, and the wallet client generated from them, carry the number.
+
+```ts
+// Don't
+// TODO: make this configurable and environment-specific
+export const SPACE_INVITE_URL = 'http://localhost:3001/welcome/spaces';
+private static readonly MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60;
+// Do — the environment-specific part from config, the fixed part a constant
+export const SPACE_INVITE_PATH = '/welcome/spaces';
+const baseUri = this.configurationService.getOrThrow<string>('safeWebApp.baseUri');
+this.inviteUrl = new URL(SPACE_INVITE_PATH, baseUri).toString();
+// Do — a tunable in configuration.ts with today's value as the default…
+attempts: Number.parseInt(
+  process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
+  10,
+),
+// …and its range in RootConfigurationSchema
+SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce.number().int().min(1).max(10).optional(),
+```
+
 ### Feature flags
 
 **Rule:** A feature flag's environment variable carries the `FF_` prefix and is read via the `features.*` namespace; a new flag's mapping in `configuration.ts` carries a comment naming an owner and the condition under which the flag comes out.

@@ -50,6 +50,34 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 **Anti-example:** `src/modules/portfolio/domain/portfolio.service.ts` (a route-shaped service placed under `domain/`) — do not imitate.
 
+### Queries in the repository, request rules in the route service
+
+**Rule:** A lookup and its `*OrFail` form live on the repository, not as a private method on a route service. A check that rejects the request because of a row's state — a status precondition throwing `ConflictException` — lives in the route service. A check that must hold atomically with its write stays in the repository, inside that write: the last-admin 409s in `src/modules/users/domain/members/members.repository.ts` and `src/modules/users/domain/users.repository.ts` read the admin list under the Space lock in the same transaction, as `security.md`'s "Workspace authorization through the shared assertions only" rule records, and a cooldown is a conditional write that reports whether it applied.
+
+**Why:** each layer otherwise does the other's job. A lookup on a route service cannot be reused by the next service that needs it, so it gets written again. A state check inside a repository method turns a plain write into a request rule its other callers may not share, and the repository starts building responses for one endpoint.
+
+**Canonical example:** `SurveysRepository.findActiveBySlugOrFail` in `src/modules/surveys/domain/surveys.repository.ts`, called from `SurveysService`, replaced a private `findActiveSurveyOrFail` on the service. `MembersService.renewInvite` in `src/modules/spaces/routes/members/members.service.ts` asserts the caller is an admin, loads the member, throws `ConflictException` unless it is `INVITED`, then calls `membersRepository.renewInvite`. That writes the new expiry only if the invite was not renewed within the cooldown, and the service turns a `false` into a 429. `SpaceSetupService.findSetupOrFail` and `SpaceSetupApplyService.findCreatorIdOrFail` in `src/modules/spaces/routes/setup/` predate this rule and are not precedent.
+
+```ts
+// Don't — route service
+private async findActiveSurveyOrFail(slug: Survey['slug']): Promise<Survey> { /* … */ }
+// Don't — repository
+if (member.status !== 'INVITED') {
+  throw new ConflictException('Only a pending invitation can be renewed.');
+}
+// Do — route service
+const survey = await this.surveysRepository.findActiveBySlugOrFail(args.slug);
+await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
+const member = await this.membersRepository.findOneOrFail({ user: { id: args.userId }, space: { id: args.spaceId } });
+if (member.status !== 'INVITED') {
+  throw new ConflictException('Only a pending invitation can be renewed.');
+}
+const renewed = await this.membersRepository.renewInvite({ memberId: member.id, inviteExpiresAt, notRenewedSince /* , … */ });
+if (!renewed) {
+  throw new HttpExceptionNoLog('Invitation was renewed recently. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
+}
+```
+
 ### Symbol DI wiring
 
 **Rule:** Declare `export const IFooRepository = Symbol('IFooRepository')` next to `export interface IFooRepository` in `<foo>.repository.interface.ts`. Bind it in the owning module as `{ provide: IFooRepository, useClass: FooRepository }`. Inject it as `@Inject(IFooRepository) private readonly fooRepository: IFooRepository` — the property is typed as the interface, never the concrete class.

@@ -1,6 +1,6 @@
 ---
 name: cgw-performance
-description: Use when a change in safe-client-gateway adds or modifies a cached read, a cache key, a TTL, an outbound upstream call, a datasource, a BullMQ job, or anything on a hot path. Covers the new-cached-call recipe (CacheRouter getter, CacheFirstDataSource with a config TTL and notFoundExpireTimeSeconds, clear*() on every write, EventCacheHelper wiring - all in one PR), the never-call-fetch-directly rule, Promise.all/allSettled over sequential awaits, batching to provider limits, and the small-single-concern-measured protocol for perf PRs. Triggers on "cache", "Redis", "TTL", "invalidate", "slow", "p95", "latency", "N+1", "timeout", "retry", "backoff", "circuit breaker", "batch", "chunk", "upstream call", "queue job", "await in a loop".
+description: Use when a change in safe-client-gateway adds or modifies a cached read, a cache key, a TTL, an outbound upstream call, a datasource, a BullMQ job, or anything on a hot path. Covers the new-cached-call recipe (CacheRouter getter, CacheFirstDataSource with a config TTL and notFoundExpireTimeSeconds, clear*() on every write, EventCacheHelper wiring - all in one PR), the never-call-fetch-directly rule, Promise.all/allSettled over sequential awaits (batched() for per-item reads, sequential only where the order decides the outcome), batching to provider limits, and the small-single-concern-measured protocol for perf PRs. Triggers on "cache", "Redis", "TTL", "invalidate", "slow", "p95", "latency", "N+1", "timeout", "retry", "backoff", "circuit breaker", "batch", "chunk", "upstream call", "queue job", "await in a loop".
 ---
 
 # CGW Caching and Performance
@@ -15,4 +15,4 @@ Three non-negotiables from [AGENTS.md](../../../AGENTS.md) live here:
 
 Perf PRs follow their own protocol: small, single-concern, and measured. A 19-file perf refactor here (#2926) was reverted the same day (#3034) because the one bad change could not be separated from the good ones.
 
-Also load **cgw-remarks** — R-020 (bypassing `NetworkService`), R-021 (cache write with no invalidation), R-022 (sequential or partial cache clears), and R-036 (a cached value whose shape or meaning changes under the same key) are the recurring shapes.
+Also load **cgw-remarks** — R-020 (bypassing `NetworkService`), R-021 (cache write with no invalidation), R-022 (sequential or partial cache clears), R-036 (a cached value whose shape or meaning changes under the same key), and R-043 (independent awaits in sequence) are the recurring shapes.

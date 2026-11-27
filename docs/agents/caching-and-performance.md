@@ -82,7 +82,22 @@ private readCachedGrants(
 
 **Anti-example (do not imitate the pattern):** `src/modules/transactions/routes/mappers/common/twap-order.mapper.ts`'s `getPartOrders` awaits `swapsRepository.getFullAppData` and `swapsRepository.getOrder` inside a `for (const part of args.partsToFetch)` loop, one TWAP part at a time, even though each part's app data and order lookup are independent of every other part's.
 
-Prefer `Promise.all` when any single failure should fail the whole call, and `Promise.allSettled` when one item's failure should not sink the rest — the batched price fetch in the next rule is the `allSettled` case.
+Prefer `Promise.all` when any single failure should fail the whole call, and `Promise.allSettled` when one item's failure should not sink the rest — the batched price fetch in the next rule is the `allSettled` case. Per-item upstream reads that would overrun the provider all at once go through `batched()` (`src/domain/common/utils/batch.ts`), a configured number at a time, as `PoliciesService.enforcersPerSafe` does for the Safes of a Space. `SpaceTransactionsService.getTransactionQueue` (`src/modules/transactions/routes/space-transactions.service.ts`) reads a Space's Safes and the caller's wallets together:
+
+```ts
+// Don't
+const spaceSafes = await this.spaceSafesRepository.findBySpaceId(args.spaceId);
+const wallets = await this.walletsRepository.findByUser(userId);
+// Do
+const [spaceSafes, wallets] = await Promise.all([
+  this.spaceSafesRepository.findBySpaceId(args.spaceId),
+  this.walletsRepository.findByUser(userId),
+]);
+// Do — per-item upstream reads, a configured number at a time
+const settled = await batched(safes, this.batchSize, (safe) => this.enforcers(safe));
+```
+
+Calls are not independent when their order decides the outcome. `WorkspaceRelayer` (`src/modules/relay/domain/relayers/workspace.relayer.ts`) checks Safe ownership, then quota, then the Tenderly simulation, one after another: a request it will reject never pays for the simulation, and the same request always gets the same status, where `Promise.all` would return whichever rejection finished first.
 
 ### Batch and chunk upstream calls
 

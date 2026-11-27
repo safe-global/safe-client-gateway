@@ -287,6 +287,35 @@ export type SafeRef = z.infer<typeof SafeRefSchema>;
 **Spotted in:** #3531 ("Should we use Address from viem instead of string here?", then "This could also use Address from viem" and "Same here :)" on two more files), #3391 ("Nit: Would be nice to infer the type from the global `ChainIdSchema`.", "Nit: Same here, we could infer the type from `AddressSchema`"), #3392 ("Nit: Can we read it from the schemas?"), #3564 ("Why are we not using the current types we have? We have Safe TX type."), #3117 (a suggestion replacing `uuid: string` with `uuid: UUID`).
 **Status:** active — `best-practices.md`'s "The project's type, not `string`" rule owns this, with `api-dtos-and-validation.md`'s "Domain types from Zod" rule for the `z.infer` side.
 
+### R-037: A parameter typed wider than what the method handles
+
+**Pattern:** a parameter whose type admits values the method does not handle: `ordering?: string` for a closed set of four values, a `FeatureKey` on a method that only checks `grant.enabled`, a `QueryDeepPartialEntity<Space>` where the interface declares `Partial<Pick<Space, 'name' | 'status'>>`.
+
+**Why it's bad:** #3454's `assertFeatureGranted` would have admitted a metered feature with an exhausted quota, and #3163's `typeof updatePayload.name === 'string'` checks existed only because the parameter admitted more than the method used.
+
+**Corrected form:**
+
+```ts
+// Don't
+assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Promise<void>;
+// Do
+assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
+```
+
+**Spotted in:** #3550 ("Does it make more sense to add a stricter enum instead of a plain string, if we have only these 4 options?"), #3454 ("It takes any FeatureKey but checks only grant.enabled, so a future caller passing sponsored_transactions (plan enabled, quota exhausted) is admitted and the metered allowance is silently bypassed."), #3163 ("if we type it instead as `Partial<Pick<Space, 'name' | 'status'>>,` then we can simplify the method").
+**Status:** active — `best-practices.md`'s "Parameters as narrow as what the method handles" rule owns this.
+
+### R-038: A variant or field nothing reads
+
+**Pattern:** a result union whose variants every reader handles the same way, or a field added to a returned shape with no consumer that acts on it.
+
+**Why it's bad:** in #3199 a `degraded` result and a missing key both fell through to `serveDegradedBalance`, so the union told readers nothing; #3656's `willRevert` had no consumer.
+
+**Corrected form:** #3199 stored the portfolio directly (`Map<string, ZerionWalletPortfolio>`, a failed fetch is a missing key); #3656 removed `willRevert` before it shipped.
+
+**Spotted in:** #3199 ("`PortfolioResult` / the `degraded` variant looks droppable — can simplify to a plain portfolio map"), #3656 ("is `willRevert` needed?").
+**Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this.
+
 ## Structure
 
 ### R-013: Interfaces, types, constants, and helpers inline in a service file
@@ -344,6 +373,39 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 **Spotted in:** #3217 ("We could use or extend the current `AuthGuard`… The code here is mostly duplicated"), #3220 ("i wonder if we can have a base function that then is implemented/extended by both queue-service and tx-service helpers as the logic is exactly the same?"), #3533 ("Make it (await this.findBySpaceIds([spaceId])).get(spaceId) ?? []."), #3565 ("we could generalizes `src/datasources/kms/aws-kms-signer.service.ts` and have only the Ethereum part in this class"), #3619 ("extracting a separate function e.g. normalizeTagNameKey so it can be used in other places").
 **Status:** active
 
+### R-039: An `export` nothing outside the file imports
+
+**Pattern:** a schema, DTO class or constant exported from a file whose only consumer is that same file — or exported and used nowhere at all.
+
+**Why it's bad:** in #2856 the variant schemas were exported only because their siblings were, while every test went through the main `ThreatAnalysisResultSchema`; #2850's exported constant had no user at all.
+
+**Corrected form:** drop the `export` (#2856, #3104), or the symbol when nothing uses it (#2850's `MIN_FALLBACK_HANDLER_VERSION`).
+
+**Spotted in:** #2856 ("is this schema used anywhere outside the file? If not we dont have to export it."), #3104 ("Also you dont use this class anywhere outside so you can remove `export`"), #2850 ("This seems not to be used anywhere").
+**Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this.
+
+### R-040: Query logic in the route service, business rules in the repository
+
+**Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method. A check that must hold atomically with its write, like the last-admin 409s, stays in the repository.
+
+**Why it's bad:** #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository, while #3107's survey lookup sat on the route service where no other service could reuse it.
+
+**Corrected form:** #3107 moved the lookup to `SurveysRepository.findActiveBySlugOrFail`; #3134 moved the `INVITED` check into `MembersService`, leaving the repository's `renewInvite` a write with only its atomic cooldown condition.
+
+**Spotted in:** #3107 ("This method should stay in the repository as it handles queries."), #3134 ("Usually this logic checks should stay in the service layer.").
+**Status:** active — `module-structure.md`'s "Queries in the repository, request rules in the route service" rule owns this.
+
+### R-041: Input validated below the controller
+
+**Pattern:** a format check on a route input — a `chainId`, a numeric or UUID id — inside a datasource or repository, instead of a `ValidationPipe` on the `@Param`.
+
+**Why it's bad:** #3397's `ConfigApi` guard answered a malformed `chainId` with a `DataSourceError` 404 where the route pipe answers 422.
+
+**Corrected form:** #3397 dropped the datasource guard and kept `@Param('chainId', new ValidationPipe(ChainIdSchema))` on the routes.
+
+**Spotted in:** #3397 ("Instead of validating it in the service layer, why don’t we validate the `chainId` at the controller level?"), #3117 ("This is ok since the method is temp but in future we should keep such validations in the controller.").
+**Status:** active — `api-dtos-and-validation.md`'s "ValidationPipe everywhere" rule owns this (non-negotiable #1).
+
 ## Naming
 
 ### R-017: A name that describes the mechanism instead of the thing
@@ -396,6 +458,28 @@ safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() 
 
 **Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`", settled on the already deployed `SAFENET_PAYER_KMS_`).
 **Status:** active — `module-structure.md`'s "One name per concept" rule owns this.
+
+## Configuration
+
+### R-042: A hard-coded environment-specific value or tunable
+
+**Pattern:** a URL, TTL, timeout, buffer, poll interval or batch size declared as a literal constant — often under a `// TODO: make this configurable` — instead of read from configuration.
+
+**Why it's bad:** #3135's `SPACE_INVITE_URL` would have pointed every invite email at `http://localhost:3001`, though its own TODO said it should be configurable.
+
+**Corrected form:**
+
+```ts
+// Don't
+export const SPACE_INVITE_URL = 'http://localhost:3001/welcome/spaces';
+// Do
+this.inviteUrl = new URL(SPACE_INVITE_PATH, this.configurationService.getOrThrow<string>('safeWebApp.baseUri')).toString();
+```
+
+#3419 and #3495 kept constants on purpose; the guide rule says which values stay.
+
+**Spotted in:** #3135 ("this it needs to be addressed before the merge", on `SPACE_INVITE_URL`'s TODO), #3284 ("should we move it to config?"), #3214 ("config service :)"), #3564 ("Should we make them configurable?"), #3565 ("Move into config file with defaults.").
+**Status:** active — `configuration-and-flags.md`'s "Environment-specific values and tunables come from config" rule owns this.
 
 ## Caching and upstream calls
 
@@ -460,6 +544,30 @@ private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
 
 **Spotted in:** #3437 ("Should we handle existing cached grants before making counter mandatory?"), #3447 ("Change the chain-list cache field (`zerion_chains`, 24h). Otherwise the old list keeps serving opBNB after deploy.").
 **Status:** active — `caching-and-performance.md`'s "A changed cached shape or meaning gets a new key" rule owns this.
+
+### R-043: Independent awaits in sequence
+
+**Pattern:** two or more independent repository or upstream calls awaited one after another, or an `await` inside a per-item loop. R-022 covers the cache-clear case.
+
+**Why it's bad:** in #3451 the endpoint awaited `enabledModules()` once per Safe, so on cache misses its latency grew with the number of Safes in the Space.
+
+**Corrected form:**
+
+```ts
+// Don't
+const spaceSafes = await this.spaceSafesRepository.findBySpaceId(args.spaceId);
+const wallets = await this.walletsRepository.findByUser(userId);
+// Do
+const [spaceSafes, wallets] = await Promise.all([
+  this.spaceSafesRepository.findBySpaceId(args.spaceId),
+  this.walletsRepository.findByUser(userId),
+]);
+```
+
+#3131 put its two member lookups in one `Promise.all`, which `MembersService.get` has since replaced with one query; #3451's per-Safe reads went through `batched()`; #3437's relay checks stayed sequential on purpose.
+
+**Spotted in:** #3131 ("nit: we can parallelize it"), #3451 ("We should create batches with a fixed, configurable size (e.g. 20) and process each batch with `Promise.all`.", then "So we await `enabledModules()` inside the per-Safe loop. On cache misses, the endpoint accumulates one upstream request’s latency per Safe, although these reads are independent.").
+**Status:** active — `caching-and-performance.md`'s "Independent awaits run concurrently" rule owns this, with "Batch and chunk upstream calls" for the batch size.
 
 ## Logging and errors
 

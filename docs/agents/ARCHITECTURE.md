@@ -101,8 +101,8 @@ The one qualification to `routes/` is staged delivery: under a declared multi-PR
 Layer responsibilities are fixed:
 
 - **Controllers** are thin: routing, Swagger decorators, and pipe wiring only — no business logic.
-- **Route services** (`routes/*.service.ts`) orchestrate: they combine one or more repository calls into the shape a client endpoint needs.
-- **Repositories** (`domain/*.repository.ts`) validate and own domain logic: every value crossing the boundary from a datasource is parsed with a Zod schema before the repository returns it.
+- **Route services** (`routes/*.service.ts`) orchestrate: they combine one or more repository calls into the shape a client endpoint needs, and own the checks that reject a request because of a row's state (`module-structure.md`'s "Queries in the repository, request rules in the route service").
+- **Repositories** (`domain/*.repository.ts`) validate and own the queries, and the invariants that must hold atomically with a write: every value crossing the boundary from a datasource is parsed with a Zod schema before the repository returns it.
 - **Datasources** (`datasources/*-api.service.ts`) fetch and cache: they own the HTTP call to one external API and the `CacheFirstDataSource` wiring around it.
 
 Dependency injection uses a Symbol-per-interface pattern throughout.
