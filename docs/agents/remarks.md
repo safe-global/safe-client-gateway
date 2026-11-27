@@ -185,7 +185,7 @@ await expect(service.mintToken()).rejects.toThrow(new UnauthorizedException('Inv
 
 ### R-032: Test file suffix that doesn't match the layer it runs in
 
-**Pattern:** a `*.spec.ts` that boots a controller's Nest module, or a `*.e2e-spec.ts` whose upstream calls are all mocked — including new coverage added only as e2e.
+**Pattern:** a `*.spec.ts` that boots a Nest module against the real database or Redis, or a `*.e2e-spec.ts` whose upstream calls are all mocked — including new coverage added only as e2e.
 
 **Why it's bad:** #3107's and #3393's e2e specs would never have run on a PR, and #2884's module-booting suite sat in the unit project. Nothing failed; the coverage just wasn't where the reader thought it was.
 
@@ -271,7 +271,7 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 ### R-033: `string` where the project already has the type
 
-**Pattern:** an address, chain id or UUID typed `string` (`` `0x${string}` `` is viem's `Address`/`Hex` type, so it isn't flagged on its own, though `Address` is preferred), or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
+**Pattern:** an address or UUID typed `string` (`` `0x${string}` `` is viem's `Address`/`Hex` type, so it isn't flagged on its own, though `Address` is preferred), a `chainId: string` written by hand in a shape a schema already types with `ChainIdSchema` (which infers `string`, so a bare `chainId: string` is fine), or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
 
 **Why it's bad:** #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction` field by field, and #3531's member `address` was a plain `string` beside typed siblings.
 
@@ -394,7 +394,7 @@ copilotCoreDisabled: process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'tr
 safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
 ```
 
-**Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`").
+**Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`", settled on the already deployed `SAFENET_PAYER_KMS_`).
 **Status:** active — `module-structure.md`'s "One name per concept" rule owns this.
 
 ## Caching and upstream calls
@@ -555,11 +555,11 @@ private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
 
 ### R-034: A removal that leaves its dependents behind
 
-**Pattern:** a diff removing a feature, endpoint or env-driven path that keeps its env vars in `.env.sample.json` or `.devcontainer/docker-compose.yml`, or leaves sibling endpoints of the same deprecated family, and the code only they call, in place.
+**Pattern:** a diff removing a feature, endpoint or env-driven path that keeps its env vars in `.env.sample.json`, `.vscode/launch.json` or `.devcontainer/docker-compose.yml`, or leaves sibling endpoints of the same deprecated family, and the code only they call, in place.
 
-**Why it's bad:** #3105 would have left three relay variables documented in `.env.sample.json` and the devcontainer after the code stopped reading them, and #3225 first removed one deprecated `/raw` route while its two siblings, and the code only they called, stayed.
+**Why it's bad:** #3105 would have left three relay variables documented in `.env.sample.json`, one of them also in the devcontainer, after the code stopped reading them, and #3225 first removed one deprecated `/raw` route while its two siblings, and the code only they called, stayed.
 
-**Corrected form:** #3105 deleted the entries from both files; #3225 removed all three `/raw` routes down to the datasource.
+**Corrected form:** #3105 deleted all three from `.env.sample.json` and `RELAY_DAILY_LIMIT_CHAIN_IDS` from the devcontainer; #3225 removed all three `/raw` routes down to the datasource.
 
 **Spotted in:** #3105 ("There are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml"), #3225 ("Let's remove all `/raw` endpoints in this PR.").
 **Status:** active — `commits-and-prs.md`'s "A removal takes what only it used" rule owns this.

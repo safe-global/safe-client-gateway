@@ -153,11 +153,11 @@ feat(messages): read messages through the tx-queue-service client
 
 ## A removal takes what only it used
 
-**Rule:** A PR that removes a feature, endpoint or env-driven path also removes what only that path used: its variables' `.env.sample.json` entries and `.devcontainer/docker-compose.yml` lines, and the service, repository and datasource methods and entities nothing else calls. Retiring one member of a deprecated family retires the rest of the family in the same PR.
+**Rule:** A PR that removes a feature, endpoint or env-driven path also removes what only that path used: its variables' `configuration.ts`, `RootConfigurationSchema`, `.env.sample.json` and `.vscode/launch.json` entries and `.devcontainer/docker-compose.yml` lines, and the service, repository and datasource methods and entities nothing else calls. Retiring one member of a deprecated family retires the rest of the family in the same PR.
 
 **Why:** a leftover still reads as live — an env sample entry tells an operator to set a variable nothing reads, and a deprecated route left beside its removed siblings keeps the service, repository and datasource methods behind it alive. Nothing flags either: the leftovers sit in files the diff never touches, so a reviewer reading the changed lines does not see them, and `scripts/validate-env-json.ts` reports a stale entry as `extraInJson` and still exits zero.
 
-**Canonical example:** #3225 removed all three deprecated `/raw` transaction routes rather than one, each with its service method, the repository and datasource methods only it called, and its orphaned entities. #3105 deleted `RELAY_DAILY_LIMIT_CHAIN_IDS`, `RELAY_FEE_CHAIN_IDS` and `RELAY_SIMULATION_CHAIN_IDS` from both `.env.sample.json` and the devcontainer in the PR that stopped the relay code reading them:
+**Canonical example:** #3225 removed all three deprecated `/raw` transaction routes rather than one, each with its service method, the repository and datasource methods only it called, and its orphaned entities. #3105 deleted `RELAY_DAILY_LIMIT_CHAIN_IDS`, `RELAY_FEE_CHAIN_IDS` and `RELAY_SIMULATION_CHAIN_IDS` from `.env.sample.json`, and the one of them listed there from the devcontainer, in the PR that stopped the relay code reading them:
 
 ```jsonc
 // Don't — .env.sample.json still documents what the removed code read
