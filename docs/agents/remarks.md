@@ -271,7 +271,7 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 ### R-033: `string` where the project already has the type
 
-**Pattern:** an address, chain id or UUID typed `string`, or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
+**Pattern:** an address, chain id or UUID typed `string` (`` `0x${string}` `` is viem's `Address`/`Hex` type, so it isn't flagged on its own, though `Address` is preferred), or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
 
 **Why it's bad:** #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction` field by field, and #3531's member `address` was a plain `string` beside typed siblings.
 

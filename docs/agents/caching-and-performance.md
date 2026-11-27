@@ -26,6 +26,24 @@ The key/TTL/clear pieces of this recipe are each covered in more depth in the ru
 
 The mechanism's own internal bookkeeping is the one exception: `CacheFirstDataSource` and `RedisCacheService` each build their own `invalidationTimeMs:<key>` marker directly, since that marker belongs to the cache mechanism itself and not to a feature datasource's key space.
 
+### No literal TTLs
+
+**Rule:** Every cache TTL comes from `expirationTimeInSeconds.*` in `src/config/entities/configuration.ts`, never a number literal at the call site; negative caching via `notFoundExpireTimeSeconds` is mandatory on every cached read, not an optional extra reserved for high-traffic endpoints.
+
+**Why:** a literal TTL can only change with a deploy, while a configuration-sourced one is env-overridable at runtime without touching code; skipping negative caching turns every lookup of a resource that doesn't exist into a guaranteed upstream round trip on every single request for it, rather than one round trip per expiry window.
+
+**Canonical example:** the `expirationTimeInSeconds` block in `src/config/entities/configuration.ts` — `.default`, `.rpc`, `.staking`, `.zerionPositions`, and others, plus the negative-caching group `.notFound.{default,contract,token}`, each backed by its own environment variable. A representative read: `src/modules/transactions/datasources/transaction-api.service.ts`'s constructor sources `expirationTimeInSeconds.default`, `.notFound.default`, and `.notFound.token` through `IConfigurationService.getOrThrow` into the fields its cached reads then pass as `expireTimeSeconds`/`notFoundExpireTimeSeconds`.
+
+Grouping every TTL under one configuration namespace also keeps the rule mechanically checkable: every stored expiry is discoverable with one grep against `expirationTimeInSeconds`, rather than a search for scattered numeric literals across datasources.
+
+### Invalidation via deleteByKey only
+
+**Rule:** Delete a cached entry only through `cacheService.deleteByKey`; never issue a raw Redis `DEL`/`UNLINK`/etc. against a cache key from application code.
+
+**Why:** `deleteByKey` stamps an `invalidationTimeMs` marker alongside the delete, and that marker is what a subsequent in-flight fetch checks before writing its result back. The race this closes is described in full in `docs/agents/ARCHITECTURE.md`'s Caching section; this rule is its normative form — a raw Redis command skips the marker and reopens the exact stale-write race that section documents.
+
+This applies equally to a `clear*()` method's own delete and to a delete triggered from the event-cache mapping in `EventCacheHelper` (first rule above) — both are application code, and both are required to funnel through the same `cacheService.deleteByKey`.
+
 ### A changed cached shape or meaning gets a new key
 
 **Rule:** When a change alters the schema of a cached value — a new required key, or a `.nullable()` field that still requires the key to be present — or what a cached entry means, change its key in `CacheRouter` in the same PR. A cache read by hand rather than through `CacheFirstDataSource` may instead treat an entry it can't parse as a miss; through `CacheFirstDataSource` there is no such option, so the key must change.
@@ -53,24 +71,6 @@ private readCachedGrants(
   }
 }
 ```
-
-### No literal TTLs
-
-**Rule:** Every cache TTL comes from `expirationTimeInSeconds.*` in `src/config/entities/configuration.ts`, never a number literal at the call site; negative caching via `notFoundExpireTimeSeconds` is mandatory on every cached read, not an optional extra reserved for high-traffic endpoints.
-
-**Why:** a literal TTL can only change with a deploy, while a configuration-sourced one is env-overridable at runtime without touching code; skipping negative caching turns every lookup of a resource that doesn't exist into a guaranteed upstream round trip on every single request for it, rather than one round trip per expiry window.
-
-**Canonical example:** the `expirationTimeInSeconds` block in `src/config/entities/configuration.ts` — `.default`, `.rpc`, `.staking`, `.zerionPositions`, and others, plus the negative-caching group `.notFound.{default,contract,token}`, each backed by its own environment variable. A representative read: `src/modules/transactions/datasources/transaction-api.service.ts`'s constructor sources `expirationTimeInSeconds.default`, `.notFound.default`, and `.notFound.token` through `IConfigurationService.getOrThrow` into the fields its cached reads then pass as `expireTimeSeconds`/`notFoundExpireTimeSeconds`.
-
-Grouping every TTL under one configuration namespace also keeps the rule mechanically checkable: every stored expiry is discoverable with one grep against `expirationTimeInSeconds`, rather than a search for scattered numeric literals across datasources.
-
-### Invalidation via deleteByKey only
-
-**Rule:** Delete a cached entry only through `cacheService.deleteByKey`; never issue a raw Redis `DEL`/`UNLINK`/etc. against a cache key from application code.
-
-**Why:** `deleteByKey` stamps an `invalidationTimeMs` marker alongside the delete, and that marker is what a subsequent in-flight fetch checks before writing its result back. The race this closes is described in full in `docs/agents/ARCHITECTURE.md`'s Caching section; this rule is its normative form — a raw Redis command skips the marker and reopens the exact stale-write race that section documents.
-
-This applies equally to a `clear*()` method's own delete and to a delete triggered from the event-cache mapping in `EventCacheHelper` (first rule above) — both are application code, and both are required to funnel through the same `cacheService.deleteByKey`.
 
 ### Independent awaits run concurrently
 
