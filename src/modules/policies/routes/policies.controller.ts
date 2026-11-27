@@ -55,7 +55,7 @@ export class PoliciesController {
   @ApiOperation({
     summary: 'Store the configurations of a delayed configuration request',
     description:
-      'Stores the `Configuration[]` behind a `requestConfiguration(root)`, which publishes only the hash on-chain, so that the configurations a later `applyConfiguration` needs survive the delay. Call it before requesting the configuration on-chain: the root is recomputed from the configurations and has to match, but it is not required to exist on-chain yet. Idempotent: storing the same root again is a no-op.',
+      'Stores the `Configuration[]` behind a `requestConfiguration(root)`, which publishes only the hash on-chain, so that the configurations a later `applyConfiguration` needs survive the delay. Call it before requesting the configuration on-chain: the root is recomputed from the configurations and has to match, but it is not required to exist on-chain yet. Idempotent: storing the same root again is a no-op that keeps the first copy, its author and its date. To draft a root again after a request of it was applied or invalidated on a guard the Safe no longer uses, delete it first.',
   })
   @ApiParam({
     name: 'spaceId',

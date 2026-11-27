@@ -84,6 +84,27 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
     return id;
   }
 
+  /** Inserts {@link request} as stored `days` ago; `created_at` is not insertable through the entity. */
+  async function insertStoredDaysAgo(
+    request: StorableRequest,
+    days: number,
+  ): Promise<void> {
+    await postgresDatabaseService
+      .getDataSource()
+      .query(
+        `INSERT INTO "policy_configuration_requests" ("space_id", "chain_id", "safe_address", "root", "configurations", "created_by", "created_at") VALUES ($1, $2, $3, $4, $5, $6, NOW() - make_interval(days => $7))`,
+        [
+          request.spaceId,
+          request.chainId,
+          request.safeAddress,
+          request.root,
+          JSON.stringify(request.configurations),
+          request.createdBy,
+          days,
+        ],
+      );
+  }
+
   beforeAll(async () => {
     const testDataSource = new DataSource({
       ...postgresConfig({
@@ -216,16 +237,17 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       );
     });
 
-    it('should not store a re-submission again', async () => {
+    it('should keep the author and date of a stored root when another member stores it again', async () => {
       const request = storableRequest();
+      await insertStoredDaysAgo(request, 1);
+      const [previous] = await dbRepository.find();
 
-      await repository.create(request);
       await repository.create({ ...request, createdBy: request.createdBy + 1 });
 
       const stored = await dbRepository.find();
       expect(stored).toHaveLength(1);
-      // the first write wins; a retry does not rewrite the row
       expect(stored[0].createdBy).toBe(request.createdBy);
+      expect(stored[0].createdAt).toEqual(previous.createdAt);
     });
 
     it('should store the same root of a Safe for each Space', async () => {
@@ -263,21 +285,7 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
   describe('prune', () => {
     it('should delete only the requests older than the retention', async () => {
       const expired = storableRequest();
-      // `created_at` is not insertable through the entity.
-      await postgresDatabaseService
-        .getDataSource()
-        .query(
-          `INSERT INTO "policy_configuration_requests" ("space_id", "chain_id", "safe_address", "root", "configurations", "created_by", "created_at") VALUES ($1, $2, $3, $4, $5, $6, NOW() - make_interval(days => $7))`,
-          [
-            expired.spaceId,
-            expired.chainId,
-            expired.safeAddress,
-            expired.root,
-            JSON.stringify(expired.configurations),
-            expired.createdBy,
-            retentionDays + 1,
-          ],
-        );
+      await insertStoredDaysAgo(expired, retentionDays + 1);
       const recent = storableRequest();
       await repository.create(recent);
 
@@ -286,6 +294,16 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       await expect(dbRepository.find()).resolves.toEqual([
         expect.objectContaining({ root: recent.root }),
       ]);
+    });
+
+    it('should not restart the retention of a request stored again', async () => {
+      const request = storableRequest();
+      await insertStoredDaysAgo(request, retentionDays + 1);
+      await repository.create(request);
+
+      await repository.prune();
+
+      await expect(dbRepository.find()).resolves.toEqual([]);
     });
   });
 

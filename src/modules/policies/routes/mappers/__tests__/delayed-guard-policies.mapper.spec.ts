@@ -110,6 +110,14 @@ describe('DelayedGuardPoliciesMapper', () => {
       .build();
   }
 
+  /** {@link stored}, drafted at `seconds` (unix). */
+  function draftedAt(
+    configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>],
+    seconds: number,
+  ): SafePolicyGuardConfiguration {
+    return { ...stored(configurations), createdAt: new Date(seconds * 1000) };
+  }
+
   /** A queued transaction with `confirmations` of 2 signatures. */
   function queued(args: {
     to: Address;
@@ -766,11 +774,145 @@ describe('DelayedGuardPoliciesMapper', () => {
               guard: previousGuard,
             }),
           ],
-          storedConfigurations: [stored(config)],
+          storedConfigurations: [draftedAt(config, now - 3_600)],
         }),
       ).toStrictEqual([
         expect.objectContaining({ status: 'draft', guard: null }),
       ]);
+    });
+
+    it.each([
+      ['APPLIED', 'removed', null],
+      ['APPLIED', 'replaced', guard],
+      ['INVALIDATED', 'removed', null],
+      ['INVALIDATED', 'replaced', guard],
+    ] as const)(
+      'should not report stored configurations of an %s root as a draft once the guard is %s',
+      (status, _, enabledGuard) => {
+        const config = configurations();
+        const root = onChain({
+          configurations: config,
+          status,
+          guard: previousGuard,
+        });
+
+        expect(
+          map({
+            enabledGuard,
+            onChainConfigurations: [root],
+            storedConfigurations: [draftedAt(config, root.readyAt - 3_600)],
+          }),
+        ).toStrictEqual([]);
+      },
+    );
+
+    it('should report configurations drafted again after their root was applied as a draft', () => {
+      const config = configurations();
+      const root = onChain({
+        configurations: config,
+        status: 'APPLIED',
+        guard: previousGuard,
+      });
+
+      expect(
+        map({
+          onChainConfigurations: [root],
+          storedConfigurations: [draftedAt(config, root.readyAt + 60)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({ status: 'draft', guard: null }),
+      ]);
+    });
+
+    it('should report configurations stored at the readyAt of their applied root as a draft', () => {
+      const config = configurations();
+      const root = onChain({
+        configurations: config,
+        status: 'APPLIED',
+        guard: previousGuard,
+      });
+
+      expect(
+        map({
+          onChainConfigurations: [root],
+          storedConfigurations: [draftedAt(config, root.readyAt)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({ status: 'draft', guard: null }),
+      ]);
+    });
+
+    it('should still report other stored configurations as a draft when one root is applied on a guard the Safe no longer uses', () => {
+      const applied = configurations();
+      const draft = configurations();
+      const root = onChain({
+        configurations: applied,
+        status: 'APPLIED',
+        guard: previousGuard,
+      });
+
+      expect(
+        map({
+          onChainConfigurations: [root],
+          storedConfigurations: [
+            draftedAt(applied, root.readyAt - 3_600),
+            stored(draft),
+          ],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'draft',
+          root: configurationRoot(draft),
+        }),
+      ]);
+    });
+
+    describe('applied on two guards and pending on a third', () => {
+      const pendingGuard = getAddress(faker.finance.ethereumAddress());
+      const config = configurations();
+      const roots = [
+        onChain({
+          configurations: config,
+          status: 'APPLIED',
+          readyAt: now - 7_200,
+          guard,
+        }),
+        onChain({
+          configurations: config,
+          status: 'APPLIED',
+          readyAt: now - 3_600,
+          guard: previousGuard,
+        }),
+        onChain({ configurations: config, guard: pendingGuard }),
+      ];
+      const configuration = draftedAt(config, now - 10_800);
+
+      it('should report the pending root on the current guard with its stored configurations', () => {
+        expect(
+          map({
+            enabledGuard: pendingGuard,
+            onChainConfigurations: roots,
+            storedConfigurations: [configuration],
+          }),
+        ).toStrictEqual([
+          expect.objectContaining({
+            status: 'pending-application',
+            guard: pendingGuard,
+            configurations: config,
+            createdAt: unixSeconds(configuration.createdAt),
+          }),
+        ]);
+      });
+
+      it('should not report the stored configurations as a draft once the guard is removed', () => {
+        expect(
+          map({
+            enabledGuard: null,
+            onChainConfigurations: roots,
+            storedConfigurations: [configuration],
+          }),
+        ).toStrictEqual([]);
+      });
     });
   });
 
