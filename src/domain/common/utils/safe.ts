@@ -93,6 +93,16 @@ export function getBaseMultisigTransaction(
   };
 }
 
+/** Whether {@link args.transaction} can still be executed: not executed, and not below the Safe nonce. */
+export function isQueuedTransaction(args: {
+  safe: Pick<Safe, 'nonce'>;
+  transaction: Pick<MultisigTransaction, 'isExecuted' | 'nonce'>;
+}): boolean {
+  return (
+    !args.transaction.isExecuted && args.transaction.nonce >= args.safe.nonce
+  );
+}
+
 export function getSafeTxHash(args: {
   chainId: string;
   transaction: BaseMultisigTransaction;

@@ -12,6 +12,7 @@ import {
   type BaseMultisigTransaction,
   getBaseMultisigTransaction,
   getSafeTxHash,
+  isQueuedTransaction,
 } from '#/domain/common/utils/safe';
 import { parseSignaturesByType } from '#/domain/common/utils/signatures';
 import {
@@ -80,10 +81,7 @@ export class TransactionVerifierHelper {
     safe: Safe;
     transaction: MultisigTransaction;
   }): void {
-    if (
-      args.transaction.isExecuted ||
-      args.transaction.nonce < args.safe.nonce
-    ) {
+    if (!isQueuedTransaction(args)) {
       return;
     }
     const code = HttpStatus.BAD_GATEWAY;
@@ -126,10 +124,7 @@ export class TransactionVerifierHelper {
   }): void {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
-    if (
-      args.transaction.isExecuted ||
-      args.transaction.nonce < args.safe.nonce
-    ) {
+    if (!isQueuedTransaction(args)) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
 

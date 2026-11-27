@@ -18,6 +18,7 @@ import {
   getBaseMultisigTransaction,
   getSafeMessageMessageHash,
   getSafeTxHash,
+  isQueuedTransaction,
 } from '#/domain/common/utils/safe';
 import {
   migrateL2SingletonEncoder,
@@ -84,6 +85,39 @@ describe('Safe', () => {
         refundReceiver: multisigTransaction.refundReceiver,
         nonce: multisigTransaction.nonce,
       });
+    });
+  });
+
+  describe('isQueuedTransaction', () => {
+    const safe = safeBuilder()
+      .with('nonce', faker.number.int({ min: 1, max: 1_000 }))
+      .build();
+
+    it('should be true for an unexecuted transaction at the Safe nonce or above', () => {
+      const transaction = multisigTransactionBuilder()
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce + faker.number.int({ min: 0, max: 5 }))
+        .build();
+
+      expect(isQueuedTransaction({ safe, transaction })).toBe(true);
+    });
+
+    it('should be false for an executed transaction', () => {
+      const transaction = multisigTransactionBuilder()
+        .with('isExecuted', true)
+        .with('nonce', safe.nonce)
+        .build();
+
+      expect(isQueuedTransaction({ safe, transaction })).toBe(false);
+    });
+
+    it('should be false for a transaction below the Safe nonce', () => {
+      const transaction = multisigTransactionBuilder()
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce - 1)
+        .build();
+
+      expect(isQueuedTransaction({ safe, transaction })).toBe(false);
     });
   });
 

@@ -9,7 +9,10 @@ import {
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
-import { getBaseMultisigTransaction } from '#/domain/common/utils/safe';
+import {
+  getBaseMultisigTransaction,
+  isQueuedTransaction,
+} from '#/domain/common/utils/safe';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
@@ -151,7 +154,7 @@ export class SafenetChecksService {
     if (!isAddressEqual(transaction.safe, safeAddress)) {
       throw unprocessable('Transaction belongs to another Safe');
     }
-    if (transaction.isExecuted || transaction.nonce < safe.nonce) {
+    if (!isQueuedTransaction({ safe, transaction })) {
       throw unprocessable('Transaction is no longer pending');
     }
     // Trusts tx-service, which checks owners and signatures when a confirmation is submitted.
