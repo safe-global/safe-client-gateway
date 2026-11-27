@@ -288,8 +288,8 @@ const UNGATED_ROUTES: Array<Route> = [
   },
   // Like proposing a contact, storing a policy configuration request only
   // stores a proposal: nothing takes effect until the Safe owners sign it
-  // on-chain. A row must hash to its root, and the per-Space cap bounds how
-  // many a stolen session can store.
+  // on-chain. A row must be backed by a transaction an owner signed,
+  // and the per-Space cap bounds how many a stolen session can store.
   {
     name: 'POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests',
     method: 'post',

@@ -28,6 +28,7 @@ import type {
   CreatePolicyConfigurationRequestPayload,
   CreatePolicyConfigurationRequestResponse,
 } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
+import { PolicyConfigurationRequestVerifier } from '#/modules/policies/routes/helpers/policy-configuration-request-verifier.helper';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
@@ -53,6 +54,8 @@ export class PolicyConfigurationRequestsService {
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(PolicyConfigurationRequestVerifier)
+    private readonly verifier: PolicyConfigurationRequestVerifier,
   ) {
     this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
       'policies.maxConfigurationRequestsPerSpaceSafe',
@@ -60,8 +63,9 @@ export class PolicyConfigurationRequestsService {
   }
 
   /**
-   * Stores the configurations of a request. The root is recomputed from them
-   * and has to match; it is not checked on-chain, as the wallet stores first.
+   * Stores the configurations of a request once an owner backs their root: a
+   * Safe transaction requesting it on the Safe's policy guard, signed by a
+   * current owner. Re-submitting a stored root is a no-op.
    */
   public async create(args: {
     spaceId: Space['id'];
@@ -77,20 +81,26 @@ export class PolicyConfigurationRequestsService {
       address: args.safe.address,
     });
 
-    // Stored as recomputed, so a retry in another casing hits the same row.
     const root = configurationRoot(args.payload.configurations);
-    if (root !== args.payload.root.toLowerCase()) {
-      throw new HttpExceptionNoLog(
-        'The configurations do not hash to the given root',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
     this.assertKnownPolicies({
       chainId: args.safe.chainId,
       configurations: args.payload.configurations,
     });
-    await this.assertBelowCap({ ...args, root });
+    const stored = await this.configurationRequestsRepository.findRootsBySafe({
+      spaceId: args.spaceId,
+      safe: args.safe,
+    });
+    if (stored.includes(root)) {
+      return { root };
+    }
+
+    await this.verifier.verify({
+      safe: args.safe,
+      root,
+      safeTxHash: args.payload.safeTxHash,
+      signature: args.payload.signature,
+    });
+    await this.assertBelowCap({ safe: args.safe, stored });
 
     await this.configurationRequestsRepository.create({
       spaceId: args.spaceId,
@@ -171,23 +181,13 @@ export class PolicyConfigurationRequestsService {
   /**
    * Rejects a new root once the Safe holds the maximum number of active ones:
    * stored roots that are not applied, invalidated or expired on-chain.
-   * Re-submitting a stored root is always accepted.
    */
   private async assertBelowCap(args: {
-    spaceId: Space['id'];
     safe: SafeRef;
-    root: Hex;
+    stored: ReadonlyArray<Hex>;
   }): Promise<void> {
-    const stored = await this.configurationRequestsRepository.findRootsBySafe({
-      spaceId: args.spaceId,
-      safe: args.safe,
-    });
-    if (stored.includes(args.root)) {
-      return;
-    }
-
     const closed = await this.closedRootsOf(args.safe);
-    const active = stored.filter((root) => !closed.has(root));
+    const active = args.stored.filter((root) => !closed.has(root));
     if (active.length >= this.maxPerSpaceSafe) {
       throw new HttpExceptionNoLog(
         `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,

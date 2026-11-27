@@ -24,6 +24,8 @@ import {
   guardPolicyKindsOf,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
+import type { CreatePolicyConfigurationRequestPayload } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
+import type { PolicyConfigurationRequestVerifier } from '#/modules/policies/routes/helpers/policy-configuration-request-verifier.helper';
 import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -58,6 +60,9 @@ describe('PolicyConfigurationRequestsService', () => {
   const loggingService: MockedObject<Pick<ILoggingService, 'warn'>> = {
     warn: vi.fn(),
   };
+  const verifier: MockedObject<
+    Pick<PolicyConfigurationRequestVerifier, 'verify'>
+  > = { verify: vi.fn() };
   const maxPerSpaceSafe = faker.number.int({ min: 2, max: 5 });
   const configurationService = new FakeConfigurationService();
   configurationService.set(
@@ -72,6 +77,7 @@ describe('PolicyConfigurationRequestsService', () => {
     policyIndexerRepository as MockedObject<IPolicyIndexerRepository>,
     configurationService,
     loggingService as MockedObject<ILoggingService>,
+    verifier as MockedObject<PolicyConfigurationRequestVerifier>,
   );
 
   const spaceId = faker.number.int({ min: 1, max: 100 });
@@ -88,14 +94,27 @@ describe('PolicyConfigurationRequestsService', () => {
     ),
   };
 
-  /** A payload whose root is the hash of its configurations. */
-  function validPayload(policy: Address = KNOWN_POLICY): {
-    root: Hex;
-    configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>];
-  } {
-    const configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>] =
-      [policyConfigurationBuilder().with('policy', policy).build()];
-    return { root: configurationRoot(configurations), configurations };
+  /** A payload binding one policy, its transaction and signature verified by default. */
+  function validPayload(
+    policy: Address = KNOWN_POLICY,
+  ): CreatePolicyConfigurationRequestPayload {
+    return {
+      configurations: [
+        policyConfigurationBuilder().with('policy', policy).build(),
+      ],
+      safeTxHash: faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex,
+      signature: faker.string.hexadecimal({
+        length: 130,
+        casing: 'lower',
+      }) as Hex,
+    };
+  }
+
+  function rootOf(payload: CreatePolicyConfigurationRequestPayload): Hex {
+    return configurationRoot(payload.configurations);
   }
 
   beforeEach(() => {
@@ -107,14 +126,21 @@ describe('PolicyConfigurationRequestsService', () => {
     policyIndexerRepository.getState.mockResolvedValue(
       policyIndexerResponseBuilder().build(),
     );
+    verifier.verify.mockResolvedValue();
   });
 
   it('should store the configurations of a root', async () => {
     const payload = validPayload();
 
     await expect(target.create({ ...request, payload })).resolves.toStrictEqual(
-      { root: payload.root },
+      { root: rootOf(payload) },
     );
+    expect(verifier.verify).toHaveBeenCalledWith({
+      safe,
+      root: rootOf(payload),
+      safeTxHash: payload.safeTxHash,
+      signature: payload.signature,
+    });
     expect(spaceSafesRepository.existsInSpace).toHaveBeenCalledWith({
       spaceId,
       chainId: safe.chainId,
@@ -124,26 +150,41 @@ describe('PolicyConfigurationRequestsService', () => {
       spaceId,
       chainId: safe.chainId,
       safeAddress: safe.address,
-      root: payload.root,
+      root: rootOf(payload),
       configurations: payload.configurations,
       createdBy: userId,
     });
   });
 
-  it('should reject configurations that do not hash to the root without logging', async () => {
-    const payload = validPayload();
+  it('should not store configurations the verifier rejects', async () => {
+    const error = new HttpExceptionNoLog(
+      'Invalid signature',
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    );
+    verifier.verify.mockRejectedValue(error);
 
     await expect(
-      target.create({
-        ...request,
-        payload: { ...payload, root: `0x${'11'.repeat(32)}` },
-      }),
-    ).rejects.toThrow(
+      target.create({ ...request, payload: validPayload() }),
+    ).rejects.toBe(error);
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should accept a stored root again without verifying it', async () => {
+    const payload = validPayload();
+    configurationRequestsRepository.findRootsBySafe.mockResolvedValue([
+      rootOf(payload),
+    ]);
+    verifier.verify.mockRejectedValue(
       new HttpExceptionNoLog(
-        'The configurations do not hash to the given root',
+        'The Safe transaction can no longer be executed',
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
     );
+
+    await expect(target.create({ ...request, payload })).resolves.toStrictEqual(
+      { root: rootOf(payload) },
+    );
+    expect(verifier.verify).not.toHaveBeenCalled();
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 
@@ -151,7 +192,7 @@ describe('PolicyConfigurationRequestsService', () => {
     const payload = validPayload(zeroAddress);
 
     await expect(target.create({ ...request, payload })).resolves.toStrictEqual(
-      { root: payload.root },
+      { root: rootOf(payload) },
     );
     expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ configurations: payload.configurations }),
@@ -174,6 +215,7 @@ describe('PolicyConfigurationRequestsService', () => {
       ),
     );
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+    expect(verifier.verify).not.toHaveBeenCalled();
   });
 
   it('should reject an unknown policy contract without logging', async () => {
@@ -188,6 +230,7 @@ describe('PolicyConfigurationRequestsService', () => {
       ),
     );
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+    expect(verifier.verify).not.toHaveBeenCalled();
   });
 
   it('should reject an unknown policy contract after a known one', async () => {
@@ -201,7 +244,7 @@ describe('PolicyConfigurationRequestsService', () => {
     await expect(
       target.create({
         ...request,
-        payload: { root: configurationRoot(configurations), configurations },
+        payload: { ...validPayload(), configurations },
       }),
     ).rejects.toThrow(
       new HttpExceptionNoLog(
@@ -210,6 +253,7 @@ describe('PolicyConfigurationRequestsService', () => {
       ),
     );
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+    expect(verifier.verify).not.toHaveBeenCalled();
   });
 
   it('should reject a known policy contract on a chain without a policy engine', async () => {
@@ -228,18 +272,7 @@ describe('PolicyConfigurationRequestsService', () => {
       ),
     );
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
-  });
-
-  it('should store an upper-cased root under its canonical casing', async () => {
-    const payload = validPayload();
-    const upperCased: Hex = `0x${payload.root.slice(2).toUpperCase()}`;
-
-    await expect(
-      target.create({ ...request, payload: { ...payload, root: upperCased } }),
-    ).resolves.toStrictEqual({ root: payload.root });
-    expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ root: payload.root }),
-    );
+    expect(verifier.verify).not.toHaveBeenCalled();
   });
 
   it('should reject a caller who is not a member of the space', async () => {
@@ -249,6 +282,7 @@ describe('PolicyConfigurationRequestsService', () => {
       target.create({ ...request, payload: validPayload() }),
     ).rejects.toThrow('User is not a member of this workspace');
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+    expect(verifier.verify).not.toHaveBeenCalled();
   });
 
   it('should reject a Safe that is not in the space', async () => {
@@ -263,6 +297,7 @@ describe('PolicyConfigurationRequestsService', () => {
       ),
     );
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+    expect(verifier.verify).not.toHaveBeenCalled();
   });
 
   describe('cap', () => {
@@ -284,9 +319,8 @@ describe('PolicyConfigurationRequestsService', () => {
 
     /** Stores {@link maxPerSpaceSafe} roots for the Safe. */
     function fillCap(): Array<Hex> {
-      const stored = Array.from(
-        { length: maxPerSpaceSafe },
-        () => validPayload().root,
+      const stored = Array.from({ length: maxPerSpaceSafe }, () =>
+        rootOf(validPayload()),
       );
       configurationRequestsRepository.findRootsBySafe.mockResolvedValue(stored);
       return stored;
@@ -320,13 +354,13 @@ describe('PolicyConfigurationRequestsService', () => {
     it('should accept a stored root again at the maximum', async () => {
       const payload = validPayload();
       configurationRequestsRepository.findRootsBySafe.mockResolvedValue([
-        payload.root,
+        rootOf(payload),
         ...fillCap().slice(1),
       ]);
 
       await expect(
         target.create({ ...request, payload }),
-      ).resolves.toStrictEqual({ root: payload.root });
+      ).resolves.toStrictEqual({ root: rootOf(payload) });
       expect(policyIndexerRepository.getState).not.toHaveBeenCalled();
     });
 
@@ -348,9 +382,9 @@ describe('PolicyConfigurationRequestsService', () => {
 
         await expect(
           target.create({ ...request, payload }),
-        ).resolves.toStrictEqual({ root: payload.root });
+        ).resolves.toStrictEqual({ root: rootOf(payload) });
         expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({ root: payload.root }),
+          expect.objectContaining({ root: rootOf(payload) }),
         );
         expect(policyIndexerRepository.getState).toHaveBeenCalledWith({
           safes: [safe],
