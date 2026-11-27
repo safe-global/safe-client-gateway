@@ -221,13 +221,18 @@ export class PolicyConfigurationRequestVerifier {
   /**
    * The chain holds the root of an executed request as long as it can still
    * be applied: requested on the guard, neither applied, invalidated nor
-   * expired.
+   * expired. Read uncached, as the state may have been cached before the
+   * indexer caught up with the execution.
    */
   private async assertRootOpen(args: {
     safe: SafeRef;
     guard: Address;
     root: Hex;
   }): Promise<void> {
+    await this.policyIndexerRepository.clearState({
+      chainId: args.safe.chainId,
+      safeAddress: args.safe.address,
+    });
     const { roots } = await this.policyIndexerRepository.getState({
       safes: [args.safe],
       guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),

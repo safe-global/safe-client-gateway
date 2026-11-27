@@ -46,8 +46,8 @@ describe('PolicyConfigurationRequestVerifier', () => {
     getMultiSigTransaction: vi.fn(),
   };
   const policyIndexerRepository: MockedObject<
-    Pick<IPolicyIndexerRepository, 'getState'>
-  > = { getState: vi.fn() };
+    Pick<IPolicyIndexerRepository, 'getState' | 'clearState'>
+  > = { getState: vi.fn(), clearState: vi.fn() };
 
   function verifierWith(
     args: { ethSign: boolean } = { ethSign: true },
@@ -365,10 +365,17 @@ describe('PolicyConfigurationRequestVerifier', () => {
       await expect(
         verify({ safe, transaction, signature: confirmation.signature! }),
       ).resolves.toBeUndefined();
+      expect(policyIndexerRepository.clearState).toHaveBeenCalledWith({
+        chainId: CHAIN_ID,
+        safeAddress: safe.address,
+      });
       expect(policyIndexerRepository.getState).toHaveBeenCalledWith({
         safes: [{ chainId: CHAIN_ID, address: safe.address }],
         guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
       });
+      expect(policyIndexerRepository.clearState).toHaveBeenCalledBefore(
+        policyIndexerRepository.getState,
+      );
     });
 
     it.each([
