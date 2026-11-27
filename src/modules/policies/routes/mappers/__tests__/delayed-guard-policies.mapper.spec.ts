@@ -774,7 +774,7 @@ describe('DelayedGuardPoliciesMapper', () => {
               guard: previousGuard,
             }),
           ],
-          storedConfigurations: [stored(config)],
+          storedConfigurations: [draftedAt(config, now - 3_600)],
         }),
       ).toStrictEqual([
         expect.objectContaining({ status: 'draft', guard: null }),
@@ -818,6 +818,24 @@ describe('DelayedGuardPoliciesMapper', () => {
         map({
           onChainConfigurations: [root],
           storedConfigurations: [draftedAt(config, root.readyAt + 60)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({ status: 'draft', guard: null }),
+      ]);
+    });
+
+    it('should report configurations stored at the readyAt of their applied root as a draft', () => {
+      const config = configurations();
+      const root = onChain({
+        configurations: config,
+        status: 'APPLIED',
+        guard: previousGuard,
+      });
+
+      expect(
+        map({
+          onChainConfigurations: [root],
+          storedConfigurations: [draftedAt(config, root.readyAt)],
         }),
       ).toStrictEqual([
         expect.objectContaining({ status: 'draft', guard: null }),

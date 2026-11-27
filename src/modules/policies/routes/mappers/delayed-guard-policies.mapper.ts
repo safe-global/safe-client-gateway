@@ -145,8 +145,9 @@ export class DelayedGuardPoliciesMapper {
    *
    * CGW stores configurations per Safe and root, not per guard, so they
    * belong to every change with their root; with no such change they are a
-   * draft, unless a request made after they were drafted is already applied
-   * or invalidated on any guard.
+   * draft, unless they were stored before the `readyAt` (request time plus
+   * the delay) of a request of their root that is applied or invalidated on
+   * any guard.
    */
   private changesByGuardAndRoot(args: {
     enabledGuards: ReadonlyArray<Address>;
@@ -192,8 +193,8 @@ export class DelayedGuardPoliciesMapper {
       }
     }
 
-    // Drafted before a request that is applied or invalidated now, on any
-    // guard. Deleting and storing them again later makes a new draft.
+    // Stored before the `readyAt` of a request that is applied or invalidated
+    // now, on any guard. Deleting and storing them again after it makes a new draft.
     const isFinished = (stored: SafePolicyGuardConfiguration): boolean =>
       args.onChainConfigurations.some(
         (onChain) =>
