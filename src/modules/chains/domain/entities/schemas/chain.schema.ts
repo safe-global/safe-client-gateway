@@ -119,7 +119,7 @@ export const ChainSchema = z.object({
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
   transactionService: z.url().transform(removeTrailingSlash),
-  vpcTransactionService: z.url().transform(removeTrailingSlash),
+  vpcTransactionService: z.url().transform(removeTrailingSlash).optional(),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
   ensRegistryAddress: NullableAddressSchema,

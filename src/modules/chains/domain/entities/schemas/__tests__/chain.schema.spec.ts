@@ -566,13 +566,22 @@ describe('Chain schemas', () => {
       },
     );
 
+    it('should validate a chain without vpcTransactionService', () => {
+      const { vpcTransactionService: _, ...chain } = chainBuilder().build();
+
+      const result = ChainSchema.safeParse(chain);
+
+      expect(result.success && result.data.vpcTransactionService).toBe(
+        undefined,
+      );
+    });
+
     it.each([
       ['chainId' as const],
       ['chainName' as const],
       ['description' as const],
       ['shortName' as const],
       ['transactionService' as const],
-      ['vpcTransactionService' as const],
       ['recommendedMasterCopyVersion' as const],
     ])('should not validate a chain without %s', (field) => {
       const chain = chainBuilder().build();

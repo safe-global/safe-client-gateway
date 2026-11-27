@@ -19,6 +19,7 @@ import {
   LoggingService,
 } from '#/logging/logging.interface';
 import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
+import { getTransactionServiceUrl } from '#/modules/chains/domain/transaction-service-url';
 import { TransactionApi } from '#/modules/transactions/datasources/transaction-api.service';
 
 @Injectable()
@@ -55,7 +56,7 @@ export class TransactionApiManager
 
     return new TransactionApi(
       chainId,
-      this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
+      getTransactionServiceUrl(chain, this.useVpcUrl),
       this.dataSource,
       this.cacheService,
       this.configurationService,
