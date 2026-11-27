@@ -52,7 +52,7 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 ### Queries in the repository, request rules in the route service
 
-**Rule:** A lookup and its `*OrFail` form live on the repository, never as a private method on a route service. A check that rejects the request because of a row's state — a status precondition throwing `ConflictException` — lives in the route service, and the repository method it guards stays a plain read or write.
+**Rule:** A lookup and its `*OrFail` form live on the repository, never as a private method on a route service. A check that rejects the request because of a row's state — a status precondition throwing `ConflictException` — lives in the route service, and the repository method it guards stays a plain read or write. The one exception is the last-admin 409 in `src/modules/users/domain/members/members.repository.ts`: it needs the whole admin list, read under the Space lock in the same transaction as the write, so it stays in the repository, as `security.md`'s "Workspace authorization through the shared assertions only" rule records.
 
 **Why:** each layer otherwise does the other's job. A lookup on a route service cannot be reused by the next service that needs it, so it gets written again. A state check inside a repository method turns a plain write into a request rule its other callers may not share, and the repository starts building responses for one endpoint.
 

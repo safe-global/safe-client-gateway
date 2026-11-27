@@ -63,11 +63,13 @@ private static readonly MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60;
 export const SPACE_INVITE_PATH = '/welcome/spaces';
 const baseUri = this.configurationService.getOrThrow<string>('safeWebApp.baseUri');
 this.inviteUrl = new URL(SPACE_INVITE_PATH, baseUri).toString();
-// configuration.ts, with today's value as the default
-managementApiTokenTtlBufferInSeconds: Number.parseInt(
-  process.env.AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS ?? `${60}`,
+// Do — a tunable in configuration.ts with today's value as the default…
+attempts: Number.parseInt(
+  process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
   10,
 ),
+// …and its range in RootConfigurationSchema
+SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce.number().int().min(1).max(10).optional(),
 ```
 
 ### Feature flags

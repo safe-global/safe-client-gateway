@@ -302,7 +302,7 @@ assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Pr
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
 ```
 
-**Spotted in:** #3550, #3454, #3163.
+**Spotted in:** #3550 ("Does it make more sense to add a stricter enum instead of a plain string, if we have only these 4 options?"), #3454 ("It takes any FeatureKey but checks only grant.enabled, so a future caller passing sponsored_transactions (plan enabled, quota exhausted) is admitted and the metered allowance is silently bypassed."), #3163 ("if we type it instead as `Partial<Pick<Space, 'name' | 'status'>>,` then we can simplify the method").
 **Status:** active — `best-practices.md`'s "Parameters as narrow as what the method handles" rule owns this.
 
 ### R-038: A variant or field nothing reads
@@ -313,7 +313,7 @@ assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }):
 
 **Corrected form:** #3199 stored the portfolio directly (`Map<string, ZerionWalletPortfolio>`, a failed fetch is a missing key); #3656 removed `willRevert` before it shipped.
 
-**Spotted in:** #3199, #3656.
+**Spotted in:** #3199 ("`PortfolioResult` / the `degraded` variant looks droppable — can simplify to a plain portfolio map"), #3656 ("is `willRevert` needed?").
 **Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this.
 
 ## Structure
@@ -381,18 +381,18 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 **Corrected form:** drop the `export` (#2856, #3104), or the symbol when nothing uses it (#2850's `MIN_FALLBACK_HANDLER_VERSION`).
 
-**Spotted in:** #2856, #3104, #2850.
-**Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this. A candidate for tooling: once Knip's unused-exports check runs in CI, this flips to `solved-by-knip`.
+**Spotted in:** #2856 ("is this schema used anywhere outside the file? If not we dont have to export it."), #3104 ("Also you dont use this class anywhere outside so you can remove `export`"), #2850 ("This seems not to be used anywhere").
+**Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this.
 
 ### R-040: Query logic in the route service, business rules in the repository
 
-**Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method.
+**Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method. The last-admin 409 in `members.repository.ts` is the guide rule's one exception.
 
 **Why it's bad:** #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository, while #3107's survey lookup sat on the route service where no other service could reuse it.
 
 **Corrected form:** #3107 moved the lookup to `SurveysRepository.findActiveBySlugOrFail`; #3134 moved the `INVITED` check into `MembersService`, leaving the repository's `renewInvite` a plain write.
 
-**Spotted in:** #3107, #3134.
+**Spotted in:** #3107 ("This method should stay in the repository as it handles queries."), #3134 ("Usually this logic checks should stay in the service layer.").
 **Status:** active — `module-structure.md`'s "Queries in the repository, request rules in the route service" rule owns this.
 
 ### R-041: Input validated below the controller
@@ -403,7 +403,7 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 **Corrected form:** #3397 dropped the datasource guard and kept `@Param('chainId', new ValidationPipe(ChainIdSchema))` on the routes.
 
-**Spotted in:** #3397, #3117.
+**Spotted in:** #3397 ("Instead of validating it in the service layer, why don’t we validate the `chainId` at the controller level?"), #3117 ("This is ok since the method is temp but in future we should keep such validations in the controller.").
 **Status:** active — `api-dtos-and-validation.md`'s "ValidationPipe everywhere" rule owns this (non-negotiable #1).
 
 ## Naming
@@ -478,7 +478,7 @@ this.inviteUrl = new URL(SPACE_INVITE_PATH, this.configurationService.getOrThrow
 
 #3419 and #3495 kept constants on purpose; the guide rule says which values stay.
 
-**Spotted in:** #3135, #3284, #3214, #3564, #3565.
+**Spotted in:** #3135 ("this it needs to be addressed before the merge", on `SPACE_INVITE_URL`'s TODO), #3284 ("should we move it to config?"), #3214 ("config service :)"), #3564 ("Should we make them configurable?"), #3565 ("Move into config file with defaults.").
 **Status:** active — `configuration-and-flags.md`'s "Environment-specific values and tunables come from config" rule owns this.
 
 ## Caching and upstream calls
@@ -555,18 +555,18 @@ private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
 
 ```ts
 // Don't
-const members = await this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId });
-const activeAdmin = await this.membersRepository.findActiveAdmin({ userId, spaceId });
+const spaceSafes = await this.spaceSafesRepository.findBySpaceId(args.spaceId);
+const wallets = await this.walletsRepository.findByUser(userId);
 // Do
-const [members, activeAdmin] = await Promise.all([
-  this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId }),
-  this.membersRepository.findActiveAdmin({ userId, spaceId }),
+const [spaceSafes, wallets] = await Promise.all([
+  this.spaceSafesRepository.findBySpaceId(args.spaceId),
+  this.walletsRepository.findByUser(userId),
 ]);
 ```
 
-#3451's per-Safe reads went through `batched()`; #3437's relay checks stayed sequential on purpose.
+#3131 put its two member lookups in one `Promise.all`, which `MembersService.get` has since replaced with one query; #3451's per-Safe reads went through `batched()`; #3437's relay checks stayed sequential on purpose.
 
-**Spotted in:** #3131, #3451.
+**Spotted in:** #3131 ("nit: we can parallelize it"), #3451 ("We should create batches with a fixed, configurable size (e.g. 20) and process each batch with `Promise.all`.", then "So we await `enabledModules()` inside the per-Safe loop. On cache misses, the endpoint accumulates one upstream request’s latency per Safe, although these reads are independent.").
 **Status:** active — `caching-and-performance.md`'s "Independent awaits run concurrently" rule owns this, with "Batch and chunk upstream calls" for the batch size.
 
 ## Logging and errors
