@@ -386,11 +386,11 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 ### R-040: Query logic in the route service, business rules in the repository
 
-**Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method. The last-admin 409 in `members.repository.ts` is the guide rule's one exception.
+**Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method. A check that must hold atomically with its write, like the last-admin 409s, stays in the repository.
 
 **Why it's bad:** #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository, while #3107's survey lookup sat on the route service where no other service could reuse it.
 
-**Corrected form:** #3107 moved the lookup to `SurveysRepository.findActiveBySlugOrFail`; #3134 moved the `INVITED` check into `MembersService`, leaving the repository's `renewInvite` a plain write.
+**Corrected form:** #3107 moved the lookup to `SurveysRepository.findActiveBySlugOrFail`; #3134 moved the `INVITED` check into `MembersService`, leaving the repository's `renewInvite` a write with only its atomic cooldown condition.
 
 **Spotted in:** #3107 ("This method should stay in the repository as it handles queries."), #3134 ("Usually this logic checks should stay in the service layer.").
 **Status:** active — `module-structure.md`'s "Queries in the repository, request rules in the route service" rule owns this.

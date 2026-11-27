@@ -190,13 +190,12 @@ export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceS
 
 **Why:** the type is what tells the next caller what is safe to pass, so a wider one compiles a call the method silently mishandles — a metered feature handed to a method that only checks whether the plan grants it is admitted with its quota exhausted. The body also has to defend against cases the narrow type would have ruled out: a `QueryDeepPartialEntity<Space>` payload forced `typeof updatePayload.name === 'string'` checks that a `Partial<Pick<Space, …>>` makes unnecessary.
 
-**Canonical example:** `src/modules/entitlements/domain/entitlement-enforcement.interface.ts` splits feature keys by kind — `assertFeatureGranted` takes `BinaryFeature`, `assertWithinQuota` takes `Exclude<FeatureKey, BinaryFeature>` — so a metered feature cannot reach the method that only checks `grant.enabled`. `SpacesRepository.update` and its `diffSpaceUpdate` (`src/modules/spaces/domain/spaces.repository.ts`) take the interface's `Partial<Pick<Space, 'name' | 'status' | 'experimentalFeatures'>>`, not TypeORM's `QueryDeepPartialEntity<Space>`.
+**Canonical example:** `src/modules/entitlements/domain/entitlement-enforcement.interface.ts` splits feature keys by kind — `assertFeatureGranted` takes `BinaryFeature`, `assertWithinQuota` takes `Exclude<FeatureKey, BinaryFeature>` — so a metered feature cannot reach the method that only checks `grant.enabled`. `SpacesRepository.update` and its `diffSpaceUpdate` (`src/modules/spaces/domain/spaces.repository.ts`) take the interface's `Partial<Pick<Space, 'name' | 'status' | 'experimentalFeatures'>>`, not TypeORM's `QueryDeepPartialEntity<Space>`. The `ordering?: string` parameters on `ITransactionApi` and `SafeRepository` predate this rule and are not precedent; #3550 deferred narrowing them.
 
 ```ts
 // Don't
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Promise<void>;
 updatePayload: QueryDeepPartialEntity<Space>;
-ordering?: string; // four values are valid
 // Do
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
 assertWithinQuota(args: { spaceId: Space['id']; featureKey: Exclude<FeatureKey, BinaryFeature>; delta: number }): Promise<void>;
