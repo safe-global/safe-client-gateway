@@ -298,11 +298,8 @@ export type SafeRef = z.infer<typeof SafeRefSchema>;
 ```ts
 // Don't
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Promise<void>;
-updatePayload: QueryDeepPartialEntity<Space>;
 // Do
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
-assertWithinQuota(args: { spaceId: Space['id']; featureKey: Exclude<FeatureKey, BinaryFeature>; delta: number }): Promise<void>;
-updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
 ```
 
 **Spotted in:** #3550, #3454, #3163.
@@ -312,24 +309,12 @@ updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
 
 **Pattern:** a result union whose variants every reader handles the same way, or a field added to a returned shape with no consumer that acts on it.
 
-**Why it's bad:** every reader has to work out that the distinction makes no difference, and on a response the field becomes contract the moment a client reads it. In #3199 a `degraded` result and a missing key both fell through to `serveDegradedBalance`, and the failure was already logged and metered where it happened.
+**Why it's bad:** in #3199 a `degraded` result and a missing key both fell through to `serveDegradedBalance`, so the union told readers nothing; #3656's `willRevert` had no consumer.
 
-**Corrected form:**
-
-```ts
-// Don't
-type PortfolioResult =
-  | { status: 'ok'; portfolio: ZerionWalletPortfolio }
-  | { status: 'degraded' };
-portfoliosByIdentity: Map<string, PortfolioResult>;
-// Do — a failed fetch is a missing key
-portfoliosByIdentity: Map<string, ZerionWalletPortfolio>;
-```
-
-#3656 removed `willRevert` from the pending guard-setup change before it shipped.
+**Corrected form:** #3199 stored the portfolio directly (`Map<string, ZerionWalletPortfolio>`, a failed fetch is a missing key); #3656 removed `willRevert` before it shipped.
 
 **Spotted in:** #3199, #3656.
-**Status:** active — `reviewing.md`'s "No speculative abstractions, unused exports, or dead code introduced" check owns this.
+**Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this.
 
 ## Structure
 
@@ -392,47 +377,20 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 **Pattern:** a schema, DTO class or constant exported from a file whose only consumer is that same file — or exported and used nowhere at all.
 
-**Why it's bad:** an export says something else depends on the symbol, so the next author treats it as module API: keeps it stable, or imports it in place of the one the module meant to expose. In #2856 the variant schemas were exported only because their siblings were, while every test went through the main `ThreatAnalysisResultSchema`.
+**Why it's bad:** in #2856 the variant schemas were exported only because their siblings were, while every test went through the main `ThreatAnalysisResultSchema`; #2850's exported constant had no user at all.
 
-**Corrected form:**
-
-```ts
-// Don't
-export const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({ /* … */ });
-export class EmailInviteUserDto { /* … */ }
-// Do
-const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({ /* … */ });
-class EmailInviteUserDto { /* … */ }
-```
-
-An exported constant nothing uses is deleted — #2850 removed `MIN_FALLBACK_HANDLER_VERSION`.
+**Corrected form:** drop the `export` (#2856, #3104), or the symbol when nothing uses it (#2850's `MIN_FALLBACK_HANDLER_VERSION`).
 
 **Spotted in:** #2856, #3104, #2850.
-**Status:** active — `reviewing.md`'s "No speculative abstractions, unused exports, or dead code introduced" check owns this. A candidate for tooling rather than review: Knip's unused-exports check catches this shape, and once it runs in CI the entry flips to `solved-by-knip`.
+**Status:** active — `best-practices.md`'s "Nothing exported, declared or returned without a reader" rule owns this. A candidate for tooling: once Knip's unused-exports check runs in CI, this flips to `solved-by-knip`.
 
 ### R-040: Query logic in the route service, business rules in the repository
 
 **Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method.
 
-**Why it's bad:** each layer ends up doing the other's job — #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository, while #3107's survey lookup sat on the route service.
+**Why it's bad:** #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository, while #3107's survey lookup sat on the route service where no other service could reuse it.
 
-**Corrected form:**
-
-```ts
-// Don't — route service
-private async findActiveSurveyOrFail(slug: Survey['slug']): Promise<Survey> { /* … */ }
-// Don't — repository
-if (member.status !== 'INVITED') {
-  throw new ConflictException('Only a pending invitation can be renewed.');
-}
-// Do — route service
-const survey = await this.surveysRepository.findActiveBySlugOrFail(args.slug);
-const member = await this.membersRepository.findOneOrFail({ user: { id: args.userId }, space: { id: args.spaceId } });
-if (member.status !== 'INVITED') {
-  throw new ConflictException('Only a pending invitation can be renewed.');
-}
-await this.membersRepository.renewInvite({ memberId: member.id, inviteExpiresAt });
-```
+**Corrected form:** #3107 moved the lookup to `SurveysRepository.findActiveBySlugOrFail`; #3134 moved the `INVITED` check into `MembersService`, leaving the repository's `renewInvite` a plain write.
 
 **Spotted in:** #3107, #3134.
 **Status:** active — `module-structure.md`'s "Queries in the repository, request rules in the route service" rule owns this.
@@ -441,21 +399,9 @@ await this.membersRepository.renewInvite({ memberId: member.id, inviteExpiresAt 
 
 **Pattern:** a format check on a route input — a `chainId`, a numeric or UUID id — inside a datasource or repository, instead of a `ValidationPipe` on the `@Param`.
 
-**Why it's bad:** the failure comes back as whatever the lower layer throws — #3397's `ConfigApi` guard answered a malformed `chainId` with a `DataSourceError` 404 where the route pipe answers 422 — and every caller of the lower method pays for a check only one route needed.
+**Why it's bad:** #3397's `ConfigApi` guard answered a malformed `chainId` with a `DataSourceError` 404 where the route pipe answers 422.
 
-**Corrected form:**
-
-```ts
-// Don't — in the datasource
-async getChain(chainId: string): Promise<Raw<Chain>> {
-  if (!ChainIdSchema.safeParse(chainId).success) {
-    throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
-  }
-  // …
-}
-// Do — at the route
-@Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
-```
+**Corrected form:** #3397 dropped the datasource guard and kept `@Param('chainId', new ValidationPipe(ChainIdSchema))` on the routes.
 
 **Spotted in:** #3397, #3117.
 **Status:** active — `api-dtos-and-validation.md`'s "ValidationPipe everywhere" rule owns this (non-negotiable #1).
@@ -519,27 +465,18 @@ safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() 
 
 **Pattern:** a URL, TTL, timeout, buffer, poll interval or batch size declared as a literal constant — often under a `// TODO: make this configurable` — instead of read from configuration.
 
-**Why it's bad:** #3135's `SPACE_INVITE_URL` would have pointed every invite email at `http://localhost:3001`, though its own TODO said it should be configurable — the TODO is what a reviewer sees, and it reads as already handled.
+**Why it's bad:** #3135's `SPACE_INVITE_URL` would have pointed every invite email at `http://localhost:3001`, though its own TODO said it should be configurable.
 
 **Corrected form:**
 
 ```ts
 // Don't
-// TODO: make this configurable and environment-specific
 export const SPACE_INVITE_URL = 'http://localhost:3001/welcome/spaces';
-private static readonly MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60;
 // Do
-export const SPACE_INVITE_PATH = '/welcome/spaces';
-const baseUri = this.configurationService.getOrThrow<string>('safeWebApp.baseUri');
-this.inviteUrl = new URL(SPACE_INVITE_PATH, baseUri).toString();
-// configuration.ts, with today's value as the default
-managementApiTokenTtlBufferInSeconds: Number.parseInt(
-  process.env.AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS ?? `${60}`,
-  10,
-),
+this.inviteUrl = new URL(SPACE_INVITE_PATH, this.configurationService.getOrThrow<string>('safeWebApp.baseUri')).toString();
 ```
 
-Two PRs settled the other way, and the guide rule says why: #3419 kept `MAX_TOKEN_ADDRESSES` a constant because it is part of the published contract, and #3495 kept its pending-transaction scan limit hard-coded because staging and production use the same value.
+#3419 and #3495 kept constants on purpose; the guide rule says which values stay.
 
 **Spotted in:** #3135, #3284, #3214, #3564, #3565.
 **Status:** active — `configuration-and-flags.md`'s "Environment-specific values and tunables come from config" rule owns this.
@@ -625,11 +562,9 @@ const [members, activeAdmin] = await Promise.all([
   this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId }),
   this.membersRepository.findActiveAdmin({ userId, spaceId }),
 ]);
-// Do — per-item upstream reads, in batches of a configured size
-const settled = await batched(safes, this.batchSize, (safe) => this.enabledModules(safe));
 ```
 
-#3437 kept its three relay checks sequential on purpose, because their order decides the outcome; the guide rule covers that case.
+#3451's per-Safe reads went through `batched()`; #3437's relay checks stayed sequential on purpose.
 
 **Spotted in:** #3131, #3451.
 **Status:** active — `caching-and-performance.md`'s "Independent awaits run concurrently" rule owns this, with "Batch and chunk upstream calls" for the batch size.

@@ -54,9 +54,25 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 **Rule:** A lookup and its `*OrFail` form live on the repository, never as a private method on a route service. A check that rejects the request because of a row's state — a status precondition throwing `ConflictException` — lives in the route service, and the repository method it guards stays a plain read or write.
 
-**Why:** a lookup on a route service cannot be reused by the next service that needs it, and a state check inside a repository method rejects requests on a rule its other callers may not share.
+**Why:** each layer otherwise does the other's job. A lookup on a route service cannot be reused by the next service that needs it, so it gets written again. A state check inside a repository method turns a plain write into a request rule its other callers may not share, and the repository starts building responses for one endpoint.
 
-**Canonical example:** `SurveysRepository.findActiveBySlugOrFail` in `src/modules/surveys/domain/surveys.repository.ts`, called from `SurveysService`; `MembersService.renewInvite` in `src/modules/spaces/routes/members/members.service.ts` loads the member, throws `ConflictException` unless it is `INVITED`, then calls `membersRepository.renewInvite` to write the new expiry.
+**Canonical example:** `SurveysRepository.findActiveBySlugOrFail` in `src/modules/surveys/domain/surveys.repository.ts`, called from `SurveysService`, replaced a private `findActiveSurveyOrFail` on the service. `MembersService.renewInvite` in `src/modules/spaces/routes/members/members.service.ts` loads the member, throws `ConflictException` unless it is `INVITED`, then calls `membersRepository.renewInvite`, which only writes the new expiry:
+
+```ts
+// Don't — route service
+private async findActiveSurveyOrFail(slug: Survey['slug']): Promise<Survey> { /* … */ }
+// Don't — repository
+if (member.status !== 'INVITED') {
+  throw new ConflictException('Only a pending invitation can be renewed.');
+}
+// Do — route service
+const survey = await this.surveysRepository.findActiveBySlugOrFail(args.slug);
+const member = await this.membersRepository.findOneOrFail({ user: { id: args.userId }, space: { id: args.spaceId } });
+if (member.status !== 'INVITED') {
+  throw new ConflictException('Only a pending invitation can be renewed.');
+}
+await this.membersRepository.renewInvite({ memberId: member.id, inviteExpiresAt });
+```
 
 ### Symbol DI wiring
 

@@ -84,6 +84,19 @@ This applies equally to a `clear*()` method's own delete and to a delete trigger
 
 Prefer `Promise.all` when any single failure should fail the whole call, and `Promise.allSettled` when one item's failure should not sink the rest — the batched price fetch in the next rule is the `allSettled` case. Per-item upstream reads that would overrun the provider all at once go through `batched()` (`src/domain/common/utils/batch.ts`), a configured number at a time, as `PoliciesService.enforcersPerSafe` does for the Safes of a Space.
 
+```ts
+// Don't
+const members = await this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId });
+const activeAdmin = await this.membersRepository.findActiveAdmin({ userId, spaceId });
+// Do
+const [members, activeAdmin] = await Promise.all([
+  this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId }),
+  this.membersRepository.findActiveAdmin({ userId, spaceId }),
+]);
+// Do — per-item upstream reads, a configured number at a time
+const settled = await batched(safes, this.batchSize, (safe) => this.enforcers(safe));
+```
+
 Calls are not independent when their order decides the outcome. `WorkspaceRelayer` (`src/modules/relay/domain/relayers/workspace.relayer.ts`) checks Safe ownership, then quota, then the Tenderly simulation, one after another: a request it will reject never pays for the simulation, and the same request always gets the same status, where `Promise.all` would return whichever rejection finished first.
 
 ### Batch and chunk upstream calls

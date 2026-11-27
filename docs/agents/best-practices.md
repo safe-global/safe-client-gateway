@@ -188,13 +188,37 @@ export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceS
 
 **Rule:** A parameter's type admits only the values the method handles: a closed set is a union or enum, not `string`; a method that handles one kind of a key takes that kind, not the whole key type. An implementation takes the type its interface declares rather than widening it.
 
-**Why:** the type is what tells the next caller what is safe to pass, so a wider one compiles a call the method silently mishandles, and the body has to defend against cases the narrow type would have ruled out.
+**Why:** the type is what tells the next caller what is safe to pass, so a wider one compiles a call the method silently mishandles — a metered feature handed to a method that only checks whether the plan grants it is admitted with its quota exhausted. The body also has to defend against cases the narrow type would have ruled out: a `QueryDeepPartialEntity<Space>` payload forced `typeof updatePayload.name === 'string'` checks that a `Partial<Pick<Space, …>>` makes unnecessary.
 
-**Canonical example:** `src/modules/entitlements/domain/entitlement-enforcement.interface.ts` splits feature keys by kind — `assertFeatureGranted` takes `BinaryFeature`, `assertWithinQuota` takes `Exclude<FeatureKey, BinaryFeature>` — so a metered feature cannot reach the method that only checks `grant.enabled`. `SpacesRepository.update` takes the interface's `Partial<Pick<Space, 'name' | 'status' | 'experimentalFeatures'>>`, not TypeORM's `QueryDeepPartialEntity<Space>`.
+**Canonical example:** `src/modules/entitlements/domain/entitlement-enforcement.interface.ts` splits feature keys by kind — `assertFeatureGranted` takes `BinaryFeature`, `assertWithinQuota` takes `Exclude<FeatureKey, BinaryFeature>` — so a metered feature cannot reach the method that only checks `grant.enabled`. `SpacesRepository.update` and its `diffSpaceUpdate` (`src/modules/spaces/domain/spaces.repository.ts`) take the interface's `Partial<Pick<Space, 'name' | 'status' | 'experimentalFeatures'>>`, not TypeORM's `QueryDeepPartialEntity<Space>`.
 
 ```ts
 // Don't
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Promise<void>;
+updatePayload: QueryDeepPartialEntity<Space>;
+ordering?: string; // four values are valid
 // Do
 assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
+assertWithinQuota(args: { spaceId: Space['id']; featureKey: Exclude<FeatureKey, BinaryFeature>; delta: number }): Promise<void>;
+updatePayload: Partial<Pick<Space, 'name' | 'status' | 'experimentalFeatures'>>;
+```
+
+### Nothing exported, declared or returned without a reader
+
+**Rule:** A symbol is exported only when something outside its file imports it, and one nothing uses at all is deleted. A union variant is added only when some reader handles it differently from the others, and a field joins a returned shape only when a consumer acts on it.
+
+**Why:** an export says something else depends on the symbol, so the next author treats it as module API — keeps it stable, or imports it in place of the one the module meant to expose; a schema exported only because its siblings were looks exactly like one that is shared. A variant or field claims a distinction matters, so every reader has to work out that it doesn't, and on a response the field becomes contract the moment a client reads it. `reviewing.md`'s "No speculative abstractions, unused exports, or dead code introduced" check applies this at review; Knip's unused-exports check would catch the export half mechanically.
+
+**Canonical example:** `src/modules/safe-shield/entities/analysis-result.entity.ts` keeps its variant schemas (`MasterCopyChangeThreatAnalysisResultSchema`, `FailedThreatAnalysisResultSchema`, …) module-private and exports only the `ThreatAnalysisResultSchema` union that callers and tests parse with. #3199 dropped a `PortfolioResult` union whose `degraded` variant every reader handled like a missing key, since the failure was already logged and metered where it happened:
+
+```ts
+// Don't
+export const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({ /* … */ });
+type PortfolioResult =
+  | { status: 'ok'; portfolio: ZerionWalletPortfolio }
+  | { status: 'degraded' };
+portfoliosByIdentity: Map<string, PortfolioResult>;
+// Do
+const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({ /* … */ });
+portfoliosByIdentity: Map<string, ZerionWalletPortfolio>; // a failed fetch is a missing key
 ```
