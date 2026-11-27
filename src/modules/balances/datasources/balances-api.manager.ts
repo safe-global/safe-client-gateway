@@ -18,6 +18,7 @@ import { IConfigApi } from '#/domain/interfaces/config-api.interface';
 import { IPricesApi } from '#/modules/balances/datasources/prices-api.interface';
 import { SafeBalancesApi } from '#/modules/balances/datasources/safe-balances-api.service';
 import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
+import { getTransactionServiceUrl } from '#/modules/chains/domain/transaction-service-url';
 import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
@@ -66,7 +67,7 @@ export class BalancesApiManager
 
     return new SafeBalancesApi(
       chainId,
-      this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
+      getTransactionServiceUrl(chain, this.useVpcUrl),
       this.dataSource,
       this.cacheService,
       this.configurationService,

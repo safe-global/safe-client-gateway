@@ -6,6 +6,7 @@ import { ChainApiManager } from '#/datasources/common/chain-api.manager';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { IConfigApi } from '#/domain/interfaces/config-api.interface';
 import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
+import { getTransactionServiceUrl } from '#/modules/chains/domain/transaction-service-url';
 import type { IExportApiManager } from '#/modules/csv-export/v1/datasources/export-api.manager.interface';
 import type { IExportApi } from './export-api.interface';
 import { ExportApi } from './export-api.service';
@@ -38,9 +39,7 @@ export class ExportApiManager
     const chain = await this.configApi
       .getChain(chainId)
       .then(ChainSchema.parse);
-    const baseUrl = this.useVpcUrl
-      ? chain.vpcTransactionService
-      : chain.transactionService;
+    const baseUrl = getTransactionServiceUrl(chain, this.useVpcUrl);
 
     return new ExportApi(
       chainId,
