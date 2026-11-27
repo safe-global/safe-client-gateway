@@ -193,7 +193,7 @@ export class DelayedGuardPoliciesMapper {
     }
 
     // Drafted before a request that is applied or invalidated now, on any
-    // guard. Drafting the same configurations again later is a new draft.
+    // guard. Deleting and storing them again later makes a new draft.
     const isFinished = (stored: SafePolicyGuardConfiguration): boolean =>
       args.onChainConfigurations.some(
         (onChain) =>

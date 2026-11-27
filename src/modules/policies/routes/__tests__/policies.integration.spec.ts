@@ -16,6 +16,7 @@ import {
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
@@ -1724,6 +1725,56 @@ describe('Space Policies Controller', () => {
         ]),
       );
       expect(statuses).toHaveLength(2);
+    });
+
+    it('should not report an applied root as a draft again when it is stored again', async () => {
+      const body = payload();
+      mockUpstream({ guard: zeroAddress });
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          ConfigurationRoot: [
+            aRoot({
+              configurations: body.configurations,
+              readyAt: nowInSeconds() - 3_600,
+              status: 'APPLIED',
+            }),
+          ],
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const url = `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`;
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+      // Rows reject UPDATE, so the row is re-inserted as drafted before the request.
+      await app
+        .get(PostgresDatabaseService)
+        .getDataSource()
+        .query(
+          `WITH stored AS (DELETE FROM "policy_configuration_requests" WHERE "root" = $1 RETURNING "space_id", "chain_id", "safe_address", "safe_address_index", "root", "configurations", "created_by", "created_at")
+          INSERT INTO "policy_configuration_requests" ("space_id", "chain_id", "safe_address", "safe_address_index", "root", "configurations", "created_by", "created_at")
+          SELECT "space_id", "chain_id", "safe_address", "safe_address_index", "root", "configurations", "created_by", "created_at" - make_interval(days => 1) FROM stored`,
+          [body.root],
+        );
+
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+
+      const pending = await getPending({
+        accessToken,
+        spaceId,
+        types: Object.values(PolicyType).join(','),
+      });
+      expect(
+        pending.filter((item) => item.kind === 'delayed-guard-policies'),
+      ).toEqual([]);
     });
   });
 

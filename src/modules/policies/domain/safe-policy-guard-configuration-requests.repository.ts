@@ -55,9 +55,10 @@ export class SafePolicyGuardConfigurationRequestsRepository
       const repository = manager.getRepository(PolicyConfigurationRequest);
       const safe = this.safeMatch({ ...args, safeAddressIndex });
 
-      // Re-submitting a stored root replaces its row, as rows are immutable,
-      // so `createdAt` is when the configurations were last drafted.
-      await repository.delete({ ...safe, root: args.root });
+      // Re-submitting a stored root is a no-op.
+      if (await repository.existsBy({ ...safe, root: args.root })) {
+        return;
+      }
       await repository.insert({
         ...args,
         safeAddress: safeAddress as Address,
