@@ -169,6 +169,25 @@ describe('PolicyConfigurationRequestsService', () => {
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 
+  it('should accept a stored root again without verifying it', async () => {
+    const payload = validPayload();
+    configurationRequestsRepository.findRootsBySafe.mockResolvedValue([
+      rootOf(payload),
+    ]);
+    verifier.verify.mockRejectedValue(
+      new HttpExceptionNoLog(
+        'The Safe transaction can no longer be executed',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+
+    await expect(target.create({ ...request, payload })).resolves.toStrictEqual(
+      { root: rootOf(payload) },
+    );
+    expect(verifier.verify).not.toHaveBeenCalled();
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
   it('should store the removal of a policy', async () => {
     const payload = validPayload(zeroAddress);
 

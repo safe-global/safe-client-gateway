@@ -23,7 +23,6 @@ import type { INetworkService } from '#/datasources/network/network.service.inte
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
-import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
 import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -335,6 +334,7 @@ describe('Space Policies Controller', () => {
     safe: Safe;
     policy?: Address;
     requestedRoot?: Hex;
+    isExecuted?: boolean;
   }): Promise<{
     root: Hex;
     transaction: MultisigTransaction;
@@ -360,7 +360,7 @@ describe('Space Policies Controller', () => {
           .encode(),
       )
       .with('operation', Operation.CALL)
-      .with('isExecuted', false)
+      .with('isExecuted', args.isExecuted ?? false)
       .with('nonce', args.safe.nonce)
       .buildWithConfirmations({
         chainId: SEPOLIA_CHAIN_ID,
@@ -1408,6 +1408,34 @@ describe('Space Policies Controller', () => {
         .expect(201);
     });
 
+    it('should store the configurations of an executed request while its root is open on-chain', async () => {
+      const safe = mockUpstream({ guard: knownSafePolicyGuard });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const { root, body } = await payload({ safe, isExecuted: true });
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          ConfigurationRoot: [
+            rawIndexerConfigurationRootBuilder()
+              .with('chainId', Number(SEPOLIA_CHAIN_ID))
+              .with('safe', safeAddress)
+              .with('guard', knownSafePolicyGuard)
+              .with('root', root)
+              .with('status', 'PENDING')
+              .build(),
+          ],
+        }),
+      );
+
+      await request(app.getHttpServer())
+        .post(requestsUrl(spaceId))
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ root });
+    });
+
     it('should reject configurations whose root the transaction does not request, without storing them', async () => {
       const safe = mockUpstream({ guard: knownSafePolicyGuard });
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -1439,45 +1467,6 @@ describe('Space Policies Controller', () => {
       expect(create).not.toHaveBeenCalled();
     });
 
-    it('should reject a request on a guard the Safe has not enabled', async () => {
-      const safe = mockUpstream({ guard: safePolicyGuard });
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-      const { body } = await payload({ safe });
-
-      await request(app.getHttpServer())
-        .post(requestsUrl(spaceId))
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send(body)
-        .expect(422)
-        .expect(({ body }) =>
-          expect(body.message).toBe(
-            "The Safe transaction does not target the Safe's policy guard",
-          ),
-        );
-    });
-
-    it('should reject a signature of someone who is not an owner', async () => {
-      const safe = mockUpstream({ guard: knownSafePolicyGuard });
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-      const { body } = await payload({ safe });
-      const signature = await getSignature({
-        signer: privateKeyToAccount(generatePrivateKey()),
-        hash: body.safeTxHash,
-        signatureType: SignatureType.Eoa,
-      });
-
-      await request(app.getHttpServer())
-        .post(requestsUrl(spaceId))
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ ...body, signature })
-        .expect(422)
-        .expect(({ body }) => expect(body.message).toBe('Invalid signature'));
-    });
-
     it('should reject a transaction the Transaction Service does not hold', async () => {
       mockUpstream({ guard: knownSafePolicyGuard });
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -1503,7 +1492,7 @@ describe('Space Policies Controller', () => {
         .expect(422)
         .expect(({ body }) =>
           expect(body.message).toBe(
-            'The Safe transaction is not queued for this Safe',
+            'The Safe transaction is unknown for this Safe',
           ),
         );
     });

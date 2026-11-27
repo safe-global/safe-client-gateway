@@ -55,7 +55,7 @@ export class PoliciesController {
   @ApiOperation({
     summary: 'Store the configurations of a delayed configuration request',
     description:
-      "Stores the `Configuration[]` behind a `requestConfiguration(root)`, which publishes only the hash on-chain, so that the configurations a later `applyConfiguration` needs survive the delay. Call it after proposing the Safe transaction: it must be queued for this Safe, call `requestConfiguration(root)` on the Safe's policy guard with the root recomputed from the configurations, and `signature` must be a current owner's signature of it. Idempotent: storing the same root again is a no-op.",
+      "Stores the `Configuration[]` behind a `requestConfiguration(root)`, which publishes only the hash on-chain, so that the configurations a later `applyConfiguration` needs survive the delay. Call it after proposing the Safe transaction. The transaction must be this Safe's, call `requestConfiguration(root)` on the Safe's policy guard with the root recomputed from the configurations, and be signed in `signature` by a current owner. It is either queued, or executed with the root still requested on-chain and neither applied, invalidated nor expired; the signature of an executed transaction must be one of its confirmations. Idempotent: storing the same root again is a no-op.",
   })
   @ApiParam({
     name: 'spaceId',
@@ -82,7 +82,7 @@ export class PoliciesController {
   })
   @ApiUnprocessableEntityResponse({
     description:
-      "Invalid chain ID, Safe address or body, the chain has no policy engine, a policy is neither a known policy contract on the chain nor the zero address, the Safe transaction is not queued for this Safe or does not call `requestConfiguration(root)` on the Safe's policy guard, or the signature is not a current owner's",
+      "Invalid chain ID, Safe address or body, the chain has no policy engine, a policy is neither a known policy contract on the chain nor the zero address, the Safe transaction is unknown for this Safe, can no longer be executed, or does not call `requestConfiguration(root)` on the Safe's policy guard, an executed request's root is not open on-chain, or the signature is not a current owner's",
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({

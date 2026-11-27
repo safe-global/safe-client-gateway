@@ -13,10 +13,18 @@ import {
 } from '#/domain/common/utils/__tests__/signatures.builder';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import { requestConfigurationEncoder } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
+import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
+import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   getSafePolicyGuardDeployments,
   POLICY_ENGINE_CHAIN_IDS,
 } from '#/modules/policies/domain/policy-deployments.constants';
+import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  GUARD_POLICY_TYPES,
+  guardPolicyKindsOf,
+} from '#/modules/policies/domain/utils/policy.utils';
 import { PolicyConfigurationRequestVerifier } from '#/modules/policies/routes/helpers/policy-configuration-request-verifier.helper';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -37,6 +45,9 @@ describe('PolicyConfigurationRequestVerifier', () => {
     getSafe: vi.fn(),
     getMultiSigTransaction: vi.fn(),
   };
+  const policyIndexerRepository: MockedObject<
+    Pick<IPolicyIndexerRepository, 'getState'>
+  > = { getState: vi.fn() };
 
   function verifierWith(
     args: { ethSign: boolean } = { ethSign: true },
@@ -45,6 +56,7 @@ describe('PolicyConfigurationRequestVerifier', () => {
     configurationService.set('features.ethSign', args.ethSign);
     return new PolicyConfigurationRequestVerifier(
       safeRepository as MockedObject<ISafeRepository>,
+      policyIndexerRepository as MockedObject<IPolicyIndexerRepository>,
       configurationService,
     );
   }
@@ -202,8 +214,45 @@ describe('PolicyConfigurationRequestVerifier', () => {
           rejection('Invalid signature'),
         );
       });
+
+      it('should reject the confirmation of a signer who is no longer an owner', async () => {
+        const safe = aSafe();
+        const transaction = await aQueuedRequest(safe, signatureType);
+        const withoutSigner = {
+          ...safe,
+          owners: safe.owners.filter((address) => address !== owner.address),
+        };
+        mockUpstream(withoutSigner, transaction);
+        const [confirmation] = transaction.confirmations ?? [];
+
+        await expect(
+          verify({
+            safe: withoutSigner,
+            transaction,
+            signature: confirmation.signature!,
+          }),
+        ).rejects.toThrow(rejection('Invalid signature'));
+      });
     },
   );
+
+  it('should reject a contract signature other than the one the owner confirmed with', async () => {
+    const safe = aSafe();
+    const transaction = await aQueuedRequest(
+      safe,
+      SignatureType.ContractSignature,
+    );
+    mockUpstream(safe, transaction);
+    const signature = await getSignature({
+      signer: owner,
+      hash: transaction.safeTxHash,
+      signatureType: SignatureType.ContractSignature,
+    });
+
+    await expect(verify({ safe, transaction, signature })).rejects.toThrow(
+      rejection('Invalid signature'),
+    );
+  });
 
   it('should reject a transaction the Transaction Service does not hold', async () => {
     const safe = aSafe();
@@ -214,7 +263,7 @@ describe('PolicyConfigurationRequestVerifier', () => {
     );
 
     await expect(verify({ safe, transaction })).rejects.toThrow(
-      rejection('The Safe transaction is not queued for this Safe'),
+      rejection('The Safe transaction is unknown for this Safe'),
     );
   });
 
@@ -241,31 +290,155 @@ describe('PolicyConfigurationRequestVerifier', () => {
     mockUpstream(safe, transaction);
 
     await expect(verify({ safe, transaction })).rejects.toThrow(
-      rejection('The Safe transaction is not queued for this Safe'),
+      rejection('The Safe transaction is unknown for this Safe'),
     );
   });
 
-  it('should reject an executed transaction', async () => {
-    const safe = aSafe();
-    const transaction = {
-      ...(await aQueuedRequest(safe)),
-      isExecuted: true,
-    };
-    mockUpstream(safe, transaction);
-
-    await expect(verify({ safe, transaction })).rejects.toThrow(
-      rejection('The Safe transaction is not queued for this Safe'),
-    );
-  });
-
-  it('should reject a transaction below the Safe nonce', async () => {
+  it('should reject an unexecuted transaction below the Safe nonce', async () => {
     const safe = { ...aSafe(), nonce: faker.number.int({ min: 1 }) };
     const transaction = await aQueuedRequest(safe);
     mockUpstream({ ...safe, nonce: safe.nonce + 1 }, transaction);
 
     await expect(verify({ safe, transaction })).rejects.toThrow(
-      rejection('The Safe transaction is not queued for this Safe'),
+      rejection('The Safe transaction can no longer be executed'),
     );
+  });
+
+  it('should not read the chain for a queued request', async () => {
+    const safe = aSafe();
+    const transaction = await aQueuedRequest(safe);
+    mockUpstream(safe, transaction);
+
+    await verify({ safe, transaction });
+
+    expect(policyIndexerRepository.getState).not.toHaveBeenCalled();
+  });
+
+  describe('executed request', () => {
+    const now = faker.date.recent();
+    const nowSeconds = Math.floor(now.getTime() / 1_000);
+
+    beforeEach(() => {
+      vi.useFakeTimers({ now });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** The request executed: the Safe nonce moved past it. */
+    async function anExecutedRequest(
+      safe: Safe,
+    ): Promise<{ safe: Safe; transaction: MultisigTransaction }> {
+      const transaction = await aQueuedRequest(safe);
+      return {
+        safe: { ...safe, nonce: safe.nonce + 1 },
+        transaction: { ...transaction, isExecuted: true },
+      };
+    }
+
+    function anOpenRoot(): PolicyIndexerConfigurationRoot {
+      return policyIndexerConfigurationRootBuilder()
+        .with('chainId', CHAIN_ID)
+        .with('guard', GUARD)
+        .with('root', root)
+        .with('status', 'PENDING')
+        .with(
+          'expiresAt',
+          nowSeconds + faker.number.int({ min: 1, max: 1_000 }),
+        )
+        .build();
+    }
+
+    function mockRoots(roots: Array<PolicyIndexerConfigurationRoot>): void {
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder().with('roots', roots).build(),
+      );
+    }
+
+    it('should accept it with the signature it was confirmed with while the root is open', async () => {
+      const { safe, transaction } = await anExecutedRequest(aSafe());
+      mockUpstream(safe, transaction);
+      mockRoots([anOpenRoot()]);
+      const [confirmation] = transaction.confirmations ?? [];
+
+      await expect(
+        verify({ safe, transaction, signature: confirmation.signature! }),
+      ).resolves.toBeUndefined();
+      expect(policyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [{ chainId: CHAIN_ID, address: safe.address }],
+        guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
+      });
+    });
+
+    it.each([
+      ['applied', 'APPLIED' as const, 1],
+      ['invalidated', 'INVALIDATED' as const, 1],
+      ['expired', 'PENDING' as const, 0],
+    ])('should reject it once the root is %s', async (_, status, expiresIn) => {
+      const { safe, transaction } = await anExecutedRequest(aSafe());
+      mockUpstream(safe, transaction);
+      mockRoots([
+        {
+          ...anOpenRoot(),
+          status,
+          expiresAt: nowSeconds + expiresIn,
+        },
+      ]);
+
+      await expect(verify({ safe, transaction })).rejects.toThrow(
+        rejection('The configuration root is not open on-chain'),
+      );
+    });
+
+    it('should reject it when the chain holds no such root', async () => {
+      const { safe, transaction } = await anExecutedRequest(aSafe());
+      mockUpstream(safe, transaction);
+      mockRoots([]);
+
+      await expect(verify({ safe, transaction })).rejects.toThrow(
+        rejection('The configuration root is not open on-chain'),
+      );
+    });
+
+    it('should reject it when the root is open on another guard', async () => {
+      const { safe, transaction } = await anExecutedRequest(aSafe());
+      mockUpstream(safe, transaction);
+      mockRoots([
+        {
+          ...anOpenRoot(),
+          guard: getAddress(faker.finance.ethereumAddress()),
+        },
+      ]);
+
+      await expect(verify({ safe, transaction })).rejects.toThrow(
+        rejection('The configuration root is not open on-chain'),
+      );
+    });
+
+    it('should reject a signature it was not confirmed with', async () => {
+      const { safe, transaction } = await anExecutedRequest(aSafe());
+      const unconfirmed = { ...transaction, confirmations: [] };
+      mockUpstream(safe, unconfirmed);
+      mockRoots([anOpenRoot()]);
+
+      await expect(verify({ safe, transaction: unconfirmed })).rejects.toThrow(
+        rejection('Invalid signature'),
+      );
+      expect(policyIndexerRepository.getState).not.toHaveBeenCalled();
+    });
+
+    it('should forward a policy indexer failure', async () => {
+      const { safe, transaction } = await anExecutedRequest(aSafe());
+      mockUpstream(safe, transaction);
+      const error = new DataSourceError(
+        'Service unavailable',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+      policyIndexerRepository.getState.mockRejectedValue(error);
+
+      await expect(verify({ safe, transaction })).rejects.toBe(error);
+    });
   });
 
   it('should reject a transaction whose fields do not hash to its safeTxHash', async () => {
@@ -313,6 +486,28 @@ describe('PolicyConfigurationRequestVerifier', () => {
         requestConfigurationEncoder().with('configureRoot', root).encode(),
       )
       .with('operation', Operation.DELEGATE)
+      .with('isExecuted', false)
+      .with('nonce', safe.nonce)
+      .buildWithConfirmations({
+        chainId: CHAIN_ID,
+        safe,
+        signers: [owner],
+        signatureType: SignatureType.Eoa,
+      });
+    mockUpstream(safe, transaction);
+
+    await expect(verify({ safe, transaction })).rejects.toThrow(
+      rejection('The Safe transaction does not request the configuration root'),
+    );
+  });
+
+  it('should reject a transaction without data', async () => {
+    const safe = aSafe();
+    const transaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('to', GUARD)
+      .with('data', null)
+      .with('operation', Operation.CALL)
       .with('isExecuted', false)
       .with('nonce', safe.nonce)
       .buildWithConfirmations({

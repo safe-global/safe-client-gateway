@@ -64,8 +64,8 @@ export class PolicyConfigurationRequestsService {
 
   /**
    * Stores the configurations of a request once an owner backs their root: a
-   * queued Safe transaction requesting it on the Safe's policy guard, signed
-   * by a current owner.
+   * Safe transaction requesting it on the Safe's policy guard, signed by a
+   * current owner. Re-submitting a stored root is a no-op.
    */
   public async create(args: {
     spaceId: Space['id'];
@@ -86,13 +86,21 @@ export class PolicyConfigurationRequestsService {
       chainId: args.safe.chainId,
       configurations: args.payload.configurations,
     });
+    const stored = await this.configurationRequestsRepository.findRootsBySafe({
+      spaceId: args.spaceId,
+      safe: args.safe,
+    });
+    if (stored.includes(root)) {
+      return { root };
+    }
+
     await this.verifier.verify({
       safe: args.safe,
       root,
       safeTxHash: args.payload.safeTxHash,
       signature: args.payload.signature,
     });
-    await this.assertBelowCap({ ...args, root });
+    await this.assertBelowCap({ safe: args.safe, stored });
 
     await this.configurationRequestsRepository.create({
       spaceId: args.spaceId,
@@ -173,23 +181,13 @@ export class PolicyConfigurationRequestsService {
   /**
    * Rejects a new root once the Safe holds the maximum number of active ones:
    * stored roots that are not applied, invalidated or expired on-chain.
-   * Re-submitting a stored root is always accepted.
    */
   private async assertBelowCap(args: {
-    spaceId: Space['id'];
     safe: SafeRef;
-    root: Hex;
+    stored: ReadonlyArray<Hex>;
   }): Promise<void> {
-    const stored = await this.configurationRequestsRepository.findRootsBySafe({
-      spaceId: args.spaceId,
-      safe: args.safe,
-    });
-    if (stored.includes(args.root)) {
-      return;
-    }
-
     const closed = await this.closedRootsOf(args.safe);
-    const active = stored.filter((root) => !closed.has(root));
+    const active = args.stored.filter((root) => !closed.has(root));
     if (active.length >= this.maxPerSpaceSafe) {
       throw new HttpExceptionNoLog(
         `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,

@@ -66,12 +66,12 @@ export class CreatePolicyConfigurationRequestDto
   ];
   @ApiProperty({
     description:
-      "Hash of the queued Safe transaction calling requestConfiguration(root) on the Safe's policy guard",
+      "Hash of the Safe transaction calling requestConfiguration(root) on the Safe's policy guard, queued or executed",
   })
   public readonly safeTxHash!: Hex;
   @ApiProperty({
     description:
-      "A current owner's signature of safeTxHash. A contract signature or approved hash must already be a confirmation of the queued transaction.",
+      "A current owner's signature of safeTxHash. A contract signature or approved hash, or any signature of an executed transaction, must already be one of its confirmations.",
   })
   public readonly signature!: Hex;
 }
