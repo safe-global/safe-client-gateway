@@ -24,6 +24,9 @@ import {
 } from '#/modules/users/domain/entities/invite-user.entity';
 import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
 
+/** Replaced in `returnUrl` with the Workspace id; it survives URL validation only in the query. */
+export const SPACE_ID_RETURN_URL_PLACEHOLDER = '{SPACE_ID}';
+
 export const CreateSpaceSetupSchema = z.object({
   name: CreateSpaceSchema.shape.name,
   paymentLinkId: OpaqueIdSchema.nullable(),
@@ -99,8 +102,7 @@ export class CreateSpaceSetupDto
 
   @ApiProperty({
     type: String,
-    description:
-      'Where the checkout returns to. Must be on an allowed redirect domain.',
+    description: `Where the checkout returns to. Must be on an allowed redirect domain. A \`${SPACE_ID_RETURN_URL_PLACEHOLDER}\` in its query is replaced with the id of the Workspace, which a first setup does not know before the request.`,
   })
   public readonly returnUrl!: string;
 }

@@ -44,6 +44,7 @@ import { activateSpaceCreator } from '#/modules/spaces/domain/space-creator.util
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   type CreateSpaceSetupDto,
+  SPACE_ID_RETURN_URL_PLACEHOLDER,
   SPACE_SETUP_STATUS_DTO,
   type SpaceSetupCheckoutDto,
   type SpaceSetupDto,
@@ -52,6 +53,11 @@ import { validateSurveyAnswer } from '#/modules/surveys/domain/survey-answer.uti
 import { ISurveysRepository } from '#/modules/surveys/domain/surveys.repository.interface';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+
+/** How `URLSearchParams` writes the placeholder; URL validation keeps that encoding. */
+const ENCODED_SPACE_ID_RETURN_URL_PLACEHOLDER = encodeURIComponent(
+  SPACE_ID_RETURN_URL_PLACEHOLDER,
+);
 
 const SETUP_NOT_PENDING_MESSAGE =
   'The Workspace setup is finished and can no longer change';
@@ -333,7 +339,12 @@ export class SpaceSetupService {
     paymentLinkId: string;
     returnUrl: string;
   }): Promise<string> {
-    const session = await this.billing.createCheckoutSession(args);
+    const session = await this.billing.createCheckoutSession({
+      ...args,
+      returnUrl: args.returnUrl
+        .replaceAll(SPACE_ID_RETURN_URL_PLACEHOLDER, args.spaceUuid)
+        .replaceAll(ENCODED_SPACE_ID_RETURN_URL_PLACEHOLDER, args.spaceUuid),
+    });
     return session.url;
   }
 

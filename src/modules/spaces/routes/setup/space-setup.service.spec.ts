@@ -27,7 +27,10 @@ import type { ISpaceSetupBilling } from '#/modules/spaces/domain/setup/space-set
 import type { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { createSpaceSetupDtoBuilder } from '#/modules/spaces/routes/entities/__tests__/create-space-setup.dto.builder';
-import type { CreateSpaceSetupDto } from '#/modules/spaces/routes/entities/space-setup.dto.entity';
+import {
+  type CreateSpaceSetupDto,
+  SPACE_ID_RETURN_URL_PLACEHOLDER,
+} from '#/modules/spaces/routes/entities/space-setup.dto.entity';
 import { SpaceSetupService } from '#/modules/spaces/routes/setup/space-setup.service';
 import type { ISurveysRepository } from '#/modules/surveys/domain/surveys.repository.interface';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -183,6 +186,44 @@ describe('SpaceSetupService', () => {
       expect(applier.apply).not.toHaveBeenCalled();
     });
 
+    it('names the new Workspace in the return URL, which the client cannot know before the request', async () => {
+      const plan = trialPaymentLinkBuilder(false).build();
+      billing.listTrialPlans.mockResolvedValue([plan]);
+      billing.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResultBuilder().build(),
+      );
+      const returnUrl = new URL(faker.system.filePath(), postLoginRedirectUri);
+      returnUrl.search = `spaceId=${SPACE_ID_RETURN_URL_PLACEHOLDER}&sessionId={CHECKOUT_SESSION_ID}`;
+      const body = { ...form(plan.id), returnUrl: returnUrl.toString() };
+
+      await target.create({ authPayload, body });
+
+      expect(billing.createCheckoutSession).toHaveBeenCalledWith({
+        spaceUuid: space.uuid,
+        paymentLinkId: plan.id,
+        returnUrl: `${returnUrl.origin}${returnUrl.pathname}?spaceId=${space.uuid}&sessionId={CHECKOUT_SESSION_ID}`,
+      });
+    });
+
+    it('names the new Workspace when the client percent-encoded the placeholder', async () => {
+      const plan = trialPaymentLinkBuilder(false).build();
+      billing.listTrialPlans.mockResolvedValue([plan]);
+      billing.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResultBuilder().build(),
+      );
+      const returnUrl = new URL(faker.system.filePath(), postLoginRedirectUri);
+      returnUrl.searchParams.set('spaceId', SPACE_ID_RETURN_URL_PLACEHOLDER);
+      const body = { ...form(plan.id), returnUrl: returnUrl.toString() };
+
+      await target.create({ authPayload, body });
+
+      expect(billing.createCheckoutSession).toHaveBeenCalledWith({
+        spaceUuid: space.uuid,
+        paymentLinkId: plan.id,
+        returnUrl: `${returnUrl.origin}${returnUrl.pathname}?spaceId=${space.uuid}`,
+      });
+    });
+
     it('applies a setup without a plan at once', async () => {
       billing.isEnforced.mockReturnValue(false);
 
@@ -333,6 +374,26 @@ describe('SpaceSetupService', () => {
       expect(spacesRepository.update).toHaveBeenCalledWith(
         expect.objectContaining({ updatePayload: { name: body.name } }),
       );
+    });
+
+    it('names the Workspace in the return URL of the new checkout', async () => {
+      storedSetup();
+      const plan = trialPaymentLinkBuilder(false).build();
+      billing.listOfferedPaymentLinks.mockResolvedValue([plan]);
+      billing.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResultBuilder().build(),
+      );
+      const returnUrl = new URL(faker.system.filePath(), postLoginRedirectUri);
+      returnUrl.search = `spaceId=${SPACE_ID_RETURN_URL_PLACEHOLDER}`;
+      const body = { ...form(plan.id), returnUrl: returnUrl.toString() };
+
+      await target.update({ spaceId: space.id, authPayload, body });
+
+      expect(billing.createCheckoutSession).toHaveBeenCalledWith({
+        spaceUuid: space.uuid,
+        paymentLinkId: plan.id,
+        returnUrl: `${returnUrl.origin}${returnUrl.pathname}?spaceId=${space.uuid}`,
+      });
     });
 
     it('applies a setup whose trial is live, then refuses to replace it', async () => {
