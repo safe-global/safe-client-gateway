@@ -682,6 +682,34 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   }
 
   /**
+   * Decodes the arguments of a setPreSignature call.
+   *
+   * @param data - the transaction data for the setPreSignature call
+   * @returns the order UID and whether it is being signed, or null if the data does not represent a setPreSignature call
+   */
+  public decodePreSignature(
+    data: Hex,
+  ): { orderUid: Hex; signed: boolean } | null {
+    if (!this.helpers.isSetPreSignature(data)) {
+      return null;
+    }
+
+    try {
+      const decoded = this.decodeFunctionData({ data });
+
+      if (decoded.functionName !== 'setPreSignature') {
+        throw new Error('Data is not of setPreSignature');
+      }
+
+      const [orderUid, signed] = decoded.args;
+      return { orderUid, signed };
+    } catch (e) {
+      this.loggingService.debug(e);
+      return null;
+    }
+  }
+
+  /**
    * Decodes an order from a settlement trade.
    *
    * @param trade The trade to decode into an order.
